@@ -92,7 +92,7 @@ class MCDARoutingAndDeploying(Selection):
     #             # print sim.topology.G.edges[link][Topology.LINK_BW]
     #
     #         att_node = sim.topology.get_nodes_att()[path[-1]]
-    #         time_service = message.inst / float(att_node["IPT"])
+    #         time_service = message.instructions / float(att_node["IPT"])
     #         totalTimelatency += time_service  # HW - computation of last node
     #         print totalTimelatency
     #
@@ -137,7 +137,7 @@ class MCDARoutingAndDeploying(Selection):
     #             #     print "\t last cloud"
     #             #     speed += 10000
     #
-    #             time_service = message.inst / float(att_node["IPT"])
+    #             time_service = message.instructions / float(att_node["IPT"])
     #             speed += time_service  # HW - computation of last node
     #             #print "SPEED: ",speed
     #             if  speed < bestSpeed:

@@ -39,7 +39,7 @@ def create_applications_from_json(data):
         ms = {}
         for message in app["message"]:
             # print "Creando mensaje: %s" %message["name"]
-            ms[message["name"]] = Message(message["name"], message["s"], message["d"], instructions=message["instructions"], bytes=message["bytes"])
+            ms[message["name"]] = Message(message["name"], message["s"], message["d"], instructions=message["instructions"], size=message["bytes"])
             if message["s"] == "None":
                 a.add_source_messages(ms[message["name"]])
 

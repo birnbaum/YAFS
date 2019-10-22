@@ -29,7 +29,7 @@ class DeviceSpeedAwareRouting(Selection):
 
                 att_node = sim.topology.get_nodes_att()[path[-1]]
 
-                time_service = message.inst / float(att_node["IPT"])
+                time_service = message.instructions / float(att_node["IPT"])
                 speed += time_service  # HW - computation of last node
                 # print "SPEED: ",speed
                 if speed < bestSpeed:

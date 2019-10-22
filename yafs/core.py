@@ -13,7 +13,7 @@ from tqdm import tqdm
 import networkx as nx
 
 from yafs.topology import Topology
-from yafs.application import Application
+from yafs.application import Application, Message
 from yafs.metrics import Metrics
 from yafs.distribution import *
 from yafs import utils
@@ -275,7 +275,7 @@ class Sim:
                 """
                 Computing message latency
                 """
-                size_bits = message.bytes
+                size_bits = message.size
                 # size_bits = message.bytes * 8
                 try:
                     # transmit = size_bits / (self.topology.get_edge(link)[Topology.LINK_BW] * 1000000.0)  # MBITS!
@@ -296,7 +296,7 @@ class Sim:
                             "latency": latency_msg_link,
                             "message": message.name,
                             "ctime": self.env.now,
-                            "size": message.bytes,
+                            "size": message.size,
                             "buffer": self.network_pump,
                         }
                     )  # "path":message.path})
@@ -440,7 +440,7 @@ class Sim:
                 # att_node = self.topology.get_nodes_att()[id_node] # WARNING DEPRECATED from V1.0
                 att_node = self.topology.G.nodes[id_node]
 
-                time_service = message.inst / float(att_node["IPT"])
+                time_service = message.instructions / float(att_node["IPT"])
 
             """
             it records the entity.id who sends this message
