@@ -21,7 +21,6 @@ from yafs import utils
 from trackanimation.animation import AnimationTrack
 
 import numpy as np
-import smopy
 
 EVENT_UP_ENTITY = "node_up"
 EVENT_DOWN_ENTITY = "node_down"
@@ -1184,6 +1183,8 @@ class Sim:
     #     animation.make_video(output_file=pathFile, framerate=10, linewidth=1.0)
 
     def __load_map(self):
+        import smopy
+
         trk_bounds = self.user_tracks.get_bounds()
         min_lat = trk_bounds.min_latitude
         max_lat = trk_bounds.max_latitude

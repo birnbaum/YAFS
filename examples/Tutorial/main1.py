@@ -11,11 +11,11 @@ from yafs.core import Sim
 from yafs.application import Application,Message
 
 from yafs.population import *
-from yafs import Topology
+from yafs.topology import Topology
 
-from simpleSelection import MinimunPath
-from simplePlacement import CloudPlacement
-from yafs import Stats
+from examples.Tutorial.simpleSelection import MinimunPath
+from examples.Tutorial.simplePlacement import CloudPlacement
+from yafs.stats import Stats
 from yafs.distribution import deterministicDistribution
 from yafs.utils import fractional_selectivity
 import time

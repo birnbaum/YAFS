@@ -5,16 +5,13 @@ import matplotlib.pyplot as plt
 import numpy as np
 import scipy
 import scipy.spatial
-import yafs.utils
 import math
-from matplotlib.collections import PatchCollection,PolyCollection
 from yafs.utils import haversine_distance
 from functools import partial
-import pyproj
-from shapely.ops import transform
-from shapely.geometry import Point
 
+from matplotlib.collections import PatchCollection,PolyCollection
 from matplotlib.patches import Circle
+
 
 class Coverage(object):
     def __init__(self):
@@ -192,6 +189,10 @@ class CircleCoverage(Coverage):
         Returns:
             a list of coordinates with radius km and center (lat,long) in this projection
         """
+        import pyproj
+        from shapely.ops import transform
+        from shapely.geometry import Point
+
         proj_wgs84 = pyproj.Proj(init='epsg:4326')
         # Azimuthal equidistant projection
         aeqd_proj = '+proj=aeqd +lat_0={lat} +lon_0={lon} +x_0=0 +y_0=0'

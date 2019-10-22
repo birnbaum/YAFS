@@ -3,7 +3,6 @@ import logging
 
 
 import networkx as nx
-import matplotlib.pyplot as plt
 import warnings
 
 
@@ -269,6 +268,7 @@ class Topology:
 
 
     def draw_png(self,path_file):
+        import matplotlib.pyplot as plt
         fig, ax = plt.subplots(nrows=1, ncols=1)
         pos = nx.spring_layout(self.G)
         nx.draw(self.G, pos)

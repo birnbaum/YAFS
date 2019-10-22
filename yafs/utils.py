@@ -2,14 +2,10 @@
 Some common functions
 """
 import copy
-import networkx as nx
-import matplotlib.pyplot as plt
 import random
 import numpy as np
 from collections import OrderedDict
 import networkx as nx
-import pyproj
-from shapely.ops import transform
 from functools import partial
 import math
 
@@ -59,6 +55,8 @@ def create_points(G):
     return pos
 
 def toMeters(geometry):
+    import pyproj
+    from shapely.ops import transform
     project = partial(
     pyproj.transform,
     pyproj.Proj(init='EPSG:4326'),
@@ -90,6 +88,8 @@ def draw_topology(topology,alloc_entity):
 
     .. Note: This classes can be extended to export the topology (graph) to other visualization tools
     """
+    import matplotlib.pyplot as plt
+
     G = copy.copy(topology.G)
 
 
