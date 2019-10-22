@@ -13,7 +13,7 @@ import subprocess
 
 import numpy as np
 
-from yafs.core import Sim
+from yafs.core import Simulation
 from yafs.application import Application, Message
 from yafs import Topology
 from yafs.distribution import *
@@ -158,7 +158,7 @@ def main(path, path_results, number_simulation_steps, tracks, topology, case, it
     """
     SIMULATION ENGINE
     """
-    s = Sim(topology, default_results_path=path_results + "Results_%s_%i" % (case, it))
+    s = Simulation(topology, default_results_path=path_results + "Results_%s_%i" % (case, it))
 
     """
     MOBILE - parametrization

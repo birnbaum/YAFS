@@ -19,7 +19,7 @@ EVENT_DOWN_ENTITY = "node_down"
 NETWORK_LIMIT = 100000000
 
 
-class Sim:  # TODO Rename to e.g. "Simulation"
+class Simulation:
     """Contains the cloud event-discrete simulation environment and controls the structure variables.
 
     Args:

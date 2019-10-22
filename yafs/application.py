@@ -1,4 +1,4 @@
-from typing import Callable, List
+from typing import Callable, List, Dict
 
 
 class Message:
@@ -64,7 +64,7 @@ class Application:
         result = f"___ APP. Name: {self.name}"
         result += "\n__ Transmissions "
         for m in list(self.messages.values()):
-            result += "\n\tModule: None : M_In: {m.src}  -> M_Out: {m.dst} "
+            result += f"\n\tModule: None : M_In: {m.src}  -> M_Out: {m.dst} "
 
         for modulename in list(self.services.keys()):
             m = self.services[modulename]
@@ -73,23 +73,22 @@ class Application:
                 if "message_in" in list(ser.keys()):
                     try:
                         result += f"\t\t M_In: {ser['message_in'].name}  -> M_Out: {ser['message_out'].name} "
-                    except:
+                    except:  # TODO Catch to broad
                         result += f"\t\t M_In: {ser['message_in'].name}  -> M_Out: [NOTHING] "
         return result
 
-    def set_modules(self, data):
-        """
-        Pure source or sink modules must be typified
+    def set_modules(self, data: List[Dict]):
+        """Pure source or sink modules must be typified
 
         Args:
-            data (dict) : a set of characteristic of modules
+            data: Set of characteristics of modules
         """
         for module in data:
             name = list(module.keys())[0]
-            type = list(module.values())[0]["Type"]
-            if type == self.TYPE_SOURCE:
+            type_ = list(module.values())[0]["Type"]
+            if type_ == self.TYPE_SOURCE:
                 self.modules_src.append(name)
-            elif type == self.TYPE_SINK:
+            elif type_ == self.TYPE_SINK:
                 self.modules_sink = name
 
             self.modules.append(name)
@@ -156,7 +155,7 @@ class Application:
                 {"type": Application.TYPE_SOURCE, "dist": distribution, "message_out": message, "module_dest": module_dst, "p": p}
             )
 
-    def add_service_module(self, module_name: str, message_in, message_out="", distribution="", module_dest=[], p=[], **param):
+    def add_service_module(self, module_name: str, message_in, message_out="", distribution="", module_dst: List = None, p: List = None, **param):
         # TODO Is message_out of type Message or str?
         # TODO Fix mutable default arguments
 
@@ -168,14 +167,14 @@ class Application:
             message_in (Message): input message
             message_out (Message): output message. If Empty the module is a sink
             distribution (function): a function with a distribution function
-            module_dest (list): a list of modules who can receive this message. Broadcasting.
+            module_dst (list): a list of modules who can receive this message. Broadcasting.
             p (list): a list of probabilities to send this message. Broadcasting
 
         Kwargs:
             param (dict): the parameters for *distribution* function
 
         """
-        if not module_name in self.services:
+        if module_name not in self.services:
             self.services[module_name] = []
 
         self.services[module_name].append(
@@ -185,7 +184,7 @@ class Application:
                 "param": param,
                 "message_in": message_in,
                 "message_out": message_out,
-                "module_dest": module_dest,
+                "module_dest": module_dst,
                 "p": p,
             }
         )

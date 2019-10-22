@@ -8,7 +8,7 @@ import networkx as nx
 import numpy as np
 
 from trackanimation.animation import AnimationTrack
-from yafs.core import Sim
+from yafs.core import Simulation
 
 
 class MovementUpdate:
@@ -101,7 +101,7 @@ class MovementUpdate:
         routing.invalid_cache_value = True  # we can invalid the cache of routing packages
 
     def __call__(self, sim, routing, case, stop_time, it):
-        # type: (Sim, Selection, String, int, int) -> None
+        # type: (Simulation, Selection, String, int, int) -> None
         """
         It updates network topology in function of user location and mobile agents in the scenario
 

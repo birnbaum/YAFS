@@ -8,7 +8,7 @@ The following tables list all of the available components in this module.
 """
 from pkgutil import extend_path
 
-from yafs.core import Sim
+from yafs.core import Simulation
 from yafs import Placement, ClusterPlacement
 from yafs import Selection, OneRandomPath, First_ShortestPath
 from yafs import Topology, Entity
@@ -32,7 +32,7 @@ def compile_toc(entries, section_marker="="):
 
 
 toc = (
-    ("Core", [Sim]),
+    ("Core", [Simulation]),
     ("Topology", [Topology, Entity]),
     ("Application", [Application, Message]),
     ("Population", [Population, StaticPopulation]),

@@ -7,7 +7,7 @@
 """
 import random
 
-from yafs.core import Sim
+from yafs.core import Simulation
 from yafs.application import Application, Message
 from yafs import Topology
 from yafs import First_ShortestPath
@@ -278,7 +278,7 @@ def main():
         SIMULATION ENGINE
         """
         stop_time = 100  # CHECK
-        s = Sim(t)
+        s = Simulation(t)
         for idx, app in enumerate(apps):
             s.deploy_app(app, placement, pops[idx], selectorPath)
 

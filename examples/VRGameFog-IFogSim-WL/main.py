@@ -13,7 +13,7 @@
 
 import argparse
 
-from yafs.core import Sim
+from yafs.core import Simulation
 from yafs.application import Application, Message
 
 from yafs.population import *
@@ -195,7 +195,7 @@ def main(simulated_time, depth, police):
     """
 
     stop_time = simulated_time
-    s = Sim(t, default_results_path="Results_%s_%i_%i" % (police, stop_time, depth))
+    s = Simulation(t, default_results_path="Results_%s_%i_%i" % (police, stop_time, depth))
     s.deploy_app(app, placement, pop, selectorPath)
 
     s.run(stop_time, test_initial_deploy=False, show_progress_monitor=False)

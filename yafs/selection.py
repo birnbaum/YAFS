@@ -5,7 +5,7 @@ from typing import Tuple
 
 import networkx as nx
 
-from yafs.core import Sim
+from yafs.core import Simulation
 
 
 class Selection(ABC):
@@ -18,21 +18,12 @@ class Selection(ABC):
         self.propagation = 0.0
 
     @abstractmethod
-    def get_path(self, sim: Sim, app_name: str, message, topology_src, alloc_DES, alloc_module, traffic, from_des) -> Tuple:
+    def get_path(self, sim: Simulation, app_name: str, message, topology_src, alloc_DES, alloc_module, traffic, from_des) -> Tuple:
         """Provides the route to follow the message within the topology to reach the destination module,.
         
         both empty arrays implies that the message will not send to the destination.  # TODO ???
         
         # TODO Missing documentation
-        Args:
-            sim: 
-            app_name: 
-            message: 
-            topology_src: 
-            alloc_DES: 
-            alloc_module: 
-            traffic: 
-            from_des: 
 
         Returns:
             - Path among nodes

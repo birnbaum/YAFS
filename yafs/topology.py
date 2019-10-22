@@ -1,5 +1,6 @@
 import logging
 import warnings
+from typing import Tuple, Dict
 
 import networkx as nx
 
@@ -41,10 +42,10 @@ class Topology:
         """Returns a list of graph edges, i.e.: ((1,0),(0,2),...)"""
         return self.G.edges
 
-    def get_edge(self, key):
+    def get_edge(self, key: Tuple[int, int]):
         """
         Args:
-            key (str): a edge identifier, i.e. (1,9)
+            key: a edge identifier, i.e. (1,9)
 
         Returns:
             list: a list of edge attributes
@@ -58,10 +59,10 @@ class Topology:
         """
         return self.G.nodes
 
-    def get_node(self, key):
+    def get_node(self, key: int):
         """
         Args:
-            key (int): a node identifier
+            key: a node identifier
 
         Returns:
             list: a list of node features
@@ -71,13 +72,8 @@ class Topology:
     def get_info(self):
         return self.nodeAttributes
 
-    def create_topology_from_graph(self, G):
-        """
-        It generates the topology from a NetworkX graph
-
-        Args:
-             G (*networkx.classes.graph.Graph*)
-        """
+    def create_topology_from_graph(self, G: nx.Graph):
+        """Generates the topology from a NetworkX graph"""
         if isinstance(G, nx.classes.graph.Graph):
             self.G = G
             self.__idNode = len(G.nodes)
@@ -100,14 +96,8 @@ class Topology:
         except:
             raise Exception
 
-    def load(self, data):
-        """
-            It generates the topology from a JSON file
-            see project example: Tutorial_JSONModelling
-
-            Args:
-                 data (str): a json
-        """
+    def load(self, data: Dict):
+        """Generates the topology from a JSON file"""
         self.G = nx.Graph()
         for edge in data["link"]:
             self.G.add_edge(edge["s"], edge["d"], BW=edge[self.LINK_BW], PR=edge[self.LINK_PR])

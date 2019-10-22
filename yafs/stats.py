@@ -3,11 +3,12 @@ import pandas as pd
 
 from yafs.metrics import Metrics
 
+
 # TODO Missing documentation
 class Stats:
-    def __init__(self, defaultPath="result"):
-        self.df_link = pd.read_csv(defaultPath + "_link.csv")
-        self.df = pd.read_csv(defaultPath + ".csv")
+    def __init__(self, default_path: str = "result"):
+        self.df_link = pd.read_csv(default_path + "_link.csv")
+        self.df = pd.read_csv(default_path + ".csv")
 
     def bytes_transmitted(self):
         return self.df_link["size"].sum()

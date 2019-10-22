@@ -11,7 +11,7 @@ import random
 
 """
 
-from yafs.core import Sim
+from yafs.core import Simulation
 from yafs.application import Application, Message
 from yafs import Topology
 from yafs.distribution import DeterministicDistribution, DeterministicDistributionStartPoint
@@ -119,7 +119,7 @@ def main(simulated_time):
     SIMULATION ENGINE
     """
 
-    s = Sim(t, default_results_path="Results_%s_singleApp1" % (simulated_time))
+    s = Simulation(t, default_results_path="Results_%s_singleApp1" % (simulated_time))
     s.deploy_app(app1, placement, pop1, selectorPath1)
     # s.deploy_app(app2, placement, pop2,  selectorPath2)
 

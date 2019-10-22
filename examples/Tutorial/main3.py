@@ -4,7 +4,7 @@
 
 """
 
-from yafs.core import Sim
+from yafs.core import Simulation
 from yafs.application import Application, Message
 
 from yafs.topology import Topology
@@ -148,7 +148,7 @@ def main(simulated_time):
     """
 
     stop_time = simulated_time
-    s = Sim(t, default_results_path="Results_multiple")
+    s = Simulation(t, default_results_path="Results_multiple")
     s.deploy_app(app, placement, pop, selectorPath)
 
     s.run(stop_time, show_progress_monitor=False)
@@ -171,7 +171,7 @@ if __name__ == "__main__":
     print("-" * 20)
     print("Results:")
     print("-" * 20)
-    m = Stats(defaultPath="Results_multiple")  # Same name of the results
+    m = Stats(default_path="Results_multiple")  # Same name of the results
     time_loops = [["M.A", "M.B"]]
     m.showResults2(1000, time_loops=time_loops)
     print("\t- Network saturation -")

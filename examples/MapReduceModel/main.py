@@ -5,7 +5,7 @@
 """
 import json
 import argparse
-from yafs.core import Sim
+from yafs.core import Simulation
 from yafs.application import Application, Message
 from yafs import Topology
 from yafs import JSONPlacement
@@ -184,7 +184,7 @@ def main(simulated_time, experimento, file, study, it):
     """
 
     stop_time = simulated_time
-    s = Sim(t, default_results_path=experimento + "Results_%i_%s_%s_%i" % (it, file, study, stop_time))
+    s = Simulation(t, default_results_path=experimento + "Results_%i_%s_%s_%i" % (it, file, study, stop_time))
 
     """
     Failure process

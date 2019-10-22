@@ -9,7 +9,7 @@
 
 """
 
-from yafs.core import Sim
+from yafs.core import Simulation
 from yafs.application import Application, Message
 from yafs import Topology
 from yafs.distribution import *
@@ -122,7 +122,7 @@ def main(simulated_time):
     """
     SIMULATION ENGINE
     """
-    s = Sim(t, default_results_path="Results_%s" % (simulated_time))
+    s = Simulation(t, default_results_path="Results_%s" % (simulated_time))
     s.deploy_app(app1, placement, pop, selectorPath)
 
     s.run(simulated_time, test_initial_deploy=False, show_progress_monitor=False)

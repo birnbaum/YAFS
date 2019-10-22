@@ -13,7 +13,7 @@ import logging.config
 import numpy as np
 from collections import Counter
 
-from yafs.core import Sim
+from yafs.core import Simulation
 from yafs.application import Application, Message
 from yafs import Topology
 from yafs.distribution import *
@@ -142,7 +142,7 @@ def main(simulated_time, path, pathResults, case, it):
     SIMULATION ENGINE
     """
     stop_time = simulated_time
-    s = Sim(t, default_results_path=pathResults + "Results_%s_%i_%i" % (case, stop_time, it))
+    s = Simulation(t, default_results_path=pathResults + "Results_%s_%i_%i" % (case, stop_time, it))
 
     """
     POPULATION algorithm
