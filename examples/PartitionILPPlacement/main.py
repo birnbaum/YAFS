@@ -163,7 +163,7 @@ def main(simulated_time, experimento, ilpPath, it):
     """
     time_shift = 10000
     # distribution = deterministicDistributionStartPoint(name="Deterministic", time=time_shift,start=10000)
-    distribution = deterministicDistributionStartPoint(name="Deterministic", time=time_shift, start=1)
+    distribution = DeterministicDistributionStartPoint(name="Deterministic", time=time_shift, start=1)
     failurefilelog = open(experimento + "Failure_%s_%i.csv" % (ilpPath, stop_time), "w")
     failurefilelog.write("node, module, time\n")
     # idCloud = t.find_IDs({"type": "CLOUD"})[0] #[0] -> In this study there is only one CLOUD DEVICE

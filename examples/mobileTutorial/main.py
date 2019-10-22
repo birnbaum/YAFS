@@ -199,7 +199,7 @@ def main(path, path_results, number_simulation_steps, tracks, topology, case, it
     """
     stop_time = number_simulation_steps * time_in_each_step
 
-    dStart = deterministicDistributionStartPoint(0, time_in_each_step, name="Deterministic")
+    dStart = DeterministicDistributionStartPoint(0, time_in_each_step, name="Deterministic")
     evol = MovementUpdate(path_results, doExecutionVideo)
     s.deploy_monitor("Traces_localization_update", evol, dStart, **{"sim": s, "routing": selectorPath, "case": case, "stop_time": stop_time, "it": it})
 

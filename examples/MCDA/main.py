@@ -194,7 +194,7 @@ def main(simulated_time, path, pathResults, case, failuresON, it, idcloud):
             if element["app"] == aName:
                 data.append(element)
 
-        distribution = exponentialDistribution(name="Exp", lambd=random.randint(100, 1000), seed=int(aName) * 100 + it)
+        distribution = ExponentialDistribution(name="Exp", lambd=random.randint(100, 1000), seed=int(aName) * 100 + it)
         pop_app = DynamicPopulation(name="Dynamic_%s" % aName, data=data, iteration=it, activation_dist=distribution)
         s.deploy_app(apps[aName], placement, pop_app, selectorPath)
 

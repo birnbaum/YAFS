@@ -1,5 +1,5 @@
 from yafs.population import Population
-from yafs.distribution import exponentialDistribution
+from yafs.distribution import ExponentialDistribution
 
 
 class JSONPopulation(Population):
@@ -26,6 +26,6 @@ class JSONPopulation(Population):
 
                 seed = item["id_resource"] * 1000 + item["lambda"] + self.it
 
-                dDistribution = exponentialDistribution(name="Exp", lambd=lambd, seed=seed)
+                dDistribution = ExponentialDistribution(name="Exp", lambd=lambd, seed=seed)
 
                 idsrc = sim.deploy_source(app_name, id_node=idtopo, msg=msg, distribution=dDistribution)

@@ -156,14 +156,14 @@ def main(simulated_time, path, pathResults, case, it):
             if element["app"] == aName:
                 data.append(element)
 
-        distribution = exponentialDistribution(name="Exp", lambd=random.randint(100, 200), seed=int(aName) * 100 + it)
+        distribution = ExponentialDistribution(name="Exp", lambd=random.randint(100, 200), seed=int(aName) * 100 + it)
         pop_app = DynamicPopulation(name="Dynamic_%s" % aName, data=data, iteration=it, activation_dist=distribution)
         s.deploy_app(apps[aName], placement, pop_app, selectorPath)
 
     """
     CUSTOM EVOLUTION
     """
-    dStart = deterministicDistributionStartPoint(stop_time / 2.0, stop_time / 2.0 / 10.0, name="Deterministic")
+    dStart = DeterministicDistributionStartPoint(stop_time / 2.0, stop_time / 2.0 / 10.0, name="Deterministic")
     evol = CustomStrategy(pathResults)
     s.deploy_monitor("EvolutionOfServices", evol, dStart, **{"sim": s, "routing": selectorPath, "case": case, "stop_time": stop_time, "it": it})
 

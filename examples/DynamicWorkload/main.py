@@ -105,11 +105,11 @@ def main(simulated_time):
     print("Number of generators %i" % number_generators)
 
     # you can use whatever funciton to change the topology
-    dStart = deterministicDistributionStartPoint(500, 400, name="Deterministic")
+    dStart = DeterministicDistributionStartPoint(500, 400, name="Deterministic")
     pop = Population_Move(name="mttf-nodes", srcs=number_generators, node_dst=main_fog_device, activation_dist=dStart)
     pop.set_sink_control({"id": main_fog_device, "number": number_generators, "module": app1.get_sink_modules()})
 
-    dDistribution = deterministicDistribution(name="Deterministic", time=100)
+    dDistribution = DeterministicDistribution(name="Deterministic", time=100)
     pop.set_src_control({"number": 1, "message": app1.get_message("M.Action"), "distribution": dDistribution})
 
     # In addition, a source includes a distribution function:

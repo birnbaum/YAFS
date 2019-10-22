@@ -1,15 +1,14 @@
-from collections import defaultdict
+# TODO What does this module do? Missing documentation
+
+import math
+from functools import partial
 
 import matplotlib.pyplot as plt
 import numpy as np
-import scipy
-import scipy.spatial
-import math
-from yafs.utils import haversine_distance
-from functools import partial
-
 from matplotlib.collections import PatchCollection, PolyCollection
 from matplotlib.patches import Circle
+
+from yafs.utils import haversine_distance
 
 
 class Coverage(object):
@@ -191,6 +190,8 @@ class CircleCoverage(Coverage):
 
 class Voronoi(Coverage):
     def __init__(self, map, points):
+        import scipy
+
         self.tree = None
         self.points = points
         self.__vor = scipy.spatial.Voronoi(self.points)

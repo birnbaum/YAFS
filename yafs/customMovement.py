@@ -1,13 +1,14 @@
-from collections import defaultdict
-import random
+# TODO Missing documentation
+
+import copy
+import logging
+import time
+
+import networkx as nx
+import numpy as np
 
 from trackanimation.animation import AnimationTrack
 from yafs.core import Sim
-import logging
-import numpy as np
-import time
-import copy
-import networkx as nx
 
 
 class MovementUpdate:

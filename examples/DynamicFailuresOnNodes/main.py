@@ -95,12 +95,12 @@ def main(simulated_time):
     print(number_generators)
 
     # you can use whatever funciton to change the topology
-    dStart = deterministicDistributionStartPoint(0, 100, name="Deterministic")
-    dStart2 = exponentialDistributionStartPoint(500, 100.0, name="Deterministic")
+    dStart = DeterministicDistributionStartPoint(0, 100, name="Deterministic")
+    dStart2 = ExponentialDistributionStartPoint(500, 100.0, name="Deterministic")
     pop = Pop_and_Failures(name="mttf-nodes", srcs=number_generators, activation_dist=dStart2)
     pop.set_sink_control({"ids": top20_devices, "number": 1, "module": app1.get_sink_modules()})
 
-    dDistribution = deterministicDistribution(name="Deterministic", time=10)
+    dDistribution = DeterministicDistribution(name="Deterministic", time=10)
     pop.set_src_control({"number": 1, "message": app1.get_message("M.Action"), "distribution": dDistribution})
 
     # In addition, a source includes a distribution function:

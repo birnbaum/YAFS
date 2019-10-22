@@ -13,7 +13,7 @@ from yafs.topology import Topology
 
 from examples.Tutorial.simpleSelection import MinPath_RoundRobin
 from examples.Tutorial.simplePlacement import CloudPlacement
-from yafs.distribution import deterministicDistribution
+from yafs.distribution import DeterministicDistribution
 from yafs.utils import fractional_selectivity
 from yafs.stats import Stats
 import time
@@ -122,7 +122,7 @@ def main(simulated_time):
     pop.set_sink_control({"model": "actuator-device", "number": 2, "module": app.get_sink_modules()})
 
     # In addition, a source includes a distribution function:
-    dDistribution = deterministicDistribution(name="Deterministic", time=100)
+    dDistribution = DeterministicDistribution(name="Deterministic", time=100)
     pop.set_src_control({"model": "sensor-device", "number": 1, "message": app.get_message("M.A"), "distribution": dDistribution})  # 5.1}})
 
     """--

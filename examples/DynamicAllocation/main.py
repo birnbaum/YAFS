@@ -14,7 +14,7 @@ import random
 from yafs.core import Sim
 from yafs.application import Application, Message
 from yafs import Topology
-from yafs.distribution import deterministicDistribution, deterministicDistributionStartPoint
+from yafs.distribution import DeterministicDistribution, DeterministicDistributionStartPoint
 
 from .Evolutive_population import Evolutive, Statical
 from .selection_multipleDeploys import CloudPath_RR, BroadPath
@@ -95,8 +95,8 @@ def main(simulated_time):
     """
     number_generators = int(len(t.G) * 0.1)
     print(number_generators)
-    dDistribution = deterministicDistributionStartPoint(3000, 300, name="Deterministic")
-    dDistributionSrc = deterministicDistribution(name="Deterministic", time=10)
+    dDistribution = DeterministicDistributionStartPoint(3000, 300, name="Deterministic")
+    dDistributionSrc = DeterministicDistribution(name="Deterministic", time=10)
     pop1 = Evolutive(top20_devices, number_generators, name="top", activation_dist=dDistribution)
     pop1.set_sink_control({"app": app1.name, "number": 1, "module": app1.get_sink_modules()})
     pop1.set_src_control({"number": 1, "message": app1.get_message("M.Action"), "distribution": dDistributionSrc})

@@ -1,24 +1,17 @@
-# -*- coding: utf-8 -*-
-"""
-This module unifies the event-discrete simulation environment with the rest of modules: placement, topology, selection, population, utils and metrics.
+"""This module unifies the event-discrete simulation environment with the rest of modules: placement, topology, selection, population, utils and metrics."""
 
-"""
-
-
-import logging
 import copy
+import logging
 
+import networkx as nx
 import simpy
 from tqdm import tqdm
-import networkx as nx
 
-from yafs.topology import Topology
-from yafs.application import Application, Message
-from yafs.metrics import Metrics
-from yafs.distribution import *
 from yafs import utils
-
-import numpy as np
+from yafs.application import Application, Message
+from yafs.distribution import *
+from yafs.metrics import Metrics
+from yafs.topology import Topology
 
 EVENT_UP_ENTITY = "node_up"
 EVENT_DOWN_ENTITY = "node_down"
@@ -26,26 +19,17 @@ EVENT_DOWN_ENTITY = "node_down"
 NETWORK_LIMIT = 100000000
 
 
-class Sim:
-    """
-
-    This class contains the cloud event-discrete simulation environment and it controls the structure variables.
-
+class Sim:  # TODO Rename to e.g. "Simulation"
+    """Contains the cloud event-discrete simulation environment and controls the structure variables.
 
     Args:
-       topology (object) - the associate (:mod:`Topology`) of the environment. There is only one.
-
-    Kwargs:
-       name_register (str): database file name where are registered the events.
-
-       purge_register (boolean): True - clean the database
-
-       logger (logger) - logger
-
-
-    **Main variables to coordinate with algorithm:**
-
-
+        topology: Associated topology of the environment.
+        name_register: database file name where are registered the events.
+        link_register  # TODO ???
+        purge_register: Clean the database
+        logger: logger  # TODO Get rid and use Python logging module
+        redis  # TODO ???
+        default_results_path  # TODO ???
     """
 
     NODE_METRIC = "COMP_M"
@@ -54,32 +38,22 @@ class Sim:
     SINK_METRIC = "SINK_M"
     LINK_METRIC = "LINK"
 
-    def __init__(
-        self, topology, name_register="events_log.json", link_register="links_log.json", redis=None, purge_register=True, logger=None, default_results_path=None
-    ):
-
-        self.env = simpy.Environment()
-        """
-        the discrete-event simulator (aka DES)
-        """
-
-        self.__idProcess = -1
-        # an unique indentifier for each process in the DES
-
-        self.__idMessage = 0
-        # an unique indentifier for each message
-
-        self.network_ctrl_pipe = simpy.Store(self.env)
-        self.network_pump = 0
-        # a shared resource that control the exchange of messagess in the topology
-
-        self.stop = False
-        """
-        Any algorithm can stop internally the simulation putting these value to True. By default is False.
-        """
+    def __init__(self, topology: Topology, name_register: str = "events_log.json", link_register: str = "links_log.json", redis=None,
+                 purge_register: bool = True, logger=None, default_results_path=None):  # TODO Many arguments unused
+        # TODO Refactor this class. Way too many fields, no clear separation of concerns.
 
         self.topology = topology
         self.logger = logger or logging.getLogger(__name__)
+
+        self.env = simpy.Environment()  # discrete-event simulator (aka DES)
+        self.network_ctrl_pipe = simpy.Store(self.env)
+
+        self.__idProcess = -1  # Unique identifier for each process in the DES
+        self.__idMessage = 0  # Unique identifier for each message
+        self.network_pump = 0  # Shared resource that controls the exchange of messages in the topology
+
+        self.stop = False  # Any algorithm can stop internally the simulation putting these value to True. By default is False.
+
         self.apps = {}
 
         self.until = 0  # End time simulation
@@ -178,18 +152,19 @@ class Sim:
         self.coverage = None
         self.control_movement_class = None
 
-    # self.__send_message(app_name, message, idDES, self.SOURCE_METRIC)
-    def __send_message(self, app_name, message, idDES, type):
+    def __send_message(self, app_name: str, message: Message, idDES, type):
         """
         Any exchange of messages between modules is done with this function and updates the metrics when the message achieves the destination module
 
         Args:
             app_name (string)º
-
             message: (:mod:`Message`)
 
+            idDES TODO ???
+            type TODO ???
+
         Kwargs:
-            id_src (int) identifier of a pure source module
+            id_src (int) identifier of a pure source module TODO ???
         """
         # TODO IMPROVE asignation of topo = alloc_DES(IdDES) , It has to move to the get_path process
         try:
@@ -210,10 +185,8 @@ class Sim:
                         self.logger.debug("STEP : ", self.control_movement_class.current_step)
 
             else:
-
                 self.logger.debug("(#DES:%i)\t--- SENDING Message:\t%s: PATH:%s  DES:%s" % (idDES, message.name, paths, DES_dst))
 
-                # print "MESSAGES"
                 # May be, the selector of path decides broadcasting multiples paths
                 for idx, path in enumerate(paths):
                     msg = copy.copy(message)
@@ -226,27 +199,19 @@ class Sim:
             self.logger.warning("(#DES:%i)\t--- Unreacheable DST:\t%s " % (idDES, message.name))
 
     def __network_process(self):
-        """
-        This is an internal DES-process who manages the latency of messages sent in the network.
+        """Internal DES-process who manages the latency of messages sent in the network.
+
         Performs the simulation of packages within the path between src and dst entities decided by the selection algorithm.
         In this way, the message has a transmission latency.
         """
-        edges = list(self.topology.get_edges().keys())
+        edges = list(self.topology.get_edges().keys())  # TODO unused variable
         self.last_busy_time = {}  # dict(zip(edges, [0.0] * len(edges)))
 
         while not self.stop:
             message = yield self.network_ctrl_pipe.get()
 
-            # print "NetworkProcess --- Current time %d " %self.env.now
-            # print "name " + message.name
-            # print "Path:",message.path
-            # print "DST_INT:",message.dst_int
-            # #print message.timestamp
-            # print "DST",message.dst
-
             # If same SRC and PATH or the message has achieved the penultimate node to reach the dst
             if not message.path or message.path[-1] == message.dst_int or len(message.path) == 1:
-
                 pipe_id = "%s%s%i" % (message.app_name, message.dst, message.idDES)  # app_name + module_name (dst) + idDES
                 # Timestamp reception message in the module
                 message.timestamp_rec = self.env.now
@@ -314,7 +279,7 @@ class Sim:
 
                     self.last_busy_time[link] = last_used
                     self.env.process(self.__wait_message(message, latency_msg_link, shift_time))
-                except:
+                except:  # TODO Too broad exception clause
                     # This fact is produced when a node or edge the topology is changed or disappeared
                     self.logger.warning("The initial path assigned is unreachabled. Link: (%i,%i). Routing a new one. %i" % (link[0], link[1], self.env.now))
 
@@ -336,25 +301,19 @@ class Sim:
                         self.network_ctrl_pipe.put(message)
 
     def __wait_message(self, msg, latency, shift_time):
-        """
-        Simulates the transfer behavior of a message on a link
-        """
+        """Simulates the transfer behavior of a message on a link"""
         self.network_pump += 1
         yield self.env.timeout(latency + shift_time)
         self.network_pump -= 1
         self.network_ctrl_pipe.put(msg)
 
     def __get_id_process(self):
-        """
-        A DES-process has an unique identifier
-        """
+        """Every DES-process has an unique identifier"""
         self.__idProcess += 1
         return self.__idProcess
 
     def __init_metrics(self):
-        """
-        Each entity and node metrics are initialized with empty values
-        """
+        """Each entity and node metrics are initialized with empty values"""
         nodes_att = self.topology.get_nodes_att()
         measures = {"node": {}, "link": {}}
         for key in nodes_att:
@@ -1222,12 +1181,12 @@ class Sim:
     def set_movement_control(self, evol):
         self.control_movement_class = evol
 
-    def run(self, until, test_initial_deploy=False, show_progress_monitor=True, mobile_behaviour=False):
+    def run(self, until: int, test_initial_deploy: bool = False, show_progress_monitor: bool = True, mobile_behaviour: bool = False):
         """
         Start the simulation
 
         Args:
-            until (int): Defines a stop time. If None the simulation runs until some internal algorithm changes the var *yafs.core.sim.stop* to True
+            until: Defines a stop time. If None the simulation runs until some internal algorithm changes the var *yafs.core.sim.stop* to True
         """
         self.env.process(self.__network_process())
 
@@ -1252,7 +1211,7 @@ class Sim:
         *Simpy.run.until* wait to all pipers are empty. So, hundreds of messages should be service... We force with the stop
         """
         time_shift = 200
-        distribution = deterministic_distribution(name="SIM_Deterministic", time=time_shift)
+        distribution = DeterministicDistribution(name="SIM_Deterministic", time=time_shift)
         self.env.process(
             self.__add_stop_monitor("Stop_Control_Monitor", self.__ctrl_progress_monitor, distribution, show_progress_monitor, time_shift=time_shift)
         )

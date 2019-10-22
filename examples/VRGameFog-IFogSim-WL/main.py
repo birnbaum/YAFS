@@ -21,7 +21,7 @@ from yafs import Topology
 
 from .selection_multipleDeploys import BroadPath, CloudPath_RR
 from .placement_Cluster_Edge import CloudPlacement, FogPlacement
-from yafs.distribution import deterministicDistribution
+from yafs.distribution import DeterministicDistribution
 from yafs.utils import fractional_selectivity
 import time
 from yafs import Stats
@@ -62,7 +62,7 @@ def create_application():
     MODULES/SERVICES: Definition of Generators and Consumers (AppEdges and TupleMappings in iFogSim)
     """
     # MODULE SOURCES: only periodic messages
-    dDistribution = deterministicDistribution(name="Deterministic", time=100)
+    dDistribution = DeterministicDistribution(name="Deterministic", time=100)
 
     a.add_service_source("Calculator", dDistribution, m_player_game_state)  # According with the comments on VRGameFog.java, the period is 100ms
     a.add_service_source("Coordinator", dDistribution, m_global_game_state)
@@ -177,7 +177,7 @@ def main(simulated_time, depth, police):
     pop.set_sink_control({"model": "a", "number": 1, "module": app.get_sink_modules()})
 
     # In addition, a source includes a distribution function:
-    dDistribution = deterministicDistribution(name="Deterministic", time=100)
+    dDistribution = DeterministicDistribution(name="Deterministic", time=100)
     pop.set_src_control({"model": "s", "number": 1, "message": app.get_message("M.EGG"), "distribution": dDistribution})
 
     """--

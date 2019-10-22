@@ -47,7 +47,7 @@ from yafs import JSONPlacement
 from yafs.distribution import *
 
 from .selection_multipleDeploys import MinShortPath
-from yafs.distribution import deterministicDistribution
+from yafs.distribution import DeterministicDistribution
 from yafs.utils import fractional_selectivity
 from .jsonPopulation import *
 import time
@@ -90,7 +90,7 @@ def create_application():
     MODULES/SERVICES: Definition of Generators and Consumers (AppEdges and TupleMappings in iFogSim)
     """
     # MODULE SOURCES: only periodic messages
-    dDistribution = deterministicDistribution(name="Deterministic", time=100)
+    dDistribution = DeterministicDistribution(name="Deterministic", time=100)
 
     a.add_service_source("Calculator", dDistribution, m_player_game_state)  # According with the comments on VRGameFog.java, the period is 100ms
     a.add_service_source("Coordinator", dDistribution, m_global_game_state)

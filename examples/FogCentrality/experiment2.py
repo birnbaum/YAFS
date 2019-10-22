@@ -9,7 +9,7 @@
 from yafs.core import Sim
 from yafs.application import Application, Message
 from yafs import Topology
-from yafs.distribution import deterministicDistribution
+from yafs.distribution import DeterministicDistribution
 
 from .CentricityPlacement import NoPlacementOfModules
 from .CentricityPopulation import Statical
@@ -334,7 +334,7 @@ def main():
                             # print "\t", "SOURCE"
                             # In addition, a source includes a distribution function:
 
-                            dDistribution = deterministicDistribution(name="Deterministic", time=idWL[1])
+                            dDistribution = DeterministicDistribution(name="Deterministic", time=idWL[1])
                             pops[idx].set_src_control(
                                 {"id": sensor_workload_types[idx], "number": 1, "message": apps[idx].get_message("m-st"), "distribution": dDistribution}
                             )
@@ -371,7 +371,7 @@ def main():
                             # Each application have a correspondence SRC/SINK among APPS
 
                             pops[idx].set_sink_control({"id": [dev], "number": 1, "module": apps[idx].get_sink_modules()})
-                            dDistribution = deterministicDistribution(name="Deterministic", time=idWL[1])
+                            dDistribution = DeterministicDistribution(name="Deterministic", time=idWL[1])
                             # In addition, a source includes a distribution function:
                             pops[idx].set_src_control(
                                 {"id": sensor_workload_types[idx], "number": 1, "message": apps[idx].get_message("m-st"), "distribution": dDistribution}

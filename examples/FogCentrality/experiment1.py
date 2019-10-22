@@ -12,7 +12,7 @@ from yafs.application import Application, Message
 from yafs import Topology
 from yafs import First_ShortestPath
 
-from yafs.distribution import deterministicDistribution
+from yafs.distribution import DeterministicDistribution
 
 from .CentricityPlacement import NoPlacementOfModules
 from .CentricityPopulation import Statical
@@ -225,7 +225,7 @@ def main():
                 pops[idx].set_sink_control({"id": [0], "number": 1, "module": apps[idx].get_sink_modules()})
                 # print "\t", "SOURCE"
                 # In addition, a source includes a distribution function:
-                dDistribution = deterministicDistribution(name="Deterministic", time=idWL[1])
+                dDistribution = DeterministicDistribution(name="Deterministic", time=idWL[1])
                 pops[idx].set_src_control(
                     {"id": sensor_workload_types[idx], "number": 1, "message": apps[idx].get_message("m-st"), "distribution": dDistribution}
                 )
@@ -269,7 +269,7 @@ def main():
                 pops[idx].set_sink_control({"id": [dev], "number": 1, "module": apps[idx].get_sink_modules()})
                 # print "\t","SOURCE"
                 # In addition, a source includes a distribution function:
-                dDistribution = deterministicDistribution(name="Deterministic", time=idWL[1])
+                dDistribution = DeterministicDistribution(name="Deterministic", time=idWL[1])
                 pops[idx].set_src_control(
                     {"id": sensor_workload_types[idx], "number": 1, "message": apps[idx].get_message("m-st"), "distribution": dDistribution}
                 )
