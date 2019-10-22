@@ -16,8 +16,8 @@ import numpy as np
 
 from yafs.utils import fractional_selectivity
 
-from selection_multipleDeploys import DeviceSpeedAwareRouting
-from jsonPopulation import JSONPopulation
+from .selection_multipleDeploys import DeviceSpeedAwareRouting
+from .jsonPopulation import JSONPopulation
 
 import time
 
@@ -41,7 +41,7 @@ def create_applications_from_json(data):
 
         #print "Total mensajes creados %i" %len(ms.keys())
         for idx, message in enumerate(app["transmission"]):
-            if "message_out" in message.keys():
+            if "message_out" in list(message.keys()):
                 a.add_service_module(message["module"],ms[message["message_in"]], ms[message["message_out"]], fractional_selectivity, threshold=1.0)
             else:
                 a.add_service_module(message["module"], ms[message["message_in"]])
@@ -58,10 +58,10 @@ def create_applications_from_json(data):
 It returns the software modules (a list of identifiers of DES process) deployed on this node
 """
 def getProcessFromThatNode(sim, node_to_remove):
-    if node_to_remove in sim.alloc_DES.values():
+    if node_to_remove in list(sim.alloc_DES.values()):
         DES = []
         # This node can have multiples DES processes on itself
-        for k, v in sim.alloc_DES.items():
+        for k, v in list(sim.alloc_DES.items()):
             if v == node_to_remove:
                 DES.append(k)
         return DES,True
@@ -171,8 +171,8 @@ def main(simulated_time,experimento,ilpPath,it):
     # s.deploy_monitor("Failure Generation", failureControl, distribution,sim=s,filelog=failurefilelog,ids=randomValues)
 
     #For each deployment the user - population have to contain only its specific sources
-    for aName in apps.keys():
-        print "Deploying app: ",aName
+    for aName in list(apps.keys()):
+        print("Deploying app: ",aName)
         pop_app = JSONPopulation(name="Statical_%s" % aName, json={}, iteration=it)
         data = []
         for element in pop.data["sources"]:
@@ -203,21 +203,21 @@ if __name__ == '__main__':
     pathExperimento = "exp_rev/"
     pathExperimento = "/home/uib/src/YAFS/src/examples/PartitionILPPlacement/exp_rev/"
 
-    print os.getcwd()
+    print(os.getcwd())
     # logging.config.fileConfig(os.getcwd()+'/logging.ini')
     for i in range(50):
         start_time = time.time()
         random.seed(i)
         np.random.seed(i)
 # 1000000
-        print "Running Partition"
+        print("Running Partition")
         main(simulated_time=1000000,  experimento=pathExperimento,ilpPath='',it=i)
-        print("\n--- %s seconds ---" % (time.time() - start_time))
+        print(("\n--- %s seconds ---" % (time.time() - start_time)))
         start_time = time.time()
-        print "Running: ILP "
+        print("Running: ILP ")
         main(simulated_time=1000000,  experimento=pathExperimento, ilpPath='ILP',it=i)
-        print("\n--- %s seconds ---" % (time.time() - start_time))
+        print(("\n--- %s seconds ---" % (time.time() - start_time)))
 
-    print "Simulation Done"
+    print("Simulation Done")
 
 

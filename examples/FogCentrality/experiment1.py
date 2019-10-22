@@ -14,8 +14,8 @@ from yafs import First_ShortestPath
 
 from yafs.distribution import deterministicDistribution
 
-from CentricityPlacement import NoPlacementOfModules
-from CentricityPopulation import Statical
+from .CentricityPlacement import NoPlacementOfModules
+from .CentricityPopulation import Statical
 import networkx as nx
 import numpy as np
 RANDOM_SEED = 1
@@ -121,8 +121,8 @@ def computingWeights(t,all_nodes_dev,edge_dev,workload_type):
             minvalue = min(len(minPath[(vertex[0],dev)]),len(minPath[(vertex[1],dev)]))
             minStep[(vertex,dev)]=minvalue
 
-    weight_load = range(0,len(workload_type))
-    version_printed_weights2 =range(0,len(workload_type))
+    weight_load = list(range(0,len(workload_type)))
+    version_printed_weights2 =list(range(0,len(workload_type)))
     for idx,load in enumerate(workload_type):
         weight_load[idx] = {}
         version_printed_weights2[idx] = {}
@@ -155,16 +155,16 @@ def main():
     """
     sensor_workload_types = [[16, 18],[13,14,15,16]]
     lambdas_wl = np.random.randint(low=5, high=10, size=len(sensor_workload_types))
-    id_lambdas = zip(range(0,len(lambdas_wl)),lambdas_wl)
+    id_lambdas = list(zip(list(range(0,len(lambdas_wl))),lambdas_wl))
     id_lambdas.sort(key=lambda tup: tup[1],reverse=True)  # sorts in place
-    print id_lambdas # [(1, 9), (0, 8)]
+    print(id_lambdas) # [(1, 9), (0, 8)]
 
     """
     topology.Centricity
     """
     # Both next ids be extracted from topology.entities
-    all_nodes_dev = range(0, 22) #DEVICES.model: F
-    edge_dev = range(13, 22) #Devices.model: E
+    all_nodes_dev = list(range(0, 22)) #DEVICES.model: F
+    edge_dev = list(range(13, 22)) #Devices.model: E
 
     weights = computingWeights(t,all_nodes_dev,edge_dev,sensor_workload_types)
 
@@ -226,7 +226,7 @@ def main():
 
         else:
             #Computing best device for each WL-type and each centrality function
-            centralWL = range(0,len(weights))
+            centralWL = list(range(0,len(weights)))
             for idx,v in enumerate(sensor_workload_types):
                 nx.set_edge_attributes(t.G, values=weights[idx], name="weight")
                 centrality = functions[f](t.G, weight="weight")
@@ -240,10 +240,10 @@ def main():
                 ## idWL[0] #index WL
                 ## idWL[1] #lambda
 
-                for dev, value in sorted(centralWL[idx].iteritems(), key=lambda (k, v): (v, k),reverse=True):
+                for dev, value in sorted(iter(centralWL[idx].items()), key=lambda k_v: (k_v[1], k_v[0]),reverse=True):
                     # print "%s: %s" % (dev, value)
                     #TODO CONTTOLAR LA CAPACIDAD DEL DISPOSITO HERE
-                    if not dev in previous_deploy.values():
+                    if not dev in list(previous_deploy.values()):
                         previous_deploy[idx] = dev
                         break
                 #TODO chequear que dEV es un device

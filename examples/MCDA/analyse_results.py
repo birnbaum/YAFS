@@ -42,7 +42,7 @@ dep = {}
 for k in cs2:
     dep[k]=len(cs2[k])
     
-l = np.sort(dep.values())
+l = np.sort(list(dep.values()))
 l[-1]=0
 plt.plot(l[l>0])
 l[l>0]

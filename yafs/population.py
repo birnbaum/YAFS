@@ -45,7 +45,7 @@ class Population(object):
         Returns:
             the next time to be activated in the simulation
         """
-        return self.activation_dist.next()
+        return next(self.activation_dist)
 
 
     def set_src_control(self,values):

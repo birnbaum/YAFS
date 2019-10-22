@@ -514,7 +514,7 @@ class DFTrack:
             df_range['VideoFrame'] = 0
             df_norm = pd.concat([df_norm, df_range])
 
-            for i in tqdm(range(1, n_fps + 1), desc='Num FPS', leave=False):
+            for i in tqdm(list(range(1, n_fps + 1)), desc='Num FPS', leave=False):
                 x_start = time_diff * (i - 1)
                 x_end = time_diff * i
 

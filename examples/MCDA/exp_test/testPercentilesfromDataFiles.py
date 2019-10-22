@@ -22,7 +22,7 @@ df = pd.DataFrame(x_scaled)
 df[1]=1-df[1]
 ## weighted average
 wa=df.sum(axis=1)*[0.2,0.2,0.1,0.4]
-print "BEST NODE: ",wa.idxmin()
+print("BEST NODE: ",wa.idxmin())
 
 l = np.array([4.,1.,2.,3.,1.])
 l = 1/l 
@@ -41,14 +41,14 @@ lp4 = [str(int(np.percentile(df["deploymentPenalty"],p))) for p in [5,20,60,80]]
 lp5 = [str(int(np.percentile(df["utilization"],p))) for p in [5,20,60,80]]
 clp = np.vstack((lp,lp2,lp3,lp4,lp5))
 
-print lp
-print lp2
-print lp3
-print lp4
-print lp5
-print "-"*30
+print(lp)
+print(lp2)
+print(lp3)
+print(lp4)
+print(lp5)
+print("-"*30)
 categoriesLowerProfiles = ",".join(str(x) for x in clp.flatten())
-print categoriesLowerProfiles
+print(categoriesLowerProfiles)
 
 c = [29, 35, 93, 128, 193, 219, 248, 268, 309, 312, 314, 325, 348, 364, 387, 477, 493, 515, 543, 629, 667, 796]
 

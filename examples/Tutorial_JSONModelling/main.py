@@ -16,8 +16,8 @@ import numpy as np
 
 from yafs.utils import fractional_selectivity
 
-from selection_multipleDeploys import DeviceSpeedAwareRouting
-from jsonPopulation import JSONPopulation
+from .selection_multipleDeploys import DeviceSpeedAwareRouting
+from .jsonPopulation import JSONPopulation
 
 import time
 
@@ -41,7 +41,7 @@ def create_applications_from_json(data):
 
         #print "Total mensajes creados %i" %len(ms.keys())
         for idx, message in enumerate(app["transmission"]):
-            if "message_out" in message.keys():
+            if "message_out" in list(message.keys()):
                 a.add_service_module(message["module"],ms[message["message_in"]], ms[message["message_out"]], fractional_selectivity, threshold=1.0)
             else:
                 a.add_service_module(message["module"], ms[message["message_in"]])
@@ -58,10 +58,10 @@ def create_applications_from_json(data):
 It returns the software modules (a list of identifiers of DES process) deployed on this node
 """
 def getProcessFromThatNode(sim, node_to_remove):
-    if node_to_remove in sim.alloc_DES.values():
+    if node_to_remove in list(sim.alloc_DES.values()):
         DES = []
         # This node can have multiples DES processes on itself
-        for k, v in sim.alloc_DES.items():
+        for k, v in list(sim.alloc_DES.items()):
             if v == node_to_remove:
                 DES.append(k)
         return DES,True
@@ -83,14 +83,14 @@ def failureControl(sim,filelog,ids):
 
         keys_DES,someModuleDeployed = getProcessFromThatNode(sim, node_to_remove)
 
-        print "\n\nRemoving node: %i, Total nodes: %i" % (node_to_remove, len(nodes))
-        print "\tStopping some DES processes: %s\n\n"%keys_DES
+        print("\n\nRemoving node: %i, Total nodes: %i" % (node_to_remove, len(nodes)))
+        print("\tStopping some DES processes: %s\n\n"%keys_DES)
         filelog.write("%i,%s,%d\n"%(node_to_remove, someModuleDeployed,sim.env.now))
 
         ##Print some information:
         for des in keys_DES:
-            if des in sim.alloc_source.keys():
-                print "Removing a Gtw/User entity\t"*4
+            if des in list(sim.alloc_source.keys()):
+                print("Removing a Gtw/User entity\t"*4)
 
         sim.remove_node(node_to_remove)
         for key in keys_DES:
@@ -158,8 +158,8 @@ def main(simulated_time,experimento,ilpPath):
 
 
     #For each deployment the user - population have to contain only its specific sources
-    for aName in apps.keys():
-        print "Deploying app: ",aName
+    for aName in list(apps.keys()):
+        print("Deploying app: ",aName)
         pop_app = JSONPopulation(name="Statical_%s"%aName,json={})
         data = []
         for element in pop.data["sources"]:
@@ -183,13 +183,13 @@ if __name__ == '__main__':
     logging.config.fileConfig(os.getcwd()+'/logging.ini')
 
     start_time = time.time()
-    print "Running Partition"
+    print("Running Partition")
     main(simulated_time=100000,  experimento=pathExperimento,ilpPath='')
-    print "Running: ILP "
+    print("Running: ILP ")
     main(simulated_time=100000,  experimento=pathExperimento, ilpPath='ILP')
 
 
-    print "Simulation Done"
-    print("\n--- %s seconds ---" % (time.time() - start_time))
+    print("Simulation Done")
+    print(("\n--- %s seconds ---" % (time.time() - start_time)))
 
 

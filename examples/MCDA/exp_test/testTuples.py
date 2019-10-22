@@ -24,16 +24,15 @@ for nodedes in l:
        
 list2d = list(map(operator.attrgetter('path'), l))
 merged = list(itertools.chain(*list2d))
-print merged
+print(merged)
 
 df = pd.DataFrame(columns=["hopcount"])
 df["hopcount"]=[1,2,3,4]
 df["tt"]=[3,5,6,7]
 df.labels=["",""]
-print df.columns
+print(df.columns)
 
 df.to_csv("tmp.txt",index=False,index_label=False)
-!cat tmp.txt
 
 
 percentileHopCount = 20

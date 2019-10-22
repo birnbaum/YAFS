@@ -23,7 +23,7 @@ class DynamicPopulation(Population):
     """
     def initial_allocation(self, sim, app_name):
             size = len(self.data)
-            self.userOrderInputByInvocation = random.sample(range(size), size)
+            self.userOrderInputByInvocation = random.sample(list(range(size)), size)
 
     """
     In each invocation, we launch one user

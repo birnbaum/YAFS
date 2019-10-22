@@ -12,7 +12,7 @@ class JSONPopulation(Population):
             # Creating the type of the distribution
             # behaviour["args"] should have the same attributes of the used distribution
             class_ = getattr(yafs.distribution, behaviour["distribution"])
-            if "seed" not in behaviour["args"].keys():
+            if "seed" not in list(behaviour["args"].keys()):
                 seed = idx + self.it
                 instance_distribution = class_(name="h%i" % idx, seed=seed, **behaviour["args"])
             else:

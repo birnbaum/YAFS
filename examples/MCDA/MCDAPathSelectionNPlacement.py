@@ -52,7 +52,7 @@ class MCDARoutingAndDeploying(Selection):
 
 
     def get_the_path(self,G,node_src,node_dst):
-        if (node_src,node_dst) not in self.min_path.keys():
+        if (node_src,node_dst) not in list(self.min_path.keys()):
             self.min_path[(node_src, node_dst)]= list(nx.shortest_path(G, source=node_src, target=node_dst))
         return self.min_path[(node_src, node_dst)]
 
@@ -181,7 +181,7 @@ class MCDARoutingAndDeploying(Selection):
 
     def get_aprx_number_services(self,sim, node):
         #TODO IMPROVE - It also counts the number of clients in that node!
-        y = np.array(sim.alloc_DES.values())
+        y = np.array(list(sim.alloc_DES.values()))
         return (y == node).sum()
 
     def get_power(self, sim, nodes):
@@ -205,7 +205,7 @@ class MCDARoutingAndDeploying(Selection):
         # df["node"] = nodes
 
         ### REMOVING NODES WITH ONE SERVICE DEPLOYED, excetp the cloud
-        nwithservices = list(np.unique(sim.alloc_DES.values()))
+        nwithservices = list(np.unique(list(sim.alloc_DES.values())))
         nwithservices.remove(self.idcloud)
         # print "NODOS REMOVIDOS %s" %nwithservices
         self.logger.info("Ignored nodes %s"%nwithservices)
@@ -241,7 +241,7 @@ class MCDARoutingAndDeploying(Selection):
         v3 = np.percentile(values, 40)
 
         # 4 CRITERIA: min : penalizacion por "SW" incompatibility "NODE id % app user"
-        print app_name
+        print(app_name)
 
         values = []
         for node in nodes:
@@ -361,13 +361,13 @@ class MCDARoutingAndDeploying(Selection):
 
 
     def print_control_services(self):
-        print "-"*30
-        print " - Assignaments (node_src,service) -> (PATH, DES) "
-        print "-" * 30
-        for k in self.controlServices.keys():
-            print k,"->",self.controlServices[k]
+        print("-"*30)
+        print(" - Assignaments (node_src,service) -> (PATH, DES) ")
+        print("-" * 30)
+        for k in list(self.controlServices.keys()):
+            print(k,"->",self.controlServices[k])
 
-        print "-" * 30
+        print("-" * 30)
         return self.controlServices
 
     """
@@ -395,7 +395,7 @@ class MCDARoutingAndDeploying(Selection):
         # print "\t WHERE DEPLOY SERVICE: %s" %message.dst
 
         # The action depends on the type of service  and the place from it is called.
-        if (node_src,service) not in self.controlServices.keys():
+        if (node_src,service) not in list(self.controlServices.keys()):
             logging.info("Take an action on service: %s from node: %i"%(service,node_src))
 
             # Looking for a candidate devices to host the service

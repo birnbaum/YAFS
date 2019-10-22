@@ -21,7 +21,7 @@ class JSONPlacementOnlyCloud(Placement):
     def initial_allocation(self, sim, app_name):
         for item in self.data["initialAllocation"]:
             idtopo = item["id_resource"]
-            print idtopo
+            print(idtopo)
             if idtopo == self.idcloud:
                 # print item
                 app_name = item["app"]

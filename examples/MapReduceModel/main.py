@@ -14,8 +14,8 @@ import numpy as np
 
 from yafs.utils import fractional_selectivity
 
-from selection_multipleDeploys import DeviceSpeedAwareRouting
-from jsonPopulation import JSONPopulation
+from .selection_multipleDeploys import DeviceSpeedAwareRouting
+from .jsonPopulation import JSONPopulation
 
 import time
 import networkx as nx
@@ -27,7 +27,7 @@ def create_applications_from_json(data):
         a = Application(name=app["name"])
         modules = [{"None":{"Type":Application.TYPE_SOURCE}}]
         for module in app["module"]:
-            if "RAM" in module.keys():
+            if "RAM" in list(module.keys()):
                 modules.append({module["name"]: {"RAM": module["RAM"], "Type": Application.TYPE_MODULE}})
             else:
                 modules.append({module["name"]: {"RAM": 1, "Type": Application.TYPE_MODULE}})
@@ -42,9 +42,9 @@ def create_applications_from_json(data):
 
         #print "Total mensajes creados %i" %len(ms.keys())
         for idx, message in enumerate(app["transmission"]):
-            if "message_out" in message.keys():
+            if "message_out" in list(message.keys()):
                 value_treshld = 1.0
-                if "fractional" in message.keys():
+                if "fractional" in list(message.keys()):
                     value_treshld = message["fractional"]
                 a.add_service_module(message["module"],ms[message["message_in"]], ms[message["message_out"]], fractional_selectivity, threshold=value_treshld)
             else:
@@ -63,10 +63,10 @@ def create_applications_from_json(data):
 It returns the software modules (a list of identifiers of DES process) deployed on this node
 """
 def getProcessFromThatNode(sim, node_to_remove):
-    if node_to_remove in sim.alloc_DES.values():
+    if node_to_remove in list(sim.alloc_DES.values()):
         DES = []
         # This node can have multiples DES processes on itself
-        for k, v in sim.alloc_DES.items():
+        for k, v in list(sim.alloc_DES.items()):
             if v == node_to_remove:
                 DES.append(k)
         return DES,True
@@ -88,14 +88,14 @@ def failureControl(sim,filelog,ids):
 
         keys_DES,someModuleDeployed = getProcessFromThatNode(sim, node_to_remove)
 
-        print "\n\nRemoving node: %i, Total nodes: %i" % (node_to_remove, len(nodes))
-        print "\tStopping some DES processes: %s\n\n"%keys_DES
+        print("\n\nRemoving node: %i, Total nodes: %i" % (node_to_remove, len(nodes)))
+        print("\tStopping some DES processes: %s\n\n"%keys_DES)
         filelog.write("%i,%s,%d\n"%(node_to_remove, someModuleDeployed,sim.env.now))
 
         ##Print some information:
         for des in keys_DES:
-            if des in sim.alloc_source.keys():
-                print "Removing a Gtw/User entity\t"*4
+            if des in list(sim.alloc_source.keys()):
+                print("Removing a Gtw/User entity\t"*4)
 
         sim.remove_node(node_to_remove)
         for key in keys_DES:
@@ -199,7 +199,7 @@ def main(simulated_time,experimento,file,study,it):
     # s.deploy_monitor("Failure Generation", failureControl, distribution,sim=s,filelog=failurefilelog,ids=randomValues)
 
     #For each deployment the user - population have to contain only its specific sources
-    for aName in apps.keys():
+    for aName in list(apps.keys()):
         #print "Deploying app: ",aName
         pop_app = JSONPopulation(name="Statical_%s"%aName,json={},it=it)
         data = []
@@ -266,53 +266,53 @@ if __name__ == '__main__':
         start_time = time.time()
 
         # for f in xrange(10, 110, 10):
-        for f in xrange(100, 201, 10):
+        for f in range(100, 201, 10):
             # file = "f%in50" % f
             file = "f%in200" % f
 
-            print file
+            print(file)
 
             study = "Replica"
-            print "\tRunning %s" % study
+            print("\tRunning %s" % study)
             main(simulated_time=duration, experimento=pathExperimento, file=file, study=study,it=i)
 
             study = "Single"
-            print "\tRunning %s" % study
+            print("\tRunning %s" % study)
             main(simulated_time=duration, experimento=pathExperimento, file=file, study=study,it=i)
 
             study = "FstrRep"
-            print "\tRunning %s" % study
+            print("\tRunning %s" % study)
             main(simulated_time=duration, experimento=pathExperimento, file=file, study=study,it=i)
 
           #  study = "Cloud"
           #  print "\tRunning %s" % study
           #  main(simulated_time=duration, experimento=pathExperimento, file=file, study=study,it=i)
 
-        print "SEGUNDA PARTE"
+        print("SEGUNDA PARTE")
 
-        for n in xrange(100, 301, 20):
+        for n in range(100, 301, 20):
         # for n in xrange(20, 220, 20):
             file = "f100n%i" % n
             # file = "f100n%i" % n
-            print file
+            print(file)
 
             study = "Replica"
-            print "\tRunning %s" % study
+            print("\tRunning %s" % study)
             main(simulated_time=duration, experimento=pathExperimento, file=file, study=study,it=i)
 
             study = "Single"
-            print "\tRunning %s" % study
+            print("\tRunning %s" % study)
             main(simulated_time=duration, experimento=pathExperimento, file=file, study=study,it=i)
 
             study = "FstrRep"
-            print "\tRunning %s" % study
+            print("\tRunning %s" % study)
             main(simulated_time=duration, experimento=pathExperimento, file=file, study=study,it=i)
 
            # study = "Cloud"
            # print "\tRunning %s" % study
            # main(simulated_time=duration, experimento=pathExperimento, file=file, study=study,it=i)
 
-        print "Simulation Done"
-        print("\n--- %s seconds ---" % (time.time() - start_time))
+        print("Simulation Done")
+        print(("\n--- %s seconds ---" % (time.time() - start_time)))
 
 

@@ -25,7 +25,7 @@ try:
     from itertools import zip_longest
 except ImportError:
     # Python 2
-    from itertools import izip_longest as zip_longest
+    from itertools import zip_longest as zip_longest
 
 # Third party modules
 import matplotlib
@@ -102,7 +102,7 @@ class AnimationTrack:
                 self.axarr[i].imshow(self.map[i].img)
 
                 vor = Voronoi(voronoi_points)
-                print "VORONERANDO"
+                print("VORONERANDO")
 
                 regions, vertices = self.voronoi_finite_polygons_2d(vor)
                 cells = [self.map[i].to_pixels(vertices[region])
@@ -136,7 +136,7 @@ class AnimationTrack:
 
             self.axarr[i].set_facecolor('0.05')
             self.axarr[i].tick_params(color='0.05', labelcolor='0.05')
-            for spine in self.axarr[i].spines.values():
+            for spine in list(self.axarr[i].spines.values()):
                 spine.set_edgecolor('white')
 
         # self.fig.tight_layout()

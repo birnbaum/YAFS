@@ -21,7 +21,7 @@ def runMCDAR(pathRScript,pathWD,fileName,criteriaWeights,IndifferenceThresholds,
              PreferenceThresholds,VetoThresholds,minmaxcriteria]
     proc = Popen(cmd, stdout=PIPE)
     stdout = proc.communicate()[0]
-    print stdout
+    print(stdout)
     return  '{}'.format(stdout)
         
 #Init 
@@ -46,7 +46,7 @@ output= runMCDAR(path,dname,"data_0",criteriaWeights,IndifferenceThresholds,
 
 #Transform output
 #logging.info("Transforming data")
-print output
+print(output)
 #if not "RESULT_OK" in output:
 #    print "ERROR"
 #text = "Final.Ranking.Matrix.alternative"

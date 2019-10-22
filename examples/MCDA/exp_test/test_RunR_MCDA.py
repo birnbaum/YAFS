@@ -19,7 +19,7 @@ def runMCDAR(pathRScript,pathWD,fileName,ncriteria,criteriaWeights,categoriesLow
              criteriaMinMax,criteriaVetos,majorityThreshold]
     proc = Popen(cmd, stdout=PIPE)
     stdout = proc.communicate()[0]
-    print stdout
+    print(stdout)
 
 
 
@@ -48,8 +48,8 @@ data = np.array([[2032,5,20,20,0], [1231,0,40,20,1], [3323,6,20,0,5],[13323,6,20
 #data = np.array([[5,20,20], [0,40,20], [6,20,0]])
 #data = np.array([[5], [0], [6]])
 nprojects = len(data)
-print "DATA"
-print data
+print("DATA")
+print(data)
 
 np.percentile(data[:,0],10)
 
@@ -68,12 +68,12 @@ clp = np.vstack((lp,lp2,lp3,lp4,lp5))
 #clp = np.vstack((lp))
 categoriesLowerProfiles = ",".join(str(x) for x in clp.flatten())
 
-print "--"*20
-print "Categories Lower Profile"
-print "--"*20
-print categoriesLowerProfiles        
-print "--"*20
-print ""
+print("--"*20)
+print("Categories Lower Profile")
+print("--"*20)
+print(categoriesLowerProfiles)        
+print("--"*20)
+print("")
 
 criteriaWeights = ",".join(str(x) for x in range(1,ncriteria+1))         #r-argument
 criteriaWeights ="4,2,3,3,1"
@@ -134,9 +134,9 @@ choice = []
 for r in range(len(data)):
     choice.append(np.average(new_matrix[r], weights=criteriaWeights))
     
-print choice 
-print "Best choice: "
-print np.array(choice).argsort()
+print(choice) 
+print("Best choice: ")
+print(np.array(choice).argsort())
 
     
 

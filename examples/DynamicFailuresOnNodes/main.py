@@ -14,8 +14,8 @@ from yafs.application import Application,Message
 from yafs import Topology
 from yafs.distribution import *
 
-from Evolutive_population import Pop_and_Failures
-from selection_multipleDeploys import  BroadPath
+from .Evolutive_population import Pop_and_Failures
+from .selection_multipleDeploys import  BroadPath
 
 
 import itertools
@@ -57,11 +57,11 @@ def main(simulated_time):
     nx.relabel_nodes(t.G, li, False) #Transform str-labels to int-labels
 
 
-    print "Nodes: %i" %len(t.G.nodes())
-    print "Edges: %i" %len(t.G.edges())
+    print("Nodes: %i" %len(t.G.nodes()))
+    print("Edges: %i" %len(t.G.edges()))
     #MANDATORY fields of a link
     # Default values =  {"BW": 1, "PR": 1}
-    valuesOne = dict(itertools.izip(t.G.edges(),np.ones(len(t.G.edges()))))
+    valuesOne = dict(zip(t.G.edges(),np.ones(len(t.G.edges()))))
 
     nx.set_edge_attributes(t.G, name='BW', values=valuesOne)
     nx.set_edge_attributes(t.G, name='PR', values=valuesOne)
@@ -69,16 +69,16 @@ def main(simulated_time):
     centrality = nx.betweenness_centrality(t.G)
     nx.set_node_attributes(t.G, name="centrality", values=centrality)
 
-    sorted_clustMeasure = sorted(centrality.items(), key=operator.itemgetter(1), reverse=True)
+    sorted_clustMeasure = sorted(list(centrality.items()), key=operator.itemgetter(1), reverse=True)
 
     top20_devices =  sorted_clustMeasure[:20]
     main_fog_device = copy.copy(top20_devices[0][0])
 
-    print "-" * 20
-    print "Top 20 centralised nodes:"
+    print("-" * 20)
+    print("Top 20 centralised nodes:")
     for item in top20_devices:
-        print item
-    print "-"*20
+        print(item)
+    print("-"*20)
     """
     APPLICATION
     """
@@ -95,7 +95,7 @@ def main(simulated_time):
     POPULATION algorithm
     """
     number_generators = int(len(t.G)*0.1)
-    print number_generators
+    print(number_generators)
 
     #you can use whatever funciton to change the topology
     dStart = deterministicDistributionStartPoint(0, 100, name="Deterministic")
@@ -125,10 +125,10 @@ def main(simulated_time):
 
     s.run(simulated_time,test_initial_deploy=False,show_progress_monitor=False)
     # s.draw_allocated_topology() # for debugging
-    print "Total nodes available in the  toopology %i" %len(s.topology.G.nodes())
-    print "Total edges available in the  toopology %i" %len(s.topology.G.edges())
+    print("Total nodes available in the  toopology %i" %len(s.topology.G.nodes()))
+    print("Total edges available in the  toopology %i" %len(s.topology.G.edges()))
 
-    print pop.nodes_removed
+    print(pop.nodes_removed)
     nx.write_graphml_lxml(s.topology.G, "final_network.graphml")
 
 if __name__ == '__main__':
@@ -141,4 +141,4 @@ if __name__ == '__main__':
 
     main(simulated_time=10000)
 
-    print("\n--- %s seconds ---" % (time.time() - start_time))
+    print(("\n--- %s seconds ---" % (time.time() - start_time)))

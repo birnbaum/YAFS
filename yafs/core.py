@@ -235,7 +235,7 @@ class Sim:
         Performs the simulation of packages within the path between src and dst entities decided by the selection algorithm.
         In this way, the message has a transmission latency.
         """
-        edges = self.topology.get_edges().keys()
+        edges = list(self.topology.get_edges().keys())
         self.last_busy_time = {}  # dict(zip(edges, [0.0] * len(edges)))
 
         while not self.stop:
@@ -399,7 +399,7 @@ class Sim:
         """
         self.logger.debug("Added_Process - Module Pure Source\t#DES:%i" % idDES)
         while not self.stop and self.des_process_running[idDES]:
-            nextTime = distribution.next()
+            nextTime = next(distribution)
             yield self.env.timeout(nextTime)
             if self.des_process_running[idDES]:
                 self.logger.debug("(App:%s#DES:%i)\tModule - Generating Message: %s \t(T:%d)" % (name_app, idDES, message.name,self.env.now))
@@ -477,7 +477,7 @@ class Sim:
                     if self.alloc_DES[eDES] == message.path[0]:
                         sourceDES = eDES
             except:
-                for k in self.alloc_source.keys():
+                for k in list(self.alloc_source.keys()):
                     if self.alloc_source[k]['id'] == message.path[0]:
                         sourceDES = k
 
@@ -540,7 +540,7 @@ class Sim:
         """
         self.logger.debug("Added_Process - Module Source: %s\t#DES:%i" % (module, idDES))
         while (not self.stop) and self.des_process_running[idDES]:
-            yield self.env.timeout(distribution.next())
+            yield self.env.timeout(next(distribution))
             if self.des_process_running[idDES]:
                 self.logger.debug(
                     "(App:%s#DES:%i#%s)\tModule - Generating Message:\t%s" % (app_name, idDES, module, message.name))
@@ -676,7 +676,7 @@ class Sim:
         if show_progress_monitor:
             self.pbar = tqdm(total=self.until)
         while not self.stop:
-            yield self.env.timeout(distribution.next())
+            yield self.env.timeout(next(distribution))
             function(show_progress_monitor,**param)
         self.logger.debug("STOP_Process - Internal Monitor: %s\t#DES:%i" % (name, myId))
 
@@ -688,7 +688,7 @@ class Sim:
         myId = self.__get_id_process()
         self.logger.debug("Added_Process - Internal Monitor: %s\t#DES:%i" % (name, myId))
         while not self.stop:
-            yield self.env.timeout(distribution.next())
+            yield self.env.timeout(next(distribution))
             function(**param)
         self.logger.debug("STOP_Process - Internal Monitor: %s\t#DES:%i" % (name, myId))
 
@@ -918,7 +918,7 @@ class Sim:
         self.alloc_module[app.name] = {}
 
         # Add Placement controls to the App
-        if not placement.name in self.placement_policy.keys():  # First Time
+        if not placement.name in list(self.placement_policy.keys()):  # First Time
             self.placement_policy[placement.name] = {"placement_policy": placement, "apps": []}
             if placement.activation_dist is not None:
                 self.env.process(self.__add_placement_process(placement))
@@ -926,7 +926,7 @@ class Sim:
 
         # Add Population control to the App
 
-        if not population.name in self.population_policy.keys():  # First Time
+        if not population.name in list(self.population_policy.keys()):  # First Time
             self.population_policy[population.name] = {"population_policy": population, "apps": []}
             if population.activation_dist is not None:
                 self.env.process(self.__add_population_process(population))
@@ -1004,7 +1004,7 @@ class Sim:
         deployed in id_topo
         """
         all_des = []
-        for k, v in self.alloc_DES.items():
+        for k, v in list(self.alloc_DES.items()):
             if v == idtopo:
                 all_des.append(k)
 
@@ -1018,16 +1018,16 @@ class Sim:
     def remove_node(self, id_node_topology):
         # Stopping related processes deployed in the module and clearing main structure: alloc_DES
         des_tmp=[]
-        if id_node_topology in self.alloc_DES.values():
-            for k, v in self.alloc_DES.items():
+        if id_node_topology in list(self.alloc_DES.values()):
+            for k, v in list(self.alloc_DES.items()):
                 if v == id_node_topology:
                     des_tmp.append(k)
                     self.stop_process(k)
                     del self.alloc_DES[k]
 
         # Clearing other related structures
-        for k, v in self.alloc_module.items():
-            for k2, v2 in self.alloc_module[k].items():
+        for k, v in list(self.alloc_module.items()):
+            for k2, v2 in list(self.alloc_module[k].items()):
                 for item in des_tmp:
                     if item in v2:
                         v2.remove(item)
@@ -1069,12 +1069,12 @@ class Sim:
                 for des in deployed:
                     fullAssignation[des] = {"ID":self.alloc_DES[des],"Module":module} #DES process are unique for each module/element
 
-        print "-"*40
-        print "DES\t| TOPO \t| Src.Mod \t| Modules"
-        print("-" * 40)
+        print("-"*40)
+        print("DES\t| TOPO \t| Src.Mod \t| Modules")
+        print(("-" * 40))
         for k in self.alloc_DES:
-            print k,"\t|",self.alloc_DES[k],"\t|",self.alloc_source[k]["name"] if k in self.alloc_source.keys() else "--","\t\t|",fullAssignation[k]["Module"] if k in fullAssignation.keys() else "--"
-        print "-" * 40
+            print(k,"\t|",self.alloc_DES[k],"\t|",self.alloc_source[k]["name"] if k in list(self.alloc_source.keys()) else "--","\t\t|",fullAssignation[k]["Module"] if k in list(fullAssignation.keys()) else "--")
+        print("-" * 40)
         # exit()
 
     #
@@ -1234,17 +1234,17 @@ class Sim:
         """
         Creating app.sources and deploy the sources in the topology
         """
-        for pop in self.population_policy.itervalues():
+        for pop in self.population_policy.values():
             for app_name in pop["apps"]:
                 pop["population_policy"].initial_allocation(self, app_name)
 
         """
         Creating initial deploy of services
         """
-        for place in self.placement_policy.itervalues():
+        for place in self.placement_policy.values():
             for app_name in place["apps"]:
 
-                print "APP_NAME ",app_name
+                print("APP_NAME ",app_name)
                 place["placement_policy"].initial_allocation(self, app_name)  # internally consideres the apps in charge
 
         """

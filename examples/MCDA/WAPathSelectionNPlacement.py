@@ -54,7 +54,7 @@ class WARoutingAndDeploying(Selection):
 
 
     def get_the_path(self,G,node_src,node_dst):
-        if (node_src,node_dst) not in self.min_path.keys():
+        if (node_src,node_dst) not in list(self.min_path.keys()):
             self.min_path[(node_src, node_dst)]= list(nx.shortest_path(G, source=node_src, target=node_dst))
         return self.min_path[(node_src, node_dst)]
 
@@ -183,7 +183,7 @@ class WARoutingAndDeploying(Selection):
 
     def get_aprx_number_services(self,sim, node):
         #TODO IMPROVE - It also counts the number of clients in that node!
-        y = np.array(sim.alloc_DES.values())
+        y = np.array(list(sim.alloc_DES.values()))
         return (y == node).sum()
 
 
@@ -210,7 +210,7 @@ class WARoutingAndDeploying(Selection):
         # df["node"] = nodes
 
         ### REMOVING NODES WITH ONE SERVICE DEPLOYED, excetp the cloud
-        nwithservices =  list(np.unique(sim.alloc_DES.values()))
+        nwithservices =  list(np.unique(list(sim.alloc_DES.values())))
         nwithservices.remove(self.idcloud)
         # print "NODOS REMOVIDOS %s" %nwithservices
         df.drop(df.loc[df['node'].isin(nwithservices)].index, inplace=True)
@@ -234,7 +234,7 @@ class WARoutingAndDeploying(Selection):
         # criteriaMinMax += ",min"
 
         #4 CRITERIA: min : penalizacion por "SW" incompatibility "NODE id % app user"
-        print app_name
+        print(app_name)
 
         values = []
         for node in nodes:
@@ -301,7 +301,7 @@ class WARoutingAndDeploying(Selection):
 
         best_node =  wa.idxmin()
 
-        print "BEST NODE: %i",best_node
+        print("BEST NODE: %i",best_node)
 
 
         df.to_csv(self.dname + "/data_%i.csv" % self.idEvaluation, index=False, index_label=False)
@@ -320,13 +320,13 @@ class WARoutingAndDeploying(Selection):
 
 
     def print_control_services(self):
-        print "-"*30
-        print " - Assignaments (node_src,service) -> (PATH, DES) "
-        print "-" * 30
-        for k in self.controlServices.keys():
-            print k,"->",self.controlServices[k]
+        print("-"*30)
+        print(" - Assignaments (node_src,service) -> (PATH, DES) ")
+        print("-" * 30)
+        for k in list(self.controlServices.keys()):
+            print(k,"->",self.controlServices[k])
 
-        print "-" * 30
+        print("-" * 30)
         return self.controlServices
 
     """
@@ -354,7 +354,7 @@ class WARoutingAndDeploying(Selection):
         # print "\t  THE SERVICE IS: %s" %message.dst
 
         # The action depends on the type of service  and the place from it is called.
-        if (node_src,service) not in self.controlServices.keys():
+        if (node_src,service) not in list(self.controlServices.keys()):
             logging.info("Take an action on service: %s from node: %i"%(service,node_src))
 
             # Looking for a candidate devices to host the service
@@ -392,7 +392,7 @@ class WARoutingAndDeploying(Selection):
                 # sim.print_debug_assignaments()
             else:
                 des = [des]
-                print "HERE Node: %i, APP: %s , SERVICE: %s" %(best_node,app_name,service)
+                print("HERE Node: %i, APP: %s , SERVICE: %s" %(best_node,app_name,service))
                 logging.info("From node choice: DES: %s " % (des))
 
             #TODO gestionar best_node action

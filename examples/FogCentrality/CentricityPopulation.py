@@ -11,13 +11,13 @@ class Statical(Population):
         #Assignment of SINK and SOURCE pure modules
 
         for ctrl in self.sink_control:
-            if "id" in ctrl.keys():
+            if "id" in list(ctrl.keys()):
                 module = ctrl["module"]
                 for idx in ctrl["id"]:
                     sim.deploy_sink(app_name, node=idx, module=module)
 
         for ctrl in self.src_control:
-            if "id" in ctrl.keys():
+            if "id" in list(ctrl.keys()):
                 msg = ctrl["message"]
                 dst = ctrl["distribution"]
                 for idx in ctrl["id"]:

@@ -22,11 +22,11 @@ from yafs.utils import *
 
 from yafs import JSONPlacement
 from yafs import MovementUpdate
-from selection_multipleDeploys import DeviceSpeedAwareRouting
+from .selection_multipleDeploys import DeviceSpeedAwareRouting
 
 import trackanimation
 
-from jsonMobilePopulation import JSONPopulation
+from .jsonMobilePopulation import JSONPopulation
 
 
 def create_applications_from_json(data):
@@ -48,7 +48,7 @@ def create_applications_from_json(data):
 
         # print "Total mensajes creados %i" %len(ms.keys())
         for idx, message in enumerate(app["transmission"]):
-            if "message_out" in message.keys():
+            if "message_out" in list(message.keys()):
                 a.add_service_module(message["module"], ms[message["message_in"]], ms[message["message_out"]],
                                      fractional_selectivity, threshold=1.0)
             else:
@@ -63,10 +63,10 @@ def getProcessFromThatNode(sim, node_to_remove):
     """
     It returns the software modules (a list of identifiers of DES process) deployed on this node
     """
-    if node_to_remove in sim.alloc_DES.values():
+    if node_to_remove in list(sim.alloc_DES.values()):
         DES = []
         # This node can have multiples DES processes on itself
-        for k, v in sim.alloc_DES.items():
+        for k, v in list(sim.alloc_DES.items()):
             if v == node_to_remove:
                 DES.append(k)
         return DES, True
@@ -187,7 +187,7 @@ def main(path, path_results, number_simulation_steps, tracks, topology, case, it
     Deploying application with specific distribution in the simulator
     # Penultimate phase
     """
-    for aName in apps.keys():
+    for aName in list(apps.keys()):
         # print "Deploying app: ",aName
         pop_app = JSONPopulation(name="Statical_%s" % aName, json={}, it=it)
         data = []
@@ -283,7 +283,7 @@ if __name__ == '__main__':
         experiment_path = "/home/uib/src/YAFS/src/examples/ConquestService/exp/"
     else:
         experiment_path = "exp/"
-    print "Experiment Path ", experiment_path
+    print("Experiment Path ", experiment_path)
     #
 
     # Experiment variables
@@ -342,10 +342,10 @@ if __name__ == '__main__':
              doExecutionVideo=True,  # expensive task
              it=i)
 
-        print("\n--- %s seconds ---" % (time.time() - start_time))
+        print(("\n--- %s seconds ---" % (time.time() - start_time)))
         do_video_from_execution_snaps(temporal_folder + "animation_snaps", 'snap_%05d.png', 10)
 
-    print "Simulation Done!"
+    print("Simulation Done!")
     # ffmpeg -r 2 -i snap_%05d.png -c:v libx264 -vf fps=1 -pix_fmt yuv420p out.mp4
 #ffmpeg -c:v -framerate 10 -f image2pipe -i snap_%03d.png -r 25 -s 1280x960 -pix_fmt yuv420p video_test.mp4
 #ffmpeg -r 1 -i snap_%05d.png -c:v libx264 -vf fps=1 -pix_fmt yuv420p out2.mp4

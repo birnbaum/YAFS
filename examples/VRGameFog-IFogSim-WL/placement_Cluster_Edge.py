@@ -27,15 +27,15 @@ class CloudPlacement(Placement):
         app = sim.apps[app_name]
         services = app.services
 
-        for module in services.keys():
+        for module in list(services.keys()):
             if "Coordinator" == module:
-                if "Coordinator" in self.scaleServices.keys():
+                if "Coordinator" in list(self.scaleServices.keys()):
                     # print self.scaleServices["Coordinator"]
                     for rep in range(0,self.scaleServices["Coordinator"]):
                         idDES = sim.deploy_module(app_name,module,services[module],id_cluster) #Deploy as many modules as elements in the array
 
             elif "Calculator" == module:
-                if "Calculator" in self.scaleServices.keys():
+                if "Calculator" in list(self.scaleServices.keys()):
                     for rep in range(0, self.scaleServices["Calculator"]):
                         idDES = sim.deploy_module(app_name,module,services[module],id_cluster)
 
@@ -67,13 +67,13 @@ class FogPlacement(Placement):
         app = sim.apps[app_name]
         services = app.services
 
-        for module in services.keys():
+        for module in list(services.keys()):
             if "Coordinator" == module:
-                if "Coordinator" in self.scaleServices.keys():
+                if "Coordinator" in list(self.scaleServices.keys()):
                     for rep in range(0, self.scaleServices["Coordinator"]):
                         idDES = sim.deploy_module(app_name, module, services[module],id_cluster)  # Deploy as many modules as elements in the array
             elif "Calculator" == module:
-                if "Calculator" in self.scaleServices.keys():
+                if "Calculator" in list(self.scaleServices.keys()):
                     for rep in range(0, self.scaleServices["Calculator"]):
                         idDES = sim.deploy_module(app_name, module, services[module], id_proxies)
             elif "Client" == module:

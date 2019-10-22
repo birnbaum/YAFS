@@ -11,9 +11,9 @@ from yafs.application import Application,Message
 from yafs import  Topology
 from yafs.distribution import deterministicDistribution
 
-from CentricityPlacement import NoPlacementOfModules
-from CentricityPopulation import Statical
-from CentricitySelection import First_ShortestPath
+from .CentricityPlacement import NoPlacementOfModules
+from .CentricityPopulation import Statical
+from .CentricitySelection import First_ShortestPath
 import networkx as nx
 import numpy as np
 import pandas as pd
@@ -55,7 +55,7 @@ def create_json_topology():
         links.append(v)
 
     entities = []
-    for nid in nodes.keys():
+    for nid in list(nodes.keys()):
         value = {"id": nid, "model": "F", "IPT": 1, "RAM": 1, "COST": 1}
         entities.append(value)
 
@@ -81,8 +81,8 @@ def computingWeights(t,all_nodes_dev,edge_dev,workload_type):
             minvalue = min(len(minPath[(vertex[0],dev)]),len(minPath[(vertex[1],dev)]))
             minStep[(vertex,dev)]=minvalue
 
-    weight_load = range(0,len(workload_type))
-    version_printed_weights2 =range(0,len(workload_type))
+    weight_load = list(range(0,len(workload_type)))
+    version_printed_weights2 =list(range(0,len(workload_type)))
     for idx,load in enumerate(workload_type):
         weight_load[idx] = {}
         version_printed_weights2[idx] = {}
@@ -97,21 +97,21 @@ def computingWeights(t,all_nodes_dev,edge_dev,workload_type):
     return weight_load
 
 def generate_communities(size,edge,minPath,minDis,threshold_population_edge,cloud_device):
-    threshold = int(len(edge.keys()) * threshold_population_edge)
-    community = range(0, size)
+    threshold = int(len(list(edge.keys())) * threshold_population_edge)
+    community = list(range(0, size))
     com = {}
     for w in range(0, size):
         # Select one random edge device
-        n = random.choice(edge.keys())
+        n = random.choice(list(edge.keys()))
         if n == cloud_device:
-            n = random.choice(edge.keys()) ## MAY BE, Cloud can be a Comm
+            n = random.choice(list(edge.keys())) ## MAY BE, Cloud can be a Comm
         community[w] = []
         community[w].append(n)
         com[n] = {"community": w}
         valueMin = sorted(minDis[n])[threshold]
         counter = 0
         while True:
-            someone = random.choice(edge.keys())
+            someone = random.choice(list(edge.keys()))
             if someone == n: continue
             if someone == cloud_device: continue
             if someone in community[w]: continue
@@ -157,7 +157,7 @@ def main():
     leddev = []
 
     try:
-        for key_topo in topologies.keys():
+        for key_topo in list(topologies.keys()):
             """
             TOPOLOGY from a json
             """
@@ -166,10 +166,10 @@ def main():
             # t.load(t_json)
 
             t.load_graphml(topologies[key_topo])
-            print "TOPOLOGY: %s" %key_topo
-            print "Total Nodes: %i" %len(t.G.nodes())
-            print "Total Vertexs: %i" % len(t.G.edges())
-            print "Average shortest path: %s" %nx.average_shortest_path_length(t.G)
+            print("TOPOLOGY: %s" %key_topo)
+            print("Total Nodes: %i" %len(t.G.nodes()))
+            print("Total Vertexs: %i" % len(t.G.edges()))
+            print("Average shortest path: %s" %nx.average_shortest_path_length(t.G))
             # t.write("network_ex2.gexf")
 
             ltopo.append(key_topo)
@@ -203,8 +203,8 @@ def main():
                     if d > 14:
                         edge[n] = -1
 
-            print "Total Edge-Devices: %i" %len(edge.keys())
-            leddev.append(len(edge.keys()))
+            print("Total Edge-Devices: %i" %len(list(edge.keys())))
+            leddev.append(len(list(edge.keys())))
 
 
 
@@ -218,7 +218,7 @@ def main():
                 cloud_device = 320
 
 
-            print "ID of Cloud-Device: %i" %cloud_device
+            print("ID of Cloud-Device: %i" %cloud_device)
             continue
 
 
@@ -228,9 +228,9 @@ def main():
             ## COMPUTING MATRIX SHORTEST PATH among EDGE-devices
             minPath = {}
             minDis = {}
-            for d in edge.keys():
+            for d in list(edge.keys()):
                 minDis[d] = []
-                for d1 in edge.keys():
+                for d1 in list(edge.keys()):
                     if d == d1: continue
                     path = list(nx.shortest_path(t.G, source=d, target=d1))
                     minPath[(d, d1)] = path
@@ -244,7 +244,7 @@ def main():
 
             for size in community_size:
 
-                print "SIZE Of Community: %i" %size
+                print("SIZE Of Community: %i" %size)
 
 
                 communities,com = generate_communities(size, edge, minPath, minDis, threshold_population_edge,cloud_device)
@@ -262,7 +262,7 @@ def main():
                 sensor_workload_types = communities
 
                 lambdas_wl = np.random.randint(low=5, high=10, size=len(sensor_workload_types))
-                id_lambdas = zip(range(0,len(lambdas_wl)),lambdas_wl)
+                id_lambdas = list(zip(list(range(0,len(lambdas_wl))),lambdas_wl))
                 id_lambdas.sort(key=lambda tup: tup[1],reverse=True)  # sorts in place
                 #print id_lambdas # [(1, 9), (0, 8)]
 
@@ -271,10 +271,10 @@ def main():
                 """
                 # Both next ids be extracted from topology.entities
                 all_nodes_dev = t.G.nodes()
-                edge_dev = edge.keys()
+                edge_dev = list(edge.keys())
 
                 weights = computingWeights(t,all_nodes_dev,edge_dev,sensor_workload_types)
-                print "Computed weights"
+                print("Computed weights")
 
                 """
                 APPLICATION
@@ -312,7 +312,7 @@ def main():
 
                 for f in functions:
 
-                    print "Analysing network with algorithm: %s "%f
+                    print("Analysing network with algorithm: %s "%f)
                     """
                     POPULATION algorithm
                     """
@@ -342,27 +342,27 @@ def main():
 
                     else:
                         #Computing best device for each WL-type and each centrality function
-                        print "\t Computando centralidad "
-                        centralWL = range(0,len(weights))
+                        print("\t Computando centralidad ")
+                        centralWL = list(range(0,len(weights)))
                         for idx,v in enumerate(sensor_workload_types):
                             if idx%20 ==0:
-                                print "\t\t%i%%",idx
+                                print("\t\t%i%%",idx)
                             nx.set_edge_attributes(t.G, values=weights[idx], name="weight")
                             centrality = functions[f](t.G, weight="weight")
                             # print(['%s %0.2f' % (node, centrality[node]) for node in centrality])
                             centralWL[idx]=centrality
 
-                        print "\t Generando SINK/SRCs centralidad "
+                        print("\t Generando SINK/SRCs centralidad ")
                         previous_deploy ={} ## DEV -> ID:load
                         for idWL in id_lambdas:
                             idx = idWL[0]
                             ## idWL[0] #index WL
                             ## idWL[1] #lambda
 
-                            for dev, value in sorted(centralWL[idx].iteritems(), key=lambda (k, v): (v, k),reverse=True):
+                            for dev, value in sorted(iter(centralWL[idx].items()), key=lambda k_v: (k_v[1], k_v[0]),reverse=True):
                                 # print "%s: %s" % (dev, value)
                                 #TODO CONTTOLAR LA CAPACIDAD DEL DISPOSITO HERE
-                                if not dev in previous_deploy.values():
+                                if not dev in list(previous_deploy.values()):
                                     previous_deploy[idx] = dev
                                     break
                             #TODO chequear que dEV es un device
@@ -391,16 +391,16 @@ def main():
             #end for communities size
         #end for topology change
 
-        print ltopo
-        print lnodes
-        print ledges
-        print lavepath
-        print leddev
+        print(ltopo)
+        print(lnodes)
+        print(ledges)
+        print(lavepath)
+        print(leddev)
 
     #end try
 
     except:
-        print "Some error??"
+        print("Some error??")
 
 if __name__ == '__main__':
     import logging.config

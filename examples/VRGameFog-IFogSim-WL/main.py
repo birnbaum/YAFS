@@ -19,8 +19,8 @@ from yafs.application import Application,Message
 from yafs.population import *
 from yafs import Topology
 
-from selection_multipleDeploys import BroadPath,CloudPath_RR
-from placement_Cluster_Edge import CloudPlacement,FogPlacement
+from .selection_multipleDeploys import BroadPath,CloudPath_RR
+from .placement_Cluster_Edge import CloudPlacement,FogPlacement
 from yafs.distribution import deterministicDistribution
 from yafs.utils import fractional_selectivity
 import time
@@ -246,10 +246,10 @@ if __name__ == '__main__':
     # police ="edge"
 
 
-    for i in xrange(50):
+    for i in range(50):
 
         main(stop_time,dep,police)
         s = Stats(defaultPath="Results_%s_%s_%s" % (police, stop_time, dep))
-        print "%f," %(s.valueLoop(stop_time, time_loops=time_loops))
+        print("%f," %(s.valueLoop(stop_time, time_loops=time_loops)))
 
-    print("\n--- %s seconds ---" % (time.time() - start_time))
+    print(("\n--- %s seconds ---" % (time.time() - start_time)))

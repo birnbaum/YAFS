@@ -46,10 +46,10 @@ from yafs import Topology
 from yafs import JSONPlacement
 from yafs.distribution import *
 
-from selection_multipleDeploys import MinShortPath
+from .selection_multipleDeploys import MinShortPath
 from yafs.distribution import deterministicDistribution
 from yafs.utils import fractional_selectivity
-from jsonPopulation import *
+from .jsonPopulation import *
 import time
 
 RANDOM_SEED = 1
@@ -229,4 +229,4 @@ if __name__ == '__main__':
 
     main(simulated_time=100000)
 
-    print("\n--- %s seconds ---" % (time.time() - start_time))
+    print(("\n--- %s seconds ---" % (time.time() - start_time)))

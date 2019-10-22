@@ -60,7 +60,7 @@ class DeviceSpeedAwareRouting(Selection):
             self.cache = {}
 
 
-        if (node_src,tuple(DES_dst)) not in self.cache.keys():
+        if (node_src,tuple(DES_dst)) not in list(self.cache.keys()):
             self.cache[node_src,tuple(DES_dst)] = self.compute_DSAR(node_src, alloc_DES, sim, DES_dst,message)
 
         path, des = self.cache[node_src,tuple(DES_dst)]

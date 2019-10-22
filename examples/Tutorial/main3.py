@@ -9,9 +9,9 @@ from yafs.application import Application,Message
 
 from yafs import Topology
 
-from simpleSelection import MinPath_RoundRobin
-from simplePlacement import CloudPlacement
-from evolutivePopulationTopology import SimpleDynamicChanges
+from .simpleSelection import MinPath_RoundRobin
+from .simplePlacement import CloudPlacement
+from .evolutivePopulationTopology import SimpleDynamicChanges
 
 from yafs.distribution import deterministicDistribution
 from yafs.utils import fractional_selectivity
@@ -166,23 +166,23 @@ if __name__ == '__main__':
     start_time = time.time()
     main(simulated_time=1000)
 
-    print("\n--- %s seconds ---" % (time.time() - start_time))
+    print(("\n--- %s seconds ---" % (time.time() - start_time)))
 
     ### Finally, you can analyse the results:
-    print "-"*20
-    print "Results:"
-    print "-" * 20
+    print("-"*20)
+    print("Results:")
+    print("-" * 20)
     m = Stats(defaultPath="Results_multiple") #Same name of the results
     time_loops = [["M.A", "M.B"]]
     m.showResults2(1000, time_loops=time_loops)
-    print "\t- Network saturation -"
-    print "\t\tAverage waiting messages : %i" % m.average_messages_not_transmitted()
-    print "\t\tPeak of waiting messages : %i" % m.peak_messages_not_transmitted()
-    print "\t\tTOTAL messages not transmitted: %i" % m.messages_not_transmitted()
+    print("\t- Network saturation -")
+    print("\t\tAverage waiting messages : %i" % m.average_messages_not_transmitted())
+    print("\t\tPeak of waiting messages : %i" % m.peak_messages_not_transmitted())
+    print("\t\tTOTAL messages not transmitted: %i" % m.messages_not_transmitted())
 
-    print "\n\t- Stats of each service deployed -"
-    print m.get_df_modules()
-    print m.get_df_service_utilization("ServiceA",1000)
+    print("\n\t- Stats of each service deployed -")
+    print(m.get_df_modules())
+    print(m.get_df_service_utilization("ServiceA",1000))
 
-    print "\n\t- Stats of each DEVICE -"
+    print("\n\t- Stats of each DEVICE -")
     #TODO

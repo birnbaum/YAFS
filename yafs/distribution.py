@@ -14,7 +14,7 @@ class Distribution(object):
     def __init__(self,name):
         self.name=name
 
-    def next(self):
+    def __next__(self):
         None
 
 class deterministicDistribution(Distribution):
@@ -28,7 +28,7 @@ class deterministicDistribution(Distribution):
         self.time = time
         super(deterministicDistribution, self).__init__(**kwargs)
 
-    def next(self):
+    def __next__(self):
         return self.time
 
 class deterministic_distribution(Distribution):
@@ -36,7 +36,7 @@ class deterministic_distribution(Distribution):
         self.time = time
         super(deterministic_distribution, self).__init__(**kwargs)
 
-    def next(self):
+    def __next__(self):
         return self.time
 
 class deterministicDistributionStartPoint(Distribution):
@@ -46,7 +46,7 @@ class deterministicDistributionStartPoint(Distribution):
         self.started = False
         super(deterministicDistributionStartPoint, self).__init__(**kwargs)
 
-    def next(self):
+    def __next__(self):
         if not self.started:
             self.started = True
             return self.start
@@ -65,7 +65,7 @@ class exponentialDistribution(Distribution):
         self.l = lambd
         self.rnd = np.random.RandomState(seed)
 
-    def next(self):
+    def __next__(self):
         value = int(self.rnd.exponential(self.l, size=1)[0])
         if value==0: return 1
         return value
@@ -77,7 +77,7 @@ class exponential_distribution(Distribution):
         self.l = lambd
         self.rnd = np.random.RandomState(seed)
 
-    def next(self):
+    def __next__(self):
         value = int(self.rnd.exponential(self.l, size=1)[0])
         if value==0: return 1
         return value
@@ -90,7 +90,7 @@ class exponentialDistributionStartPoint(Distribution):
         self.started = False
         super(exponentialDistributionStartPoint, self).__init__(**kwargs)
 
-    def next(self):
+    def __next__(self):
         if not self.started:
             self.started = True
             return self.start
@@ -102,5 +102,5 @@ class uniformDistribution(Distribution):
         self.min = min
         self.max = max
         super(uniformDistribution, self).__init__(**kwargs)
-    def next(self):
+    def __next__(self):
         return random.randint(self.min, self.max)

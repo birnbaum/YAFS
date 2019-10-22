@@ -14,7 +14,7 @@ class CloudPath_RR(Selection):
         node_src = topology_src
         DES_dst = alloc_module[app_name][message.dst]  # returns an array with all DES process serving
 
-        if message.dst not in self.rr.keys():
+        if message.dst not in list(self.rr.keys()):
             self.rr[message.dst] = 0
 
         # print "GET PATH"
@@ -58,7 +58,7 @@ class BroadPath(Selection):
             return minPath,bestDES
         except nx.NetworkXNoPath:
             self.logger.warning("There is no path between two nodes: %s - %s "%(node_src,node_dst))
-            print "Simulation ends?"
+            print("Simulation ends?")
             return [],None
 
     def get_path(self, sim, app_name, message, topology_src, alloc_DES, alloc_module, traffic, from_des):

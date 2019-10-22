@@ -14,8 +14,8 @@ from yafs.application import Application,Message
 from yafs import Topology
 from yafs.distribution import *
 
-from Evolutive_population import Population_Move
-from selection_multipleDeploys import  CloudPath_RR
+from .Evolutive_population import Population_Move
+from .selection_multipleDeploys import  CloudPath_RR
 
 import itertools
 import time
@@ -55,11 +55,11 @@ def main(simulated_time):
     li = {x: int(x) for x in ls}
     nx.relabel_nodes(t.G, li, False) #Transform str-labels to int-labels
 
-    print "Nodes: %i" %len(t.G.nodes())
-    print "Edges: %i" %len(t.G.edges())
+    print("Nodes: %i" %len(t.G.nodes()))
+    print("Edges: %i" %len(t.G.edges()))
     #MANDATORY fields of a link
     # Default values =  {"BW": 1, "PR": 1}
-    valuesOne = dict(itertools.izip(t.G.edges(),np.ones(len(t.G.edges()))))
+    valuesOne = dict(zip(t.G.edges(),np.ones(len(t.G.edges()))))
 
     nx.set_edge_attributes(t.G, name='BW', values=valuesOne)
     nx.set_edge_attributes(t.G, name='PR', values=valuesOne)
@@ -67,7 +67,7 @@ def main(simulated_time):
     centrality = nx.betweenness_centrality(t.G)
     nx.set_node_attributes(t.G, name="centrality", values=centrality)
 
-    sorted_clustMeasure = sorted(centrality.items(), key=operator.itemgetter(1), reverse=True)
+    sorted_clustMeasure = sorted(list(centrality.items()), key=operator.itemgetter(1), reverse=True)
 
     top20_devices =  sorted_clustMeasure[0:20]
     main_fog_device = copy.copy(top20_devices[0][0])
@@ -84,9 +84,9 @@ def main(simulated_time):
     # plt.savefig('labels.png')
     # exit()
 
-    print "-" * 20
-    print "Best top centralized device: ",main_fog_device
-    print "-"*20
+    print("-" * 20)
+    print("Best top centralized device: ",main_fog_device)
+    print("-"*20)
 
     """
     APPLICATION
@@ -104,7 +104,7 @@ def main(simulated_time):
     POPULATION algorithm
     """
     number_generators = int(len(t.G)*0.1)
-    print "Number of generators %i"%number_generators
+    print("Number of generators %i"%number_generators)
 
     #you can use whatever funciton to change the topology
     dStart = deterministicDistributionStartPoint(500, 400, name="Deterministic")
@@ -149,6 +149,6 @@ if __name__ == '__main__':
 
     main(simulated_time=10000)
 
-    print("\n--- %s seconds ---" % (time.time() - start_time))
+    print(("\n--- %s seconds ---" % (time.time() - start_time)))
 
 #ffmpeg -i out5.mp4 -pix_fmt rgb24  out.gif

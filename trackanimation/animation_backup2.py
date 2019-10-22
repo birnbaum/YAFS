@@ -25,7 +25,7 @@ try:
     from itertools import zip_longest
 except ImportError:
     # Python 2
-    from itertools import izip_longest as zip_longest
+    from itertools import zip_longest as zip_longest
 
 # Third party modules
 import matplotlib
@@ -108,7 +108,7 @@ class AnimationTrack:
 
             self.axarr[i].set_facecolor('0.05')
             self.axarr[i].tick_params(color='0.05', labelcolor='0.05')
-            for spine in self.axarr[i].spines.values():
+            for spine in list(self.axarr[i].spines.values()):
                 spine.set_edgecolor('white')
 
         # self.fig.tight_layout()
@@ -140,7 +140,7 @@ class AnimationTrack:
 
 
         for ix,code_mobile in enumerate(self.mobile_code_points):
-            if code_mobile in self.track_code_last_position.keys():
+            if code_mobile in list(self.track_code_last_position.keys()):
                 (lng, lat) = self.track_code_last_position[code_mobile]
                 point_mobiles.append(np.array([lng, lat]))
                 self.name_mobile[ix]=code_mobile

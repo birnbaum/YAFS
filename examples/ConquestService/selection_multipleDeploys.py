@@ -26,8 +26,8 @@ class DeviceSpeedAwareRouting(Selection):
                 path = list(nx.shortest_path(sim.topology.G, source=node_src, target=node_dst))
                 long = len(path)
 
-                if  long < bestLong:
-                    bestLong = long
+                if  int < bestLong:
+                    bestLong = int
                     minPath = path
                     bestDES = dev
 
@@ -54,7 +54,7 @@ class DeviceSpeedAwareRouting(Selection):
             self.invalid_cache_value = False
             self.cache = {}
 
-        if (node_src,tuple(DES_dst)) not in self.cache.keys():
+        if (node_src,tuple(DES_dst)) not in list(self.cache.keys()):
             self.cache[node_src,tuple(DES_dst)] = self.compute_BEST_DES(node_src, alloc_DES, sim, DES_dst,message)
 
         path, des = self.cache[node_src,tuple(DES_dst)]

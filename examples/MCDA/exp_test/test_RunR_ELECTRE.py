@@ -19,7 +19,7 @@ def runMCDAR(pathRScript,pathWD,fileName,criteriaWeights,IndifferenceThresholds,
              PreferenceThresholds,VetoThresholds,minmaxcriteria]
     proc = Popen(cmd, stdout=PIPE)
     stdout = proc.communicate()[0]
-    print stdout
+    print(stdout)
     return  '{}'.format(stdout)
         
 #Init 
@@ -43,8 +43,8 @@ data = np.array([[2032,5,20,20,0], [1231,0,40,20,1], [3323,6,20,0,5],[13323,6,20
 #data = np.array([[5,20,20], [0,40,20], [6,20,0]])
 #data = np.array([[5], [0], [6]])
 nprojects = len(data)
-print "DATA"
-print data
+print("DATA")
+print(data)
 
 
 
@@ -99,9 +99,9 @@ output= runMCDAR(path,dname,"data",criteriaWeights,IndifferenceThresholds,
 
 #Transform output
 logging.info("Transforming data")
-print output
+print(output)
 if not "RESULT_OK" in output:
-    print "ERROR"
+    print("ERROR")
 text = "Final.Ranking.Matrix.alternative"
 process = output[output.index(text)+len(text):].split()
 ranking = [int(process[i]) for i in range(1,len(process),2)]

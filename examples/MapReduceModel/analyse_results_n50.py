@@ -62,8 +62,8 @@ def performResults(df,dfl,pathNetwork,f,exp,it,idcloud):
         appCloud[app] = (dt3["latency"]).mean()
         appCloudst[app] = (dt3["time_reception"] - dt3["time_emit"]).std()
 
-    lat = np.array(appCloud.values()).mean()
-    devlatency = np.array(appCloudst.values()).mean()
+    lat = np.array(list(appCloud.values())).mean()
+    devlatency = np.array(list(appCloudst.values())).mean()
     f.write("totalLATrepclo;%i;%s;%f\n" % (it, exp, lat))
     f.write("totalLATrepcloSTD;%i;%s;%f\n" % (it, exp, devlatency))
 
@@ -134,7 +134,7 @@ def performResults(df,dfl,pathNetwork,f,exp,it,idcloud):
             idMax = dtmp[app][src][dstmax].values[0]
             valueMax = dmsg[dmsg["id"].isin(idMax)].groupby(['id']).agg({"latency": np.sum}).mean().values[0]
             if math.isnan(valueMax):
-                print "NO MAXIMO"
+                print("NO MAXIMO")
                 valueMax = 0
             totalRmax.append(valueMax)
 
@@ -270,7 +270,7 @@ def performResults(df,dfl,pathNetwork,f,exp,it,idcloud):
 #         f.write("totalLATminSTD;%i;%s;%f\n"%(it,exp,np.array(totalmin).std()))
 #         f.write("totalLATmaxSTD;%i;%s;%f\n"%(it,exp,np.array(totalmax).std()))
     except:
-        print "ERROR LAT MIN Y MAX:   "
+        print("ERROR LAT MIN Y MAX:   ")
 
 
 
@@ -306,9 +306,9 @@ fcsv = open(pathExperimento+"resultsParte_n200.csv","w")
 
 
 for i in range(nSimulations):
-    for f in xrange(100,201,10):
+    for f in range(100,201,10):
         exps = "rep-f%i-n200"%f
-        print "\tRunning %s"%exps
+        print("\tRunning %s"%exps)
         exp = "f%in200"%f
         model = "Replica"
         pathNetwork = pathExperimento + "%s-network.json" % exp
@@ -321,7 +321,7 @@ for i in range(nSimulations):
 
         model = "Single"
         exps = "sin-f%i-n200"%f
-        print "\tRunning %s"%exps
+        print("\tRunning %s"%exps)
         path =pathExperimento+"Results_%i_%s_%s_%s"%(i,exp,model,duration)
         df = pd.read_csv(path + ".csv")
         dfl = pd.read_csv(path + "_link.csv")
@@ -337,7 +337,7 @@ for i in range(nSimulations):
 
         model = "FstrRep"
         exps = "Fstrrep-f%i-n200" % f
-        print "\tRunning %s" % exps
+        print("\tRunning %s" % exps)
         path = pathExperimento + "Results_%i_%s_%s_%s" % (i,exp, model, duration)
         df = pd.read_csv(path + ".csv")
         dfl = pd.read_csv(path + "_link.csv")

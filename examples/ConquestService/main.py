@@ -20,9 +20,9 @@ from yafs.distribution import *
 from yafs.utils import fractional_selectivity
 
 from yafs import JSONPlacement
-from customStrategy import CustomStrategy
-from jsonDynamicPopulation import DynamicPopulation
-from selection_multipleDeploys import DeviceSpeedAwareRouting
+from .customStrategy import CustomStrategy
+from .jsonDynamicPopulation import DynamicPopulation
+from .selection_multipleDeploys import DeviceSpeedAwareRouting
 
 def create_applications_from_json(data):
     applications = {}
@@ -42,7 +42,7 @@ def create_applications_from_json(data):
 
         #print "Total mensajes creados %i" %len(ms.keys())
         for idx, message in enumerate(app["transmission"]):
-            if "message_out" in message.keys():
+            if "message_out" in list(message.keys()):
                 a.add_service_module(message["module"],ms[message["message_in"]], ms[message["message_out"]], fractional_selectivity, threshold=1.0)
             else:
                 a.add_service_module(message["module"], ms[message["message_in"]])
@@ -59,10 +59,10 @@ def create_applications_from_json(data):
 It returns the software modules (a list of identifiers of DES process) deployed on this node
 """
 def getProcessFromThatNode(sim, node_to_remove):
-    if node_to_remove in sim.alloc_DES.values():
+    if node_to_remove in list(sim.alloc_DES.values()):
         DES = []
         # This node can have multiples DES processes on itself
-        for k, v in sim.alloc_DES.items():
+        for k, v in list(sim.alloc_DES.items()):
             if v == node_to_remove:
                 DES.append(k)
         return DES,True
@@ -150,7 +150,7 @@ def main(simulated_time, path,pathResults,case,it):
     dataPopulation = json.load(open(path + 'usersDefinition.json'))
     # Each application has an unique population politic
     # For the original json, we filter and create a sub-list for each app politic
-    for aName in apps.keys():
+    for aName in list(apps.keys()):
         data = []
         for element in dataPopulation["sources"]:
             if element['app'] == aName:
@@ -186,10 +186,10 @@ def main(simulated_time, path,pathResults,case,it):
 
     evol.summarize()
 
-    print "----"
+    print("----")
     entities = s.get_alloc_entities()
     src_entities,modules_entities = Counter(),Counter()
-    for k, v in entities.iteritems():
+    for k, v in entities.items():
         src_entities[k]=0
         modules_entities[k]=0
         for service in v:
@@ -227,7 +227,7 @@ if __name__ == '__main__':
         pathExperimento = "exp1/"
     #####
 
-    print "PATH EXPERIMENTO: ",pathExperimento
+    print("PATH EXPERIMENTO: ",pathExperimento)
     nSimulations = 1
     timeSimulation = 1000000#100000
     datestamp = time.strftime('%Y%m%d')
@@ -248,7 +248,7 @@ if __name__ == '__main__':
 
         main(simulated_time=timeSimulation, path=pathExperimento, pathResults=dname, case='CQ',it=i)
 
-        print("\n--- %s seconds ---" % (time.time() - start_time))
+        print(("\n--- %s seconds ---" % (time.time() - start_time)))
         start_time = time.time()
 
-    print "Simulation Done"
+    print("Simulation Done")

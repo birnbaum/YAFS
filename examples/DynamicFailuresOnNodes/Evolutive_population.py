@@ -33,11 +33,11 @@ class Pop_and_Failures(Population):
 
 
     def getProcessFromThatNode(self,sim,node_to_remove):
-        if node_to_remove in sim.alloc_DES.values():
+        if node_to_remove in list(sim.alloc_DES.values()):
             someModuleDeployed = False
             keys = []
             # This node can have multiples DES processes on itself
-            for k, v in sim.alloc_DES.items():
+            for k, v in list(sim.alloc_DES.items()):
                 if v == node_to_remove:
                     keys.append(k)
             # key = sim.alloc_DES.keys()[sim.alloc_DES.values().index(node_to_remove)]
@@ -45,12 +45,12 @@ class Pop_and_Failures(Population):
                 # Information
                 # print "\tNode %i - with a DES process: %i" % (node_to_remove, key)
                 # This assignamnet can be a source/sensor module:
-                if key in sim.alloc_source.keys():
+                if key in list(sim.alloc_source.keys()):
                     # print "\t\t a sensor: %s" % sim.alloc_source[key]["module"]
                     ## Sources/Sensors modules are not removed
                     return False,[],False
                 someModuleAssignament = sim.get_assigned_structured_modules_from_DES()
-                if key in someModuleAssignament.keys():
+                if key in list(someModuleAssignament.keys()):
                     # print "\t\t a module: %s" % someModuleAssignament[key]["module"]
                     if self.count_down<3:
                         return False, [], False
@@ -76,7 +76,7 @@ class Pop_and_Failures(Population):
                 is_removable,keys_DES,someModuleDeployed = self.getProcessFromThatNode(sim,node_to_remove)
 
             self.logger.debug("Removing node: %i, Total nodes: %i" % (node_to_remove, len(nodes)))
-            print "\tStopping some DES processes: %s"%keys_DES
+            print("\tStopping some DES processes: %s"%keys_DES)
 
             self.nodes_removed.append({"id":node_to_remove,"module":someModuleDeployed,"time":sim.env.now})
 

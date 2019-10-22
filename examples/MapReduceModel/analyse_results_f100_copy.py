@@ -84,10 +84,10 @@ def performResults(df,dfl,pathNetwork,f,exp,it):
                          idMax = dtmp[previousAPP][maxpath.src][maxpath.dst].values[0]
                          value = dmsg[dmsg["id"].isin(idMax)].groupby(['id']).agg({"latency":np.sum}).mean().values[0] 
                      except IndexError:
-                         print "NO MAX"
+                         print("NO MAX")
                          value = 0
                      except AttributeError:
-                        print "NO MAX"
+                        print("NO MAX")
                         value = 0
                      totalRmax.append(value)
                     
@@ -118,10 +118,10 @@ def performResults(df,dfl,pathNetwork,f,exp,it):
                         idMax = dtmp[previousAPP][maxpath.src][maxpath.dst].values[0]
                         value = dmsg[dmsg["id"].isin(idMax)].groupby(['id']).agg({"latency":np.sum}).mean().values[0] 
                     except IndexError:
-                         print "NO MAX"
+                         print("NO MAX")
                          value = 0
                     except AttributeError:
-                        print "NO MAX"
+                        print("NO MAX")
                         value = 0
                     totalRmax.append(value)
                     
@@ -157,10 +157,10 @@ def performResults(df,dfl,pathNetwork,f,exp,it):
                  idMax = dtmp[previousAPP][maxpath.src][maxpath.dst].values[0]
                  value = dmsg[dmsg["id"].isin(idMax)].groupby(['id']).agg({"latency":np.sum}).mean().values[0] 
              except IndexError:
-                 print "NO MAX"
+                 print("NO MAX")
                  value = 0
              except AttributeError:
-                 print "NO MAX"
+                 print("NO MAX")
                  value = 0
              totalRmax.append(value)
             
@@ -178,7 +178,7 @@ def performResults(df,dfl,pathNetwork,f,exp,it):
         f.write("totalLATminSTD;%i;%s;%f\n"%(it,exp,np.array(totalmin).std()))
         f.write("totalLATmaxSTD;%i;%s;%f\n"%(it,exp,np.array(totalmax).std()))
     except:
-        print "ERROR LAT MIN Y MAX:   " , exp
+        print("ERROR LAT MIN Y MAX:   " , exp)
 
 
 
@@ -218,9 +218,9 @@ duration = args.duration
 fcsv = open(pathExperimento+"resultsParte_f100.csv","w")
 
 for i in range(nSimulations):
-    for n in xrange(100,301,20):
+    for n in range(100,301,20):
         exps = "rep-f100-n%i"%n
-        print "\tRunning %s"%exps
+        print("\tRunning %s"%exps)
 
         exp = "f100n%i"%n
         model = "Replica"
@@ -234,7 +234,7 @@ for i in range(nSimulations):
 
         model = "Single"
         exps = "sin-f100-n%i"%n
-        print "\tRunning %s"%exps
+        print("\tRunning %s"%exps)
         path =pathExperimento+"Results_%i_%s_%s_%s"%(i,exp,model,duration)
         df = pd.read_csv(path + ".csv")
         dfl = pd.read_csv(path + "_link.csv")
@@ -250,7 +250,7 @@ for i in range(nSimulations):
 
         model = "FstrRep"
         exps = "Fstrrep-f100-n%i" % n
-        print "\tRunning %s" % exps
+        print("\tRunning %s" % exps)
         path = pathExperimento + "Results_%i_%s_%s_%s" % (i,exp, model, duration)
         df = pd.read_csv(path + ".csv")
         dfl = pd.read_csv(path + "_link.csv")

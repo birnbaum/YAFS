@@ -54,7 +54,7 @@ class my_custom_action(generic_action):
         # print ma.next_time
         # print ma.get_current_position()
         # print "-"*10
-        if ma.get_current_position() in service_coverage.keys():
+        if ma.get_current_position() in list(service_coverage.keys()):
             if ma.plate in self.plates:
                 self.fees[ma.plate]={"arrive":self.plates[ma.plate],"end":self.env.now}
             else:
@@ -124,7 +124,7 @@ def create_pos(G,scale):
     x = nx.get_node_attributes(G,'x')
     y = nx.get_node_attributes(G,'y')
     pos = {}
-    for k in x.keys():
+    for k in list(x.keys()):
         lat = x[k]*scale
         lng = y[k]*scale
         pos[k]=np.array([lat,lng])
@@ -134,7 +134,7 @@ def create_points(G):
     x = nx.get_node_attributes(G,'x')
     y = nx.get_node_attributes(G,'y')
     pos = OrderedDict()
-    for k in x.keys():
+    for k in list(x.keys()):
         lat = x[k]
         lng = y[k]
         pos[k]=[lat,lng]
@@ -172,7 +172,7 @@ def __add_mobile_agent(idDES,gme,G):
  
     #Last movement
     gme.do.action(gme)
-    print "Mobile agent: %s ends "%gme.plate
+    print("Mobile agent: %s ends "%gme.plate)
 
 
 # =============================================================================
@@ -227,8 +227,8 @@ nx.draw(G2,posG2,node_size=20,node_color="yellow",edge_color='pink',width=2)
 tolerance = 0.0001
 pG = create_points(G)
 pG2 = create_points(G2)
-tree = scipy.spatial.KDTree(pG.values())
-points_within_tolerance = tree.query_ball_point(pG2.values(),tolerance)
+tree = scipy.spatial.KDTree(list(pG.values()))
+points_within_tolerance = tree.query_ball_point(list(pG2.values()),tolerance)
 
 # key = node network
 # value = id - module SW
@@ -236,18 +236,18 @@ service_coverage = {}
 
 for idx,pt in enumerate(points_within_tolerance):
     ## MODULE SW
-    key2 = pG2.keys()[idx]
+    key2 = list(pG2.keys())[idx]
     nG2 = G2.nodes[key2]
-    print "%s is close to "%nG2["model"]
+    print("%s is close to "%nG2["model"])
     ## Street coverage
     for p in pt:
-        key = pG.keys()[p]
-        print G.nodes[key]
+        key = list(pG.keys())[p]
+        print(G.nodes[key])
         # service_coverage[(G.nodes[key]['x'],G.nodes[key]['y'])]=nG2["model"]
         service_coverage[key] = nG2["id"]
 
-print "SERVICE COVERAGE"        
-print service_coverage
+print("SERVICE COVERAGE")        
+print(service_coverage)
 
  
 # =============================================================================
@@ -277,4 +277,4 @@ for i in range(10000):
         counter+=1 #oneway edges by random choice
 
 env.run(until=1000000)
-print "COCHES REGISTRADOS EN ESE MOVIMIENTO: %i"%len(action.fees)
+print("COCHES REGISTRADOS EN ESE MOVIMIENTO: %i"%len(action.fees))

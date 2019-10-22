@@ -31,7 +31,7 @@ try:
     from itertools import zip_longest
 except ImportError:
     # Python 2
-    from itertools import izip_longest as zip_longest
+    from itertools import zip_longest as zip_longest
 
 # Third party modules
 import matplotlib
@@ -70,7 +70,7 @@ class AnimationTrack:
 
         self.axarr.set_facecolor('0.05')
         self.axarr.tick_params(color='0.05', labelcolor='0.05')
-        for spine in self.axarr.spines.values():
+        for spine in list(self.axarr.spines.values()):
             spine.set_edgecolor('white')
 
         df = sim.user_tracks.get_tracks()
@@ -105,7 +105,7 @@ class AnimationTrack:
         point_mobiles = []
 
         for ix,code_mobile in enumerate(self.sim.mobile_fog_entities.keys()):
-            if code_mobile in self.track_code_last_position.keys():
+            if code_mobile in list(self.track_code_last_position.keys()):
                 (lng, lat) = self.track_code_last_position[code_mobile]
                 point_mobiles.append(np.array([lng, lat]))
 
@@ -168,7 +168,7 @@ class AnimationTrack:
             (lng, lat) = self.track_code_last_position[code]
             new_point=[lng,lat]
 
-            if code not in self.sim.mobile_fog_entities.keys():
+            if code not in list(self.sim.mobile_fog_entities.keys()):
                 point_index = self.sim.coverage.connection(new_point)
                 self.connection[point_index] += 1
                 icon = self.car_icon
@@ -292,9 +292,9 @@ class AnimationTrack:
                     pos[:, 1] = (pos[:, 1] - pos[:, 1].min()) / (pos[:, 1].max() - pos[:, 1].min())
                     size = self.fig.get_size_inches() * self.fig.dpi * 1.5
                     pos = [self.point_network_map(x, size) for x in pos]
-                    pos = dict(zip(G.nodes(), pos))
+                    pos = dict(list(zip(G.nodes(), pos)))
 
-                    nx.draw(G, pos, with_labels=False, node_size=100, nodelist=self.sim.name_endpoints.values(),
+                    nx.draw(G, pos, with_labels=False, node_size=100, nodelist=list(self.sim.name_endpoints.values()),
                             node_color="#1260A0", node_shape="o")
                     # rest_nodes = [e for e in G.nodes() if e not in self.sim.name_endpoints.values()]
                     nodes_level_mobile = self.get_nodes_by_level(G, -1)
@@ -338,9 +338,9 @@ class AnimationTrack:
             pos[:, 1] = (pos[:, 1] - pos[:, 1].min()) / (pos[:, 1].max() - pos[:, 1].min())
             size = self.fig.get_size_inches() * self.fig.dpi * 1.5
             pos = [self.point_network_map(x, size) for x in pos]
-            pos = dict(zip(G.nodes(),pos))
+            pos = dict(list(zip(G.nodes(),pos)))
 
-            nx.draw(G, pos,with_labels=False,node_size=100,nodelist=self.sim.name_endpoints.values(),node_color="#1260A0",node_shape="o")
+            nx.draw(G, pos,with_labels=False,node_size=100,nodelist=list(self.sim.name_endpoints.values()),node_color="#1260A0",node_shape="o")
             # rest_nodes = [e for e in G.nodes() if e not in self.sim.name_endpoints.values()]
             nodes_level_mobile = self.get_nodes_by_level(G,-1)
             nobes_upper_level = self.get_nodes_by_upper_level(G,1)

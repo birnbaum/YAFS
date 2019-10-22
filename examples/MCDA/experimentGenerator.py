@@ -93,14 +93,14 @@ def networkGeneration(pathTXT,idcloud):
         nodePower_min[i]=eval(func_POWERmin)
         nodePower_max[i]=nodePower_min[i]+eval(func_POWERmax)
     
-    print tiers
+    print(tiers)
     for e in G.edges:
         tier = tiers[e[0]]
         if tier<tiers[e[1]]: #getMAX
             tier = tiers[e[1]]
 #        print tier
         pr = eval(func_PROPAGATIONTIME)*tier
-        print pr
+        print(pr)
         G[e[0]][e[1]]['PR']= pr
         bw = int(eval(func_BANDWITDH)*(1.0/float(tier)))
 #        print bw
@@ -151,7 +151,7 @@ def userGeneration(id_gateways,G):
         #****************************************************************************************************
 
         level = nx.get_node_attributes(G, 'level')
-        ll = {x: y for x, y in level.items() if y > 3}
+        ll = {x: y for x, y in list(level.items()) if y > 3}
 
         userJson ={}
        
@@ -162,7 +162,7 @@ def userGeneration(id_gateways,G):
             userRequestList = set()
             probOfRequested = eval(func_REQUESTPROB)
             atLeastOneAllocated = False
-            for j in ll.keys():
+            for j in list(ll.keys()):
                 j = int(j)
                 if random.random()<probOfRequested:
                     myOneUser={}
@@ -175,7 +175,7 @@ def userGeneration(id_gateways,G):
                     atLeastOneAllocated = True
             if not atLeastOneAllocated:
 #                j=random.randint(0,len(id_gateways)-1)
-                j=random.choice(ll.keys())
+                j=random.choice(list(ll.keys()))
                 j = int(j)
                 myOneUser={}
                 myOneUser['app']=str(i)
@@ -186,7 +186,7 @@ def userGeneration(id_gateways,G):
                 myUsers.append(myOneUser)
             appsRequests.append(userRequestList)
         
-        print "Usuarios creados : %i "%len(myUsers)
+        print("Usuarios creados : %i "%len(myUsers))
         userJson['sources']=myUsers
         
         return userJson
@@ -212,7 +212,7 @@ def appGeneration():
     
     
     for i in range(TOTALNUMBEROFAPPS):
-        print "CREANDDO APP :%i "%i
+        print("CREANDDO APP :%i "%i)
         
         myApp = {}
         APP = eval(func_APPGENERATION)
@@ -232,7 +232,7 @@ def appGeneration():
     
     
     
-        mapping=dict(zip(APP.nodes(),range(numberOfServices,numberOfServices+len(APP.nodes))))
+        mapping=dict(list(zip(APP.nodes(),list(range(numberOfServices,numberOfServices+len(APP.nodes))))))
         APP=nx.relabel_nodes(APP,mapping)
     
         numberOfServices = numberOfServices + len(APP.nodes)

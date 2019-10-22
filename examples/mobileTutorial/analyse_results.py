@@ -60,7 +60,7 @@ fig = plt.figure()
 ax1 = fig.add_subplot(111)
 
 for user in [636798]:
-    print user
+    print(user)
     dfap1 = df[df["TOPO.src"]==user]
     
     ids = df_link[df_link["src"]==user].id
@@ -74,7 +74,7 @@ for user in [636798]:
     
     dfap1["dstC"]=dfuser["dst"].values
     
-    ticks = range(len(dfap1.index))
+    ticks = list(range(len(dfap1.index)))
     latency_by_user[user] = dfap1["latency"].resample('100s').agg(dict(latency='mean'))
     timeLatency = dfap1.latency.values
     ax1.plot(ticks, timeLatency, '-')

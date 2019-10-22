@@ -41,13 +41,13 @@ dfap1 = dfap1.resample('300s').agg(dict(time_latency='mean'))
 
 timeLatency = dfap1.time_latency.values
 
-ticks = range(len(timeLatency))
+ticks = list(range(len(timeLatency)))
 ticksV = np.array(ticks)*300
 
 #index = dfap1.index
 #rng = pd.date_range('01/01/1970',periods=20,freq="300s")
 
-values = range(len(ticks))
+values = list(range(len(ticks)))
 
 for x in range(len(ticks)):
     if x<10:

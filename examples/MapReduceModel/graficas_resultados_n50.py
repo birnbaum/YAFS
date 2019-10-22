@@ -114,7 +114,7 @@ pathResults = pathExperimento+"resultsParte_n200.csv"
 colors = ["#F85A3E","#CBC544","#1A7AF8","#99194b","#3aa54b","#3a364b"]
 N = 4 #bars: two series: s1 , s2
 width = 0.2       # the width of the bars
-fs = range(100,201,10)
+fs = list(range(100,201,10))
 
 
 dr = pd.DataFrame()
@@ -134,7 +134,7 @@ for metric in metrics:
     s1b,s2b,s3b,s4b = {},{},{},{}
     ylabel = info_metrics[metric]
     
-    print "METRICA %s --- %s" %(metric,ylabel)
+    print("METRICA %s --- %s" %(metric,ylabel))
     
     for it in range(nSimulations):
         #LOAD OF VALUES
@@ -225,8 +225,8 @@ for metric in metrics:
 
      
 
-    print mean_confidence_interval(s1m, s1std,confidence=0.95)       
-    if len(s1m)!=len(s2m): print "ERROR! - Series with different sizes" #END?
+    print(mean_confidence_interval(s1m, s1std,confidence=0.95))       
+    if len(s1m)!=len(s2m): print("ERROR! - Series with different sizes") #END?
     
     ind = np.arange(len(s1m))  # the x locations for the groups
 
@@ -399,7 +399,7 @@ dr["latMax"]=s6m/s2m
 
 #    slatMAX = df[df.t=="sin"].loc["totalLATmax"][2]
 
-if len(ss1)!=len(ss2): print "ERROR! - Series with different sizes" #END?
+if len(ss1)!=len(ss2): print("ERROR! - Series with different sizes") #END?
 
 ind = np.arange(len(ss1))  # the x locations for the groups
 

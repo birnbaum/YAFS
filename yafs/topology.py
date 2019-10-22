@@ -164,11 +164,11 @@ class Topology:
         for edge in data["link"]:
             self.G.add_edge(edge["s"], edge["d"], BW=edge[self.LINK_BW], PR=edge[self.LINK_PR])
 
-        dc = {str(x): {} for x in data["entity"][0].keys()}
+        dc = {str(x): {} for x in list(data["entity"][0].keys())}
         for ent in data["entity"]:
-            for key in ent.keys():
+            for key in list(ent.keys()):
                 dc[key][ent["id"]] = ent[key]
-        for x in data["entity"][0].keys():
+        for x in list(data["entity"][0].keys()):
             nx.set_node_attributes(self.G, values=dc[x], name=str(x))
 
         for node in data["entity"]:
@@ -218,10 +218,10 @@ class Topology:
         Returns:
             A list with the ID of each node that have the same attribute that the value.value
         """
-        keyS = value.keys()[0]
+        keyS = list(value.keys())[0]
 
         result = []
-        for key in self.nodeAttributes.keys():
+        for key in list(self.nodeAttributes.keys()):
             val = self.nodeAttributes[key]
             if keyS in val:
                 if value[keyS] == val[keyS]:
@@ -247,7 +247,7 @@ class Topology:
         """
         self.__idNode = + 1
         self.G.add_node(self.__idNode)
-        self.G.add_edges_from(zip(nodes, [self.__idNode] * len(nodes)))
+        self.G.add_edges_from(list(zip(nodes, [self.__idNode] * len(nodes))))
 
         return self.__idNode
 

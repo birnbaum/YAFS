@@ -14,16 +14,16 @@ class MinimunPath(Selection):
         DES_dst = alloc_module[app_name][message.dst]
 
         print("GET PATH")
-        print("\tNode _ src (id_topology): %i" %node_src)
-        print("\tRequest service: %s " %message.dst)
-        print("\tProcess serving that service: %s " %DES_dst)
+        print(("\tNode _ src (id_topology): %i" %node_src))
+        print(("\tRequest service: %s " %message.dst))
+        print(("\tProcess serving that service: %s " %DES_dst))
 
         bestPath = []
         bestDES = []
 
         for des in DES_dst: ## In this case, there are only one deployment
             dst_node = alloc_DES[des]
-            print("\t\t Looking the path to id_node: %i" %dst_node)
+            print(("\t\t Looking the path to id_node: %i" %dst_node))
 
             path = list(nx.shortest_path(sim.topology.G, source=node_src, target=dst_node))
 
@@ -48,14 +48,14 @@ class MinPath_RoundRobin(Selection):
         DES_dst = alloc_module[app_name][message.dst] #returns an array with all DES process serving
 
 
-        if message.dst not in self.rr.keys():
+        if message.dst not in list(self.rr.keys()):
             self.rr[message.dst] = 0
 
 
         print("GET PATH")
-        print("\tNode _ src (id_topology): %i" %node_src)
-        print("\tRequest service: %s " %(message.dst))
-        print("\tProcess serving that service: %s (pos ID: %i)" %(DES_dst,self.rr[message.dst]))
+        print(("\tNode _ src (id_topology): %i" %node_src))
+        print(("\tRequest service: %s " %(message.dst)))
+        print(("\tProcess serving that service: %s (pos ID: %i)" %(DES_dst,self.rr[message.dst])))
 
         bestPath = []
         bestDES = []

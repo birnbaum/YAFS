@@ -152,7 +152,7 @@ if __name__ == '__main__':
     start_time = time.time()
     main(simulated_time=1000)
 
-    print("\n--- %s seconds ---" % (time.time() - start_time))
+    print(("\n--- %s seconds ---" % (time.time() - start_time)))
 
     ### Finally, you can analyse the results:
     # print "-"*20

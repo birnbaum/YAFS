@@ -8,7 +8,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 import matplotlib as mpl
-from itertools import izip_longest as zip_longest
+from itertools import zip_longest as zip_longest
 from tqdm import tqdm
 import scipy
 #runfile('/Users/isaaclera/PycharmProjects/YAFS/src/examples/mobileTutorial/testAnimationVoroni.py', wdir='/Users/isaaclera/PycharmProjects/YAFS/src/')
@@ -35,7 +35,7 @@ points = ibiza_trk.df.to_dict()
 
 for point, next_point in zip_longest(tqdm(points, desc='Video generation process'), points[1:], fillvalue=None):
     track_code = str(point['CodeRoute']) + "_" + str(point['Axes'])
-    print track_code
+    print(track_code)
 
 
 fixed_points_or = np.array([[38.914409,1.291472],[39.010489,1.359833],[38.952876,1.427421],[39.001689,1.517648],[39.076888,1.503921]])
@@ -49,18 +49,18 @@ mobile_points = [[38.914409,1.291472],[39.010489,1.359833]]
 
 
  
-fixed_points = dict(zip([10,11,12,13,14],fixed_points_or))
-mobile_points= dict(zip([2909,2345],mobile_points))
+fixed_points = dict(list(zip([10,11,12,13,14],fixed_points_or)))
+mobile_points= dict(list(zip([2909,2345],mobile_points)))
 
 result ={}
 for k in mobile_points:
     point = mobile_points[k]
-    print point
-    idx = np.argmin(np.sum((np.array(fixed_points.values()) - point) ** 2, axis=1))
-    print idx
+    print(point)
+    idx = np.argmin(np.sum((np.array(list(fixed_points.values())) - point) ** 2, axis=1))
+    print(idx)
     result[k]=list(fixed_points)[idx]
     
-print result
+print(result)
    
 
 #fig = AnimationTrack(df_points=ibiza_trk, dpi=250, bg_map=True, map_transparency=0.5,voronoi_points=fixed_points,mobile_code_points=mobile_code_points)

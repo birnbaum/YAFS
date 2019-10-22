@@ -23,7 +23,7 @@ class MovementUpdate:
 
 
     def summarize(self):
-        print "Number of evolutions %i" % self.current_step
+        print("Number of evolutions %i" % self.current_step)
 
     def deploy_module(self,sim,service,idtopo):
         app_name = service[0:service.index("_")]
@@ -138,7 +138,7 @@ class MovementUpdate:
         mobile_endpoints = []
         code_mobile_endpoints = []
         for ix, code_mobile in enumerate(sim.mobile_fog_entities):
-            if code_mobile in track_code_last_position.keys():
+            if code_mobile in list(track_code_last_position.keys()):
                 (lng, lat) = track_code_last_position[code_mobile]
                 mobile_endpoints.append(np.array([lng, lat]))
                 code_mobile_endpoints.append(code_mobile)
@@ -169,7 +169,7 @@ class MovementUpdate:
             (lng, lat) = track_code_last_position[code]
             new_point = [lng, lat]
 
-            if code not in sim.mobile_fog_entities.keys():
+            if code not in list(sim.mobile_fog_entities.keys()):
                 point_index = sim.coverage.connection(new_point)
                 if point_index != None:
                     all_current_connection[code] = self.name_endpoints[point_index]
@@ -177,10 +177,10 @@ class MovementUpdate:
         ##########
         # UPDATING CONNECTIONS of MOBILE ENDPOINTS  with NETWORK ENDPOINTS
         #
-        fixed_location_endpoints = dict(zip(sim.name_endpoints.values(), sim.endpoints))
-        mobile_location_endpoints = dict(zip(code_mobile_endpoints, mobile_endpoints))
+        fixed_location_endpoints = dict(list(zip(list(sim.name_endpoints.values()), sim.endpoints)))
+        mobile_location_endpoints = dict(list(zip(code_mobile_endpoints, mobile_endpoints)))
 
-        print "STEP ",self.current_step
+        print("STEP ",self.current_step)
         # print "FIX"
         # print fixed_location_endpoints
         # print "MOB"
@@ -210,7 +210,7 @@ class MovementUpdate:
         # TODO Point of improvement: Decide if a user remains connected to the current point or connects to other options.
         changes = False
         for k in all_current_connection:
-            if not k in self.previous_graph_connection.keys():
+            if not k in list(self.previous_graph_connection.keys()):
                 self.previous_graph_connection[k] = all_current_connection[k]
                 self.update_topology_connections(sim, k, self.previous_graph_connection[k], routing)
                 changes = True

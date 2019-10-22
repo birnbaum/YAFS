@@ -47,7 +47,7 @@ class Population_Move(Population):
         nx.draw(sim.topology.G, with_labels=True, pos=self.pos, node_size=60, node_color="orange", font_size=5)
 
         # fig, ax = plt.subplots(nrows=1, ncols=1)  # create figure & 1 axis
-        for node in sim.alloc_DES.values():
+        for node in list(sim.alloc_DES.values()):
             # for id_s, service in enumerate(current_services):
             # for node in current_services[service]:
             #     node = sim.alloc_DES[key]
@@ -84,10 +84,10 @@ class Population_Move(Population):
 
 
 
-        for key in sim.alloc_source.keys():
+        for key in list(sim.alloc_source.keys()):
             node_src = sim.alloc_DES[key]
             path = list(nx.shortest_path(sim.topology.G, source=node_src, target=self.node_dst))
-            print path
+            print(path)
             if len(path)>2:
                 next_src_position = path[1]
                 #print path,next_src_position

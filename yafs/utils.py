@@ -38,7 +38,7 @@ def create_pos(G,scale):
     x = nx.get_node_attributes(G,'x')
     y = nx.get_node_attributes(G,'y')
     pos = {}
-    for k in x.keys():
+    for k in list(x.keys()):
         lat = x[k]*scale
         lng = y[k]*scale
         pos[k]=np.array([lat,lng])
@@ -48,7 +48,7 @@ def create_points(G):
     x = nx.get_node_attributes(G,'x')
     y = nx.get_node_attributes(G,'y')
     pos = OrderedDict()
-    for k in x.keys():
+    for k in list(x.keys()):
         lat = x[k]
         lng = y[k]
         pos[k]=[lat,lng]
@@ -94,7 +94,7 @@ def draw_topology(topology,alloc_entity):
 
 
     lastID = len(G.nodes())
-    labels = dict(zip(range(topology.size()), range(topology.size())))
+    labels = dict(list(zip(list(range(topology.size())), list(range(topology.size())))))
 
     nodesM = []
     edgesM = []

@@ -21,10 +21,10 @@ from yafs.distribution import *
 from yafs.utils import fractional_selectivity
 
 from yafs import JSONPlacement
-from MCDAPathSelectionNPlacement import MCDARoutingAndDeploying
-from WAPathSelectionNPlacement import WARoutingAndDeploying
-from jsonDynamicPopulation import DynamicPopulation
-from placementOnlyCloud import JSONPlacementOnlyCloud
+from .MCDAPathSelectionNPlacement import MCDARoutingAndDeploying
+from .WAPathSelectionNPlacement import WARoutingAndDeploying
+from .jsonDynamicPopulation import DynamicPopulation
+from .placementOnlyCloud import JSONPlacementOnlyCloud
 
 
 def create_applications_from_json(data):
@@ -46,7 +46,7 @@ def create_applications_from_json(data):
 
         # print "Total mensajes creados %i" %len(ms.keys())
         for idx, message in enumerate(app["transmission"]):
-            if "message_out" in message.keys():
+            if "message_out" in list(message.keys()):
                 a.add_service_module(message["module"], ms[message["message_in"]], ms[message["message_out"]],
                                      fractional_selectivity, threshold=1.0)
             else:
@@ -66,10 +66,10 @@ It returns the software modules (a list of identifiers of DES process) deployed 
 
 
 def getProcessFromThatNode(sim, node_to_remove):
-    if node_to_remove in sim.alloc_DES.values():
+    if node_to_remove in list(sim.alloc_DES.values()):
         DES = []
         # This node can have multiples DES processes on itself
-        for k, v in sim.alloc_DES.items():
+        for k, v in list(sim.alloc_DES.items()):
             if v == node_to_remove:
                 DES.append(k)
         return DES, True
@@ -193,7 +193,7 @@ def main(simulated_time, path,pathResults,case, failuresON, it,idcloud):
 
     # Each application has an unique population politic
     # For the original json, we filter and create a sub-list for each app politic
-    for aName in apps.keys():
+    for aName in list(apps.keys()):
         data = []
         for element in dataPopulation["sources"]:
             if element['app'] == aName:
@@ -217,7 +217,7 @@ def main(simulated_time, path,pathResults,case, failuresON, it,idcloud):
     s.print_debug_assignaments()
 
     # Genera un fichero GEPHI donde se marcan los nodos con usuarios (userposition) y los nodos con servicios desplegados (services)
-    print "----"
+    print("----")
     l = s.get_alloc_entities()
     userposition = {}
     deploymentservices = {}
@@ -237,12 +237,12 @@ def main(simulated_time, path,pathResults,case, failuresON, it,idcloud):
     nx.set_node_attributes(s.topology.G, values= userposition, name='userposition')
     # nx.write_gexf(s.topology.G, "network_assignments.gexf")
 
-    print selectorPath.dname
+    print(selectorPath.dname)
     f = open(selectorPath.dname + "/file_alloc_entities_%s_%i_%i.pkl" % (case, stop_time, it), "wb")
     pickle.dump(l, f)
     f.close()
 
-    print "----"
+    print("----")
     controlServices = selectorPath.controlServices
     # print controlServices
     attEdges = collections.Counter()
@@ -270,14 +270,14 @@ if __name__ == '__main__':
     # NOTE: ABSOLUTE PATH TO JSON FILES ACCORDING TO THE EXECUTION-PLACE
     # We simplify the path update in our experimentation to external servers (it's a bit precarious but functional)
     runpath = os.getcwd()
-    print runpath
+    print(runpath)
     if "/home/uib/" in runpath :
         pathExperimento = "/home/uib/src/YAFS/src/examples/MCDA/exp1/"
     else:
         pathExperimento = "exp1/"
     #####
 
-    print "PATH EXPERIMENTO: ",pathExperimento
+    print("PATH EXPERIMENTO: ",pathExperimento)
     nSimulations = 1
     timeSimulation = 10000
     datestamp = time.strftime('%Y%m%d')
@@ -310,10 +310,10 @@ if __name__ == '__main__':
         idxFControl = 0  # reset counter of failure nodes
         main(simulated_time=timeSimulation, path=pathExperimento,pathResults=dname, case='WA', failuresON=False, it=i, idcloud=153)
 
-        print("\n--- %s seconds ---" % (time.time() - start_time))
+        print(("\n--- %s seconds ---" % (time.time() - start_time)))
         start_time = time.time()
 
-    print "Simulation Done"
+    print("Simulation Done")
 
 ### NOTAS:
 # Deberia de cambiar la posicion en cada simulation

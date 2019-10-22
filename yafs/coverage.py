@@ -142,7 +142,7 @@ class CircleCoverage(Coverage):
                 result[code] = mobile_fog_entities[code]["connectionWith"]
             else:
                 point = mobile_endpoints[code]
-                idx = np.argmin(np.sum((np.array(fixed_endpoints.values()) - point) ** 2, axis=1))
+                idx = np.argmin(np.sum((np.array(list(fixed_endpoints.values())) - point) ** 2, axis=1))
 
                 id_node = list(fixed_endpoints)[idx]
                 pnode = fixed_endpoints[id_node]
@@ -259,7 +259,7 @@ class Voronoi(Coverage):
 
         for k in mobile_endpoints:
             point = mobile_endpoints[k]
-            idx = np.argmin(np.sum((np.array(fixed_endpoints.values()) - point) ** 2, axis=1))
+            idx = np.argmin(np.sum((np.array(list(fixed_endpoints.values())) - point) ** 2, axis=1))
             result[k] = list(fixed_endpoints)[idx]
 
         return result

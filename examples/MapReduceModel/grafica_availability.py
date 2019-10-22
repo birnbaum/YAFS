@@ -70,8 +70,8 @@ for variableSizeOf in ['-n','-f']:
 #            filename_  = './jsonmodel/results2bueno.csv'
 #         filename_  = './'+folder_+'/results.csv'
 
-        fn = range(100,201,10)
-        nn = range(100,301,20)
+        fn = list(range(100,201,10))
+        nn = list(range(100,301,20))
 
         with open(filename_) as File:  
             reader = csv.reader(File,delimiter=';')
@@ -109,10 +109,10 @@ for variableSizeOf in ['-n','-f']:
                                 rndValue[int(nodes_[1:])]=int(row[2])
 
         
-        singleList = sorted(singleValue.items(), key=lambda x: x[0], reverse=False)
-        replicaList = sorted(replicaValue.items(), key=lambda x: x[0], reverse=False)
-        rndList = sorted(rndValue.items(), key=lambda x: x[0], reverse=False)
-        cloudList = sorted(cloudValue.items(), key=lambda x: x[0], reverse=False)
+        singleList = sorted(list(singleValue.items()), key=lambda x: x[0], reverse=False)
+        replicaList = sorted(list(replicaValue.items()), key=lambda x: x[0], reverse=False)
+        rndList = sorted(list(rndValue.items()), key=lambda x: x[0], reverse=False)
+        cloudList = sorted(list(cloudValue.items()), key=lambda x: x[0], reverse=False)
         
         
         yvals=list()

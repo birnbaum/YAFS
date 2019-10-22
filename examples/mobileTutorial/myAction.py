@@ -16,7 +16,7 @@ class my_custom_action(generic_action):
         # print "-"*10
         logging.info(" Performing Action from VEHICLE: %i in: %i " % (ma.id, ma.get_current_position()))
 
-        if ma.get_current_position() in self.sim.service_coverage.keys(): #sim is an instance of CORE.py
+        if ma.get_current_position() in list(self.sim.service_coverage.keys()): #sim is an instance of CORE.py
             if ma.plate in self.plates:
                 self.fees[ma.plate]={"arrive":self.plates[ma.plate],"end":self.sim.env.now}
             else:

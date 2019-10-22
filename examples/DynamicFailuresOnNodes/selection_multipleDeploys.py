@@ -16,7 +16,7 @@ class CloudPath_RR(Selection):
         node_src = topology_src
         DES_dst = alloc_module[app_name][message.dst]  # returns an array with all DES process serving
 
-        if message.dst not in self.rr.keys():
+        if message.dst not in list(self.rr.keys()):
             self.rr[message.dst] = 0
 
         # print "GET PATH"
@@ -61,13 +61,13 @@ class BroadPath(Selection):
             return minPath,bestDES
         except nx.NetworkXNoPath as e:
             self.logger.warning("There is no path between two nodes: %s - %s " % (node_src, node_dst))
-            print "Simulation ends?. Time:", sim.env.now
+            print("Simulation ends?. Time:", sim.env.now)
             # sim.stop = True ## You can stop all DES process
             return [], None
 
         except nx.NodeNotFound as e:
             self.logger.warning("Node not found: %s - %s "%(node_src,node_dst))
-            print "Simulation ends?. Time:",sim.env.now
+            print("Simulation ends?. Time:",sim.env.now)
             # sim.stop = True ## You can stop all DES process
             return [],None
 
@@ -96,7 +96,7 @@ class BroadPath(Selection):
 
         # self.most_near_calculator_to_client = {}
 
-        if node_src not in self.most_near_calculator_to_client.keys():
+        if node_src not in list(self.most_near_calculator_to_client.keys()):
             self.most_near_calculator_to_client[node_src] = self.compute_most_near(
                  node_src,alloc_DES, sim,DES_dst)
 

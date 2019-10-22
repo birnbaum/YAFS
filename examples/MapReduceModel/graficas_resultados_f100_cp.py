@@ -104,7 +104,7 @@ colors = ["#F85A3E","#CBC544","#1A7AF8","#99194b","#3aa54b","#3a364b"]
 N = 4 #bars: two series: s1 , s2
 width = 0.2       # the width of the bars
 # fn = range(20,220,20)
-fn = range(100,301,20)
+fn = list(range(100,301,20))
 
 dr = pd.DataFrame()
 dr["ffiles"]=[100]*11
@@ -114,7 +114,7 @@ for metric in metrics:
     s1b,s2b,s3b,s4b = {},{},{},{}
     ylabel = info_metrics[metric]
     
-    print "METRICA %s --- %s" %(metric,ylabel)
+    print("METRICA %s --- %s" %(metric,ylabel))
 
     
 #    for it in range(nSimulations):
@@ -196,7 +196,7 @@ for metric in metrics:
             
     dr[metric]=s4m/s1m
     
-    if len(ss1)!=len(ss2): print "ERROR! - Series with different sizes" #END?
+    if len(ss1)!=len(ss2): print("ERROR! - Series with different sizes") #END?
     
     ind = np.arange(len(ss1))  # the x locations for the groups
 
@@ -287,7 +287,7 @@ for metric in metrics:
 N = 6 #bars: two series: s1 , s2
 width = 0.14       # the width of the bars
 # fn = range(20,220,20)
-fn = range(100,301,20)
+fn = list(range(100,301,20))
 ylabel = "latency (ms)"
 s1,s2,s3,s4,s5,s6 = {},{},{},{},{},{}
 s1b,s2b,s3b,s4b,s5b,s6b = {},{},{},{},{},{}
@@ -351,11 +351,11 @@ maxDD = -1;
 
 
 for value in range(len(fn)):
-    print value
+    print(value)
     for it in range(nSimulations):    
-        print it
+        print(it)
         ss1[value].append(s1[it][value])
-        print ss1
+        print(ss1)
         
         ss2[value].append(s2[it][value]) 
         ss3[value].append(s3[it][value]) 
@@ -402,11 +402,11 @@ dr["latMax"]=s6m/s2m
 
 #    slatMAX = df[df.t=="sin"].loc["totalLATmax"][2]
 
-if len(s1m)!=len(s2m): print "ERROR! - Series with different sizes" #END?
-if len(s1m)!=len(s3m): print "ERROR! - Series with different sizes" #END?
-if len(s1m)!=len(s4m): print "ERROR! - Series with different sizes" #END?
-if len(s1m)!=len(s5m): print "ERROR! - Series with different sizes" #END?
-if len(s1m)!=len(s6m): print "ERROR! - Series with different sizes" #END?
+if len(s1m)!=len(s2m): print("ERROR! - Series with different sizes") #END?
+if len(s1m)!=len(s3m): print("ERROR! - Series with different sizes") #END?
+if len(s1m)!=len(s4m): print("ERROR! - Series with different sizes") #END?
+if len(s1m)!=len(s5m): print("ERROR! - Series with different sizes") #END?
+if len(s1m)!=len(s6m): print("ERROR! - Series with different sizes") #END?
 
 ind = np.arange(len(ss1))  # the x locations for the groups
 

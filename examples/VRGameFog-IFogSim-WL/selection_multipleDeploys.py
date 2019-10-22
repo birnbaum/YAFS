@@ -13,7 +13,7 @@ class CloudPath_RR(Selection):
         node_src = topology_src
         DES_dst = alloc_module[app_name][message.dst]  # returns an array with all DES process serving
 
-        if message.dst not in self.rr.keys():
+        if message.dst not in list(self.rr.keys()):
             self.rr[message.dst] = 0
 
         # print "GET PATH"
@@ -87,7 +87,7 @@ class BroadPath(Selection):
 
         # print "MIN PATH ",minPath
         last_dest_topo = minPath[len(minPath) - 1]
-        if last_dest_topo not in self.running_services.keys():
+        if last_dest_topo not in list(self.running_services.keys()):
             run_service = []
             for des in DES_dst:
                 if alloc_DES[des] == last_dest_topo:
@@ -121,7 +121,7 @@ class BroadPath(Selection):
         if message.name == "M.Sensor":
             ## CACHING ROUTE - Between NODE_SRC and MESSAGE.DST - MOST NEAR
             # Warning. In this example, our topology is constant
-            if node_src not in self.most_near_calculator_to_client.keys():
+            if node_src not in list(self.most_near_calculator_to_client.keys()):
                 self.most_near_calculator_to_client[node_src] = self.compute_most_near(
                     node_src,alloc_DES, sim,DES_dst)
 
@@ -132,7 +132,7 @@ class BroadPath(Selection):
             return [path],[des]
 
         if message.dst == "Coordinator":  # ALL OF THEM ARE IN THE SAME ELEMENT  - CLOUD
-            if message.dst not in self.rr.keys():
+            if message.dst not in list(self.rr.keys()):
                 self.rr[message.dst] = 0
                 for ix, des in enumerate(DES_dst):
                     if self.rr[message.dst] == ix:

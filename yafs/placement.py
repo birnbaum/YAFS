@@ -41,7 +41,7 @@ class Placement(object):
         Returns:
             the next time to be activated
         """
-        return self.activation_dist.next()
+        return next(self.activation_dist)
 
 
     def initial_allocation(self,sim,app_name):
@@ -118,15 +118,15 @@ class ClusterPlacement(Placement):
         app = sim.apps[app_name]
         services = app.services
 
-        for module in services.keys():
+        for module in list(services.keys()):
             if "Coordinator" == module:
-                if "Coordinator" in self.scaleServices.keys():
+                if "Coordinator" in list(self.scaleServices.keys()):
                     # print self.scaleServices["Coordinator"]
                     for rep in range(0,self.scaleServices["Coordinator"]):
                         idDES = sim.deploy_module(app_name,module,services[module],id_cluster) #Deploy as many modules as elements in the array
 
             elif "Calculator" == module:
-                if "Calculator" in self.scaleServices.keys():
+                if "Calculator" in list(self.scaleServices.keys()):
                     for rep in range(0, self.scaleServices["Calculator"]):
                         idDES = sim.deploy_module(app_name,module,services[module],id_cluster)
 
@@ -168,7 +168,7 @@ class EdgePlacement(Placement):
         app = sim.apps[app_name]
         services = app.services
 
-        for module in services.keys():
+        for module in list(services.keys()):
 
             print(module)
 

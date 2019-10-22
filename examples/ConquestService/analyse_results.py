@@ -31,19 +31,19 @@ def drawBoxPlot_Both_USER_ax(app,dr,drILP,ax):
      data_a=dr[dr.app==app].r.values
      data_b=drILP[drILP.app==app].r.values
      ticks = list(np.sort(dr[dr.app==app].user.unique()))
-     bpl = ax.boxplot(data_a, positions=np.array(xrange(len(data_a)))*2.0-0.4, sym='', widths=0.55,
+     bpl = ax.boxplot(data_a, positions=np.array(range(len(data_a)))*2.0-0.4, sym='', widths=0.55,
                       whiskerprops = dict(linewidth=2),
                      boxprops = dict(linewidth=2),
                       capprops = dict(linewidth=2),
                      medianprops = dict(linewidth=2))
-     bpI = ax.boxplot(data_b, positions=np.array(xrange(len(data_b)))*2.0+0.4, sym='', widths=0.55,
+     bpI = ax.boxplot(data_b, positions=np.array(range(len(data_b)))*2.0+0.4, sym='', widths=0.55,
                          whiskerprops = dict(linewidth=2),
                      boxprops = dict(linewidth=2),
                       capprops = dict(linewidth=2),
                      medianprops = dict(linewidth=2))
      set_box_color(bpl, '#a6bddb')
      set_box_color(bpI, '#e34a33')
-     ax.get_xaxis().set_ticks(xrange(0, len(ticks) * 2, 2))
+     ax.get_xaxis().set_ticks(range(0, len(ticks) * 2, 2))
      ax.set_xticklabels(ticks)
      ax.set_title("App:%i"%app)
      ax.set_xlim(-2, len(ticks)*2)
@@ -77,7 +77,7 @@ def getRbyApp(df,dtmp):
         columns=['app', 'user', 'r', 'time'])  # m - numero de mensajes enviados
 
     ixloc = 0
-    for g in dtmp.keys():
+    for g in list(dtmp.keys()):
         ids = dtmp[g]
         responses = []
         times = []
@@ -92,14 +92,14 @@ def getRbyApp(df,dtmp):
 #        # mode = stats.mode(msg).mode[0]
 #        mode = stats.mode(msg)[0][0]
         mode = 1
-        print "-----"*10
+        print("-----"*10)
         for i in ids:
             dm = df[df.id == i]
-            print dm
+            print(dm)
             if mode == dm.shape[0]:
                 r = dm['time_out'].max() - dm['time_emit'].min()
                 responses.append(r)
-                print r
+                print(r)
                 times.append(dm['time_emit'].min())
 
         resp = np.array(responses)
@@ -119,7 +119,7 @@ def prepare_results(pathSimple):
                 
                 df = pd.read_csv(pathSimple+fCSV)
                 dtmp = df[df["module.src"]=="None"].groupby(['app','TOPO.src'])['id'].apply(list)
-                print dtmp
+                print(dtmp)
                 dr= getRbyApp(df,dtmp)
                 
 #                dC = pd.DataFrame(index=np.array(timeC).astype('datetime64[s]'))
@@ -147,7 +147,7 @@ pathSimple = pathEXP+"results_"+datestamp+"/"
 case ="CQ"
 
 resampleSize = 1000
-tickGeneration =  range(int(timeSimulation/resampleSize / 2.),timeSimulation/resampleSize,int(timeSimulation/resampleSize / 2.0 /10.0))
+tickGeneration =  list(range(int(timeSimulation/resampleSize / 2.),timeSimulation/resampleSize,int(timeSimulation/resampleSize / 2.0 /10.0)))
     
 drs = {}
 color_sequence = ['#1f77b4', '#aec7e8', '#ff7f0e', '#ffbb78', '#2ca02c',
@@ -163,8 +163,8 @@ for it in range(nsimulations):
     drs = {}
     ticks = 0
     maxValue= 0 
-    for g in dtmp.keys():
-        print g
+    for g in list(dtmp.keys()):
+        print(g)
         ids = dtmp[g]
 
 
@@ -180,9 +180,9 @@ for it in range(nsimulations):
         dr.index = np.array(intime).astype('datetime64[s]')
         dr = dr.resample('1000s').agg(dict(time='mean'))   
         maxValue=max(maxValue,dr.time.max())
-        ticks = range(len(dr.time.values))
+        ticks = list(range(len(dr.time.values)))
         drs[(g[0],g[1])] = dr.time.values
-        print "-"*40
+        print("-"*40)
 
 
     fig, ax = plt.subplots(figsize=(12.0,4.0))
@@ -239,9 +239,9 @@ for it in range(nsimulations):
         ixloc +=1
 #    print dlat.columns
 #    print len(dlat.columns)
-    print "MAIN METRICS"
-    print dlat.iloc[:,[0,2,5,32]]
-    print "-"*30
+    print("MAIN METRICS")
+    print(dlat.iloc[:,[0,2,5,32]])
+    print("-"*30)
     
     with open(pathSimple+'mytable_%i.tex'%it,'w') as tf:
        tf.write(dlat.to_latex(index=False))

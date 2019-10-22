@@ -14,7 +14,7 @@ class CloudPath_RR(Selection):
         node_src = topology_src
         DES_dst = alloc_module[app_name][message.dst]  # returns an array with all DES process serving
 
-        if message.dst not in self.rr.keys():
+        if message.dst not in list(self.rr.keys()):
             self.rr[message.dst] = 0
 
         # print "GET PATH"
@@ -73,7 +73,7 @@ class BroadPath(Selection):
 
         if self.invalid_cache_value == len(DES_dst): #Cache updated
 
-            if node_src not in self.most_near_calculator_to_client.keys():
+            if node_src not in list(self.most_near_calculator_to_client.keys()):
                 #This value is not in the cache
                 self.most_near_calculator_to_client[node_src] = self.compute_most_near(
                     node_src,alloc_DES, sim,DES_dst)
