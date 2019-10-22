@@ -278,7 +278,7 @@ if __name__ == '__main__':
     ##
 
     # As we perform the simulations in external server, we simplify the path value according with the WD_path
-    print (wd_path)
+    print(wd_path)
     if "/home/uib/" in wd_path:
         experiment_path = "/home/uib/src/YAFS/src/examples/ConquestService/exp/"
     else:

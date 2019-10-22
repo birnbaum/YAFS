@@ -108,7 +108,7 @@ class car_agent(generic_mobile_entity):
 #    nodeid = mobileAgent.path[mobileAgent.current_position]
 #    x,y = G.nodes[nodeid]['x'],G.nodes[nodeid]['y']
 #    if (x,y) in service_coverage.keys():
-#        print (x,y)
+#        print(x,y)
 #        if ma.idx in plates:
 #            print "REGISTRADO"
 #            

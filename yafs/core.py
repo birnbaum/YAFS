@@ -1071,7 +1071,7 @@ class Sim:
 
         print "-"*40
         print "DES\t| TOPO \t| Src.Mod \t| Modules"
-        print ("-" * 40)
+        print("-" * 40)
         for k in self.alloc_DES:
             print k,"\t|",self.alloc_DES[k],"\t|",self.alloc_source[k]["name"] if k in self.alloc_source.keys() else "--","\t\t|",fullAssignation[k]["Module"] if k in fullAssignation.keys() else "--"
         print "-" * 40

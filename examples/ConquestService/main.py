@@ -220,7 +220,7 @@ if __name__ == '__main__':
     # NOTE: ABSOLUTE PATH TO JSON FILES ACCORDING TO THE EXECUTION-PLACE
     # We simplify the path update in our experimentation to external servers (it's a bit precarious but functional)
     runpath = os.getcwd()
-    print (runpath)
+    print(runpath)
     if "/home/uib/" in runpath :
         pathExperimento = "/home/uib/src/YAFS/src/examples/ConquestService/exp/"
     else:

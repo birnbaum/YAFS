@@ -170,7 +170,7 @@ class EdgePlacement(Placement):
 
         for module in services.keys():
 
-            print (module)
+            print(module)
 
             if "Coordinator" == module:
                 idDES = sim.deploy_module(app_name,module,services[module],id_cluster) #Deploy as many modules as elements in the array
