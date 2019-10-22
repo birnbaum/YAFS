@@ -1,38 +1,32 @@
-"""
-    This type of algorithm have two obligatory functions:
-
-        *initial_allocation*: invoked at the start of the simulation
-
-        *run* invoked according to the assigned temporal distribution.
-
-"""
-
 import logging
+from abc import abstractmethod, ABC
+from typing import Callable
+
+from yafs.core import Sim
 
 
-class Placement(object):
-    """
-    A placement (or allocation) algorithm controls where to locate the service modules and their replicas in the different nodes of the topology, according to load criteria, or other objectives.
+class Placement(ABC):
+    """A placement (or allocation) algorithm controls where to locate the service modules and their replicas in the different nodes of the topology, according to load criteria or other objectives.
 
-    .. note:: A class interface
+    A placement consists out of two functions:
+    - *initial_allocation*: Invoked at the start of the simulation
+    - *run*: Invoked according to the assigned temporal distribution
 
     Args:
-        name (str): associated name
-
-        activation_dist (function): a distribution function to active the *run* function in execution time
+        name: Placement name
+        activation_dist (function): a distribution function to active the *run* function in execution time  TODO What das function mean? Callable?
 
     Kwargs:
-        param (dict): the parameters of the *activation_dist*
-
+        param (dict): the parameters of the *activation_dist*  TODO ???
     """
 
-    def __init__(self, name, activation_dist=None, logger=None):
+    def __init__(self, name: str, activation_dist: Callable = None, logger=None):  # TODO Remove logger
         self.logger = logger or logging.getLogger(__name__)
         self.name = name
         self.activation_dist = activation_dist
         self.scaleServices = []
 
-    def scaleService(self, scale):
+    def scaleService(self, scale):  # TODO Refactor, this is not pythonic
         self.scaleServices = scale
 
     def get_next_activation(self):
@@ -40,30 +34,18 @@ class Placement(object):
         Returns:
             the next time to be activated
         """
-        return next(self.activation_dist)
+        return next(self.activation_dist)  # TODO Data type?
 
-    def initial_allocation(self, sim, app_name):
-        """
-        Given an ecosystem, it starts the allocation of modules in the topology.
+    @abstractmethod
+    def initial_allocation(self, sim: Sim, app_name: str):
+        """Given an ecosystem, it starts the allocation of modules in the topology."""
 
-        Args:
-            sim (:mod:yafs.core.Sim)
-            app_name (String)
-
-        .. attention:: override required
-        """
-
-    def run(self, sim):
-        """
-        This method will be invoked during the simulation to change the assignment of the modules to the topology
-
-        Args:
-            sim (:mod: yafs.core.Sim)
-        """
+    def run(self, sim: Sim):  # TODO Does this have to be implemented?
+        """This method will be invoked during the simulation to change the assignment of the modules to the topology."""
         self.logger.debug("Activiting - RUN - Placement")
 
 
-class JSONPlacement(Placement):
+class JSONPlacement(Placement):  # TODO The placement should not care how it was instantiated
     def __init__(self, json, **kwargs):
         super(JSONPlacement, self).__init__(**kwargs)
         self.data = json
@@ -76,17 +58,16 @@ class JSONPlacement(Placement):
                 idtopo = item["id_resource"]
                 app = sim.apps[app_name]
                 services = app.services
-                idDES = sim.deploy_module(app_name, module, services[module], [idtopo])
+                idDES = sim.deploy_module(app_name, module, services[module], [idtopo])  # TODO unused variable
 
 
-class JSONPlacementOnCloud(Placement):
+class JSONPlacementOnCloud(Placement):  # TODO The placement should not care how it was instantiated
     def __init__(self, json, idCloud, **kwargs):
         super(JSONPlacementOnCloud, self).__init__(**kwargs)
         self.data = json
         self.idCloud = idCloud
 
     def initial_allocation(self, sim, app_name):
-
         for item in self.data["initialAllocation"]:
             if app_name == item["app"]:
                 app_name = item["app"]
@@ -94,18 +75,16 @@ class JSONPlacementOnCloud(Placement):
 
                 app = sim.apps[app_name]
                 services = app.services
-                idDES = sim.deploy_module(app_name, module, services[module], [self.idCloud])
+                idDES = sim.deploy_module(app_name, module, services[module], [self.idCloud])  # TODO unused variable
 
 
 class ClusterPlacement(Placement):
-    """
-    This implementation locates the services of the application in the cheapest cluster regardless of where the sources or sinks are located.
+    """Locates the services of the application in the cheapest cluster regardless of where the sources or sinks are located.  # TODO Docstring wrong?
 
-    It only runs once, in the initialization.
-
+    Only runs once during initialization.
     """
 
-    def initial_allocation(self, sim, app_name):
+    def initial_allocation(self, sim: Sim, app_name: str):
         # We find the ID-nodo/resource
         value = {"model": "Cluster"}
         id_cluster = sim.topology.find_IDs(value)  # there is only ONE Cluster
@@ -121,34 +100,22 @@ class ClusterPlacement(Placement):
                 if "Coordinator" in list(self.scaleServices.keys()):
                     # print self.scaleServices["Coordinator"]
                     for rep in range(0, self.scaleServices["Coordinator"]):
-                        idDES = sim.deploy_module(app_name, module, services[module], id_cluster)  # Deploy as many modules as elements in the array
+                        # Deploy as many modules as elements in the array
+                        idDES = sim.deploy_module(app_name, module, services[module], id_cluster)  # TODO unused variable
 
             elif "Calculator" == module:
                 if "Calculator" in list(self.scaleServices.keys()):
                     for rep in range(0, self.scaleServices["Calculator"]):
-                        idDES = sim.deploy_module(app_name, module, services[module], id_cluster)
+                        idDES = sim.deploy_module(app_name, module, services[module], id_cluster)  # TODO unused variable
 
             elif "Client" == module:
-                idDES = sim.deploy_module(app_name, module, services[module], id_mobiles)
-
-    # end function
-
-    # def run(self, sim):
-    #     """
-    #     This method will be invoked during the simulation to change the assignment of the modules to the topology
-    #
-    #     Args:
-    #         sim (:mod: yafs.core.Sim)
-    #     """
-    #     self.logger.debug("Activiting - Cluster Algorithm (do nothing)")
+                idDES = sim.deploy_module(app_name, module, services[module], id_mobiles)  # TODO unused variable
 
 
 class EdgePlacement(Placement):
-    """
-    This implementation locates the services of the application in the cheapest cluster regardless of where the sources or sinks are located.
+    """Locates the services of the application in the cheapest cluster regardless of where the sources or sinks are located.  # TODO Docstring wrong?
 
-    It only runs once, in the initialization.
-
+    Only runs once during initialization.
     """
 
     def initial_allocation(self, sim, app_name):
@@ -170,20 +137,18 @@ class EdgePlacement(Placement):
             print(module)
 
             if "Coordinator" == module:
-                idDES = sim.deploy_module(app_name, module, services[module], id_cluster)  # Deploy as many modules as elements in the array
+                # Deploy as many modules as elements in the array
+                idDES = sim.deploy_module(app_name, module, services[module], id_cluster)  # TODO Unused variable
             elif "Calculator" == module:
-                idDES = sim.deploy_module(app_name, module, services[module], id_proxies)
+                idDES = sim.deploy_module(app_name, module, services[module], id_proxies)  # TODO Unused variable
             elif "Client" == module:
-                idDES = sim.deploy_module(app_name, module, services[module], id_mobiles)
+                idDES = sim.deploy_module(app_name, module, services[module], id_mobiles)  # TODO Unused variable
 
 
 class NoPlacementOfModules(Placement):
+    """Locates the services of the application in the cheapest cluster regardless of where the sources or sinks are located.  # TODO Docstring wrong?
 
-    """
-    This implementation locates the services of the application in the cheapest cluster regardless of where the sources or sinks are located.
-
-    It only runs once, in the initialization.
-
+    Only runs once during initialization.
     """
 
     def initial_allocation(self, sim, app_name):

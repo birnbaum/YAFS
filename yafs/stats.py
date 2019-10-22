@@ -1,9 +1,9 @@
-import pandas as pd
 import numpy as np
+import pandas as pd
 
 from yafs.metrics import Metrics
 
-
+# TODO Missing documentation
 class Stats:
     def __init__(self, defaultPath="result"):
         self.df_link = pd.read_csv(defaultPath + "_link.csv")

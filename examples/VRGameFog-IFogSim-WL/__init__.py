@@ -12,7 +12,7 @@ from yafs.core import Sim
 from yafs import Placement, ClusterPlacement
 from yafs import Selection, OneRandomPath, First_ShortestPath
 from yafs import Topology, Entity
-from yafs.population import Population, Statical
+from yafs.population import Population, StaticPopulation
 from yafs.application import Application, Message
 from yafs.metrics import Metrics
 
@@ -35,7 +35,7 @@ toc = (
     ("Core", [Sim]),
     ("Topology", [Topology, Entity]),
     ("Application", [Application, Message]),
-    ("Population", [Population, Statical]),
+    ("Population", [Population, StaticPopulation]),
     ("Placement", [Placement, ClusterPlacement]),
     ("Selection", [Selection, OneRandomPath, First_ShortestPath]),
     ("Metrics", [Metrics]),

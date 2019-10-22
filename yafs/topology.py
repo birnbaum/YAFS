@@ -1,33 +1,27 @@
-# -*- coding: utf-8 -*-
 import logging
-
+import warnings
 
 import networkx as nx
-import warnings
+
+
+# TODO Is this entire class necessary? Wouldn't it be smarter to just use a nx.networkx instance?
 
 
 class Topology:
+    """Unifies the functions to deal with **Complex Networks** as a network topology within of the simulator.
+
+    In addition, it facilitates its creation, and assignment of attributes.
     """
-    This class unifies the functions to deal with **Complex Networks** as a network topology within of the simulator. In addition, it facilitates its creation, and assignment of attributes.
-    """
 
-    LINK_BW = "BW"
-    "Link feature: Bandwidth"
+    LINK_BW = "BW"  # Link feature: Bandwidth
+    LINK_PR = "PR"  # Link feature: Propagation delay
+    # LINK_LATENCY = "LATENCY"  # A edge or a network link has a Bandwidth"
 
-    LINK_PR = "PR"
-    "Link feauture:  Propagation delay"
+    NODE_IPT = "IPT"  # Node feature: Instructions per Simulation Time
 
-    # LINK_LATENCY = "LATENCY"
-    # " A edge or a network link has a Bandwidth"
-
-    NODE_IPT = "IPT"
-    "Node feature: IPS . Instructions per Simulation Time "
-
-    def __init__(self, logger=None):
-
+    def __init__(self, logger=None):  # TODO Remove logger
         self.__idNode = -1
-        # G is a nx.networkx graph
-        self.G = None
+        self.G: nx.networkx = None  # TODO ??
 
         # TODO VERSION 2. THIS VALUE SHOULD BE REMOVED
         # INSTEAD USE NX.G. attributes
@@ -44,10 +38,7 @@ class Topology:
             self.nodeAttributes[key]["uptime"] = (0, None)
 
     def get_edges(self):
-        """
-        Returns:
-            list: a list of graph edges, i.e.: ((1,0),(0,2),...)
-        """
+        """Returns a list of graph edges, i.e.: ((1,0),(0,2),...)"""
         return self.G.edges
 
     def get_edge(self, key):

@@ -25,11 +25,6 @@ class Distribution(ABC):  # TODO This interface defines nothing??
 
 class DeterministicDistribution(Distribution):
     def __init__(self, time, **kwargs):
-        warnings.warn(
-            "The exponentialDistribution class is deprecated and " "will be removed in version 2.0.0. " "Use the exponential_distribution function instead.",
-            FutureWarning,
-            stacklevel=8,
-        )
         self.time = time
         super(DeterministicDistribution, self).__init__(**kwargs)
 
@@ -54,11 +49,6 @@ class DeterministicDistributionStartPoint(Distribution):
 
 class ExponentialDistribution(Distribution):
     def __init__(self, lambd, seed=1, **kwargs):
-        warnings.warn(
-            "The exponentialDistribution class is deprecated and " "will be removed in version 2.0.0. " "Use the exponential_distribution function instead.",
-            FutureWarning,
-            stacklevel=8,
-        )
         super(ExponentialDistribution, self).__init__(**kwargs)
         self.l = lambd
         self.rnd = np.random.RandomState(seed)

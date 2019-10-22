@@ -46,6 +46,7 @@ class Application:
     Args:
         name: Application name, unique within the same topology.
     """
+
     TYPE_SOURCE = "SOURCE"  # Sensor
     TYPE_MODULE = "MODULE"
     TYPE_SINK = "SINK"  # Actuator
@@ -97,6 +98,7 @@ class Application:
 
         # self.modules_sink = modules
         # TODO Remove??
+
     # def set_module(self, modules, type_module):
     #     """
     #     Pure source or sink modules must be typified

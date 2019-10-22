@@ -9,6 +9,8 @@ import networkx as nx
 from functools import partial
 import math
 
+# TODO Refactor, many methods like `create_pos` are only used in examples and never in the core lib
+
 # DISTRIBUTIONS
 
 # def next_time_uniform_dist(min,max):

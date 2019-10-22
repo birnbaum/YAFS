@@ -1,6 +1,9 @@
-class generic_mobile_entity(object):  # GME
+# TODO Documentation, why is this a module?
+
+
+class GenericMobileEntity:  # GME
     def __init__(self, id, path, speed, action=None, start=0):
-        self.__default_speed = 10.0
+        self.__default_speed = 10.0  # TODO Shouldn't this just be the argument default value?
         self.id = id
         self.path = path
         self.speed = speed

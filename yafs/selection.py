@@ -1,53 +1,42 @@
-"""
-    This algorithm have one obligatory functions:
-
-        *get_path*: It provides the route to follow the message within the topology to reach the destination module, it can also be seen as an orchestration algorithm.
-
-
-"""
-import random
 import logging
+import random
+from abc import ABC, abstractmethod
+from typing import Tuple
 
 import networkx as nx
 
+from yafs.core import Sim
 
-class Selection(object):
-    """
-    A selection algorithm provide the route among topology entities for that a message reach the destiny module.
 
-    .. note:: A class interface
-    """
+class Selection(ABC):
+    """Provides the route among topology entities for that a message reach the destiny module, it can also be seen as an orchestration algorithm."""
 
-    def __init__(self, logger=None):
+    def __init__(self, logger=None):  # TODO Remove logger
         self.logger = logger or logging.getLogger(__name__)
         self.transmit = 0.0
         self.lat_acc = 0.0
         self.propagation = 0.0
 
-    def get_path(self, sim, app_name, message, topology_src, alloc_DES, alloc_module, traffic, from_des):
-
-        """
+    @abstractmethod
+    def get_path(self, sim: Sim, app_name: str, message, topology_src, alloc_DES, alloc_module, traffic, from_des) -> Tuple:
+        """Provides the route to follow the message within the topology to reach the destination module,.
+        
+        both empty arrays implies that the message will not send to the destination.  # TODO ???
+        
+        # TODO Missing documentation
         Args:
-
-        :param sim:
-        :param message:
-        :param link:
-        :param alloc_DES:
-        :param alloc_module:
-        :param traffic:
-        :param ctime:
-        :param from_des
-        :return:
-           both empty arrays implies that the message will not send to the destination.
+            sim: 
+            app_name: 
+            message: 
+            topology_src: 
+            alloc_DES: 
+            alloc_module: 
+            traffic: 
+            from_des: 
 
         Returns:
-
-            a path among nodes
-
-            an identifier of the module
-
-        .. attention:: override required
-
+            - Path among nodes
+            - Identifier of the module
         """
         self.logger.debug("Selection")
         """ Define Selection """
@@ -58,21 +47,22 @@ class Selection(object):
         return path, ids
 
     def get_path_from_failure(self, sim, message, link, alloc_DES, alloc_module, traffic, ctime, from_des):
-        """
-        This function is call when some link of a message path is broken or unavailable. A new one from that point should be calculated.
+        """Called when some link of a message path is broken or unavailable. A new one from that point should be calculated.
 
-        :param sim:
-        :param message:
-        :param link:
-        :param alloc_DES:
-        :param alloc_module:
-        :param traffic:
-        :param ctime:
-        :param from_des
-        :return:
-           both empty arrays implies that the message will not send to the destination.
+        .. attention:: this function is optional  # TODO ???
 
-        .. attention:: this function is optional
+        Args:
+            sim:
+            message:
+            link:
+            alloc_DES:
+            alloc_module:
+            traffic:
+            ctime:
+            from_des:
+
+        Returns:
+            # TODO ???
         """
         """ Define Selection """
         path = []
@@ -82,10 +72,8 @@ class Selection(object):
         return path, ids
 
 
-class OneRandomPath(Selection):
-    """
-    Among all the possible options, it returns a random path.
-    """
+class OneRandomPathSelection(Selection):
+    """Among all the possible options, it returns a random path."""
 
     def get_path(self, sim, app_name, message, topology_src, alloc_DES, alloc_module, traffic, from_des):
         paths = []
@@ -101,10 +89,11 @@ class OneRandomPath(Selection):
         return paths, dst_idDES
 
 
-class First_ShortestPath(Selection):
+class FirstShortestPathSelection(Selection):
     """Among all possible shorter paths, returns the first."""
 
     def get_path(self, sim, app_name, message, topology_src, alloc_DES, alloc_module, traffic, from_des):
+        # TODO Refactor, unused variables etc.
         paths = []
         dst_idDES = []
 

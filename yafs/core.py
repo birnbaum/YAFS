@@ -38,8 +38,16 @@ class Sim:  # TODO Rename to e.g. "Simulation"
     SINK_METRIC = "SINK_M"
     LINK_METRIC = "LINK"
 
-    def __init__(self, topology: Topology, name_register: str = "events_log.json", link_register: str = "links_log.json", redis=None,
-                 purge_register: bool = True, logger=None, default_results_path=None):  # TODO Many arguments unused
+    def __init__(
+        self,
+        topology: Topology,
+        name_register: str = "events_log.json",
+        link_register: str = "links_log.json",
+        redis=None,
+        purge_register: bool = True,
+        logger=None,
+        default_results_path=None,
+    ):  # TODO Many arguments unused
         # TODO Refactor this class. Way too many fields, no clear separation of concerns.
 
         self.topology = topology
