@@ -1,19 +1,17 @@
-
 from yafs.population import Population
 
 import random
 
 
 class Evolutive(Population):
-
-    def __init__(self,fog,srcs, **kwargs):
-       #TODO arreglar en otros casos
+    def __init__(self, fog, srcs, **kwargs):
+        # TODO arreglar en otros casos
         self.fog_devices = fog
         self.number_generators = srcs
         super(Evolutive, self).__init__(**kwargs)
 
     def initial_allocation(self, sim, app_name):
-        #ASSIGNAMENT of SOURCE - GENERATORS - ACTUATORS
+        # ASSIGNAMENT of SOURCE - GENERATORS - ACTUATORS
         id_nodes = list(sim.topology.G.nodes())
         for ctrl in self.src_control:
             msg = ctrl["message"]
@@ -31,12 +29,11 @@ class Evolutive(Population):
             for number in range(ctrl["number"]):
                 sim.deploy_sink(app_name, node=fog_device, module=module)
 
-
     def run(self, sim):
-        if len(self.fog_devices)>0:
+        if len(self.fog_devices) > 0:
             fog_device = self.fog_devices[0][0]
             del self.fog_devices[0]
-            self.logger.debug("Activiting - RUN - Evolutive - Deploying a new actuator at position: %i"%fog_device)
+            self.logger.debug("Activiting - RUN - Evolutive - Deploying a new actuator at position: %i" % fog_device)
             for ctrl in self.sink_control:
                 module = ctrl["module"]
                 app_name = ctrl["app"]
@@ -45,13 +42,12 @@ class Evolutive(Population):
 
 
 class Statical(Population):
-
-    def __init__(self,srcs,**kwargs):
+    def __init__(self, srcs, **kwargs):
         self.number_generators = srcs
         super(Statical, self).__init__(**kwargs)
 
     def initial_allocation(self, sim, app_name):
-        #ASSIGNAMENT of SOURCE - GENERATORS - ACTUATORS
+        # ASSIGNAMENT of SOURCE - GENERATORS - ACTUATORS
         id_nodes = list(sim.topology.G.nodes())
         for ctrl in self.src_control:
             msg = ctrl["message"]
@@ -65,6 +61,6 @@ class Statical(Population):
         # ASSIGNAMENT of the only one SINK
         for ctrl in self.sink_control:
             module = ctrl["module"]
-            best_device  = ctrl["id"]
+            best_device = ctrl["id"]
             for number in range(ctrl["number"]):
                 sim.deploy_sink(app_name, node=best_device, module=module)

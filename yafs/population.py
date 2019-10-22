@@ -8,6 +8,7 @@
 """
 import logging
 
+
 class Population(object):
     """
     A population algorithm controls how the message generation of the sensor modules is associated in the nodes of the topology.
@@ -25,6 +26,7 @@ class Population(object):
         param (dict): the parameters of the *activation_dist*
 
     """
+
     def __init__(self, name, activation_dist=None, logger=None):
         self.logger = logger or logging.getLogger(__name__)
         self.name = name
@@ -47,8 +49,7 @@ class Population(object):
         """
         return next(self.activation_dist)
 
-
-    def set_src_control(self,values):
+    def set_src_control(self, values):
         """
         Stores the drivers of each message generator.
 
@@ -57,8 +58,7 @@ class Population(object):
         """
         self.src_control.append(values)
 
-
-    def initial_allocation(self,sim,app_name):
+    def initial_allocation(self, sim, app_name):
         """
         Given an ecosystem and an application, it starts the allocation of pure sources in the topology.
 
@@ -78,8 +78,6 @@ class Population(object):
         """ User definition of the Population evolution """
 
 
-
-
 class Statical(Population):
     """
     This implementation of a population algorithm statically assigns the generation of a source in a node of the topology. It is only invoked in the initialization.
@@ -87,18 +85,18 @@ class Statical(Population):
     Extends: :mod: Population
     """
 
-    def initial_allocation(self,sim,app_name):
-        #Assignment of SINK and SOURCE pure modules
+    def initial_allocation(self, sim, app_name):
+        # Assignment of SINK and SOURCE pure modules
         for id_entity in sim.topology.nodeAttributes:
             entity = sim.topology.nodeAttributes[id_entity]
             for ctrl in self.sink_control:
-                #A node can have several sinks modules
-                if entity["model"]==ctrl["model"]:
-                    #In this node there is a sink
+                # A node can have several sinks modules
+                if entity["model"] == ctrl["model"]:
+                    # In this node there is a sink
                     module = ctrl["module"]
                     for number in range(ctrl["number"]):
                         sim.deploy_sink(app_name, node=id_entity, module=module)
-            #end for sink control
+            # end for sink control
 
             for ctrl in self.src_control:
                 # A node can have several source modules
@@ -106,9 +104,9 @@ class Statical(Population):
                     msg = ctrl["message"]
                     dst = ctrl["distribution"]
                     for number in range(ctrl["number"]):
-                        idsrc = sim.deploy_source(app_name,id_node=id_entity,msg=msg,distribution=dst)
+                        idsrc = sim.deploy_source(app_name, id_node=id_entity, msg=msg, distribution=dst)
                         # the idsrc can be used to control the deactivation of the process in a dynamic behaviour
 
-            #end for src control
+            # end for src control
 
-        #end assignments
+        # end assignments

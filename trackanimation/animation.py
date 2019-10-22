@@ -56,9 +56,8 @@ from matplotlib.offsetbox import OffsetImage, AnnotationBbox
 from collections import defaultdict
 
 
-
 class AnimationTrack:
-    def __init__(self, sim, dpi=100, bg_map=True, aspect='equal',map_transparency=0.5):
+    def __init__(self, sim, dpi=100, bg_map=True, aspect="equal", map_transparency=0.5):
         # type: (Sim, int, boolean, String, float) -> AnimationTrack
 
         ## Combining endpoints with mobile
@@ -68,50 +67,47 @@ class AnimationTrack:
         self.fig = plt.figure(figsize=(10, 8), dpi=dpi)
         self.axarr = self.fig.add_subplot(111)
 
-        self.axarr.set_facecolor('0.05')
-        self.axarr.tick_params(color='0.05', labelcolor='0.05')
+        self.axarr.set_facecolor("0.05")
+        self.axarr.tick_params(color="0.05", labelcolor="0.05")
         for spine in list(self.axarr.spines.values()):
-            spine.set_edgecolor('white')
+            spine.set_edgecolor("white")
 
         df = sim.user_tracks.get_tracks()
-        df.df['Axes'] = 0
+        df.df["Axes"] = 0
         self.track_df = DFTrack()
         self.track_df = self.track_df.concat(df)
 
-        if 'VideoFrame' in self.track_df.df:
-            self.track_df = self.track_df.sort(['VideoFrame', 'Axes', 'CodeRoute'])
+        if "VideoFrame" in self.track_df.df:
+            self.track_df = self.track_df.sort(["VideoFrame", "Axes", "CodeRoute"])
         else:
-            self.track_df = self.track_df.sort(['Axes', 'Date'])
+            self.track_df = self.track_df.sort(["Axes", "Date"])
 
         self.track_df.df = self.track_df.df.reset_index(drop=True)
         self.sim = sim
         self.name_mobile = copy.copy(self.sim.name_endpoints)
         last = len(self.name_mobile)
         for ix, code_mobile in enumerate(self.sim.mobile_fog_entities.keys()):
-            self.name_mobile[last+ix] = code_mobile
+            self.name_mobile[last + ix] = code_mobile
 
+        self.car_icon = self.getImage(os.path.dirname(__file__) + "/icon/car.png", 0.2)
+        self.endpoint_icon = self.getImage(os.path.dirname(__file__) + "/icon/endpoint.png", 0.2)
+        self.car_endpoint_icon = self.getImage(os.path.dirname(__file__) + "/icon/car_endpoint.png", 0.2)
 
-
-        self.car_icon = self.getImage(os.path.dirname(__file__)+'/icon/car.png',0.2)
-        self.endpoint_icon = self.getImage(os.path.dirname(__file__)+'/icon/endpoint.png',0.2)
-        self.car_endpoint_icon= self.getImage(os.path.dirname(__file__)+'/icon/car_endpoint.png',0.2)
-
-
-    def getImage(self,path, zoom=10):
+    def getImage(self, path, zoom=10):
         return OffsetImage(plt.imread(path), zoom=zoom)
 
-    #TODO update proportions according to the image size
+    # TODO update proportions according to the image size
     def update_coverage_regions(self):
         point_mobiles = []
 
-        for ix,code_mobile in enumerate(self.sim.mobile_fog_entities.keys()):
+        for ix, code_mobile in enumerate(self.sim.mobile_fog_entities.keys()):
             if code_mobile in list(self.track_code_last_position.keys()):
                 (lng, lat) = self.track_code_last_position[code_mobile]
                 point_mobiles.append(np.array([lng, lat]))
 
         point_mobiles = np.array(point_mobiles)
 
-        if len(point_mobiles)==0:
+        if len(point_mobiles) == 0:
             self.pointsVOR = self.sim.endpoints
         else:
             self.pointsVOR = np.concatenate((self.sim.endpoints, point_mobiles), axis=0)
@@ -124,7 +120,7 @@ class AnimationTrack:
         plt.grid(False)
         plt.xlim(0, self.sim.map.w)
         plt.ylim(self.sim.map.h, 0)
-        plt.axis('off')
+        plt.axis("off")
         plt.tight_layout()
 
         self.axarr.imshow(self.sim.map.img)
@@ -138,7 +134,6 @@ class AnimationTrack:
         # p.set_array(self.sim.coverage.colors_cells)
 
         self.axarr.add_collection(self.sim.coverage.get_polygons_on_map())
-
 
         # self.ppix = [self.sim.map.to_pixels(vp[0], vp[1]) for vp in self.pointsVOR]
         # self.ppix = np.array(self.ppix)
@@ -154,19 +149,18 @@ class AnimationTrack:
 
         # self.axarr.scatter(self.ppix[:, 0], self.ppix[:, 1])
 
-
-    def show_frequency(self,draw_connection_line=False):
+    def show_frequency(self, draw_connection_line=False):
         self.axarr.texts = []
 
         # Draw names
         for ix, vp in enumerate(self.ppix):
-            t = plt.text(vp[0] - 3, vp[1] - 8, self.name_mobile[ix], dict(size=6, color='b'))
+            t = plt.text(vp[0] - 3, vp[1] - 8, self.name_mobile[ix], dict(size=6, color="b"))
 
         # Draw last movement
         for code in self.track_code_last_position:
 
             (lng, lat) = self.track_code_last_position[code]
-            new_point=[lng,lat]
+            new_point = [lng, lat]
 
             if code not in list(self.sim.mobile_fog_entities.keys()):
                 point_index = self.sim.coverage.connection(new_point)
@@ -177,14 +171,17 @@ class AnimationTrack:
 
             lng, lat = self.sim.map.to_pixels(lng, lat)
 
-            plt.annotate(str(code).replace("_0.0",""),
-                        xy=(lng, lat),  # theta, radius
-                        xytext=(lng-1, lat-5),  # fraction, fraction
-                        # arrowprops=dict(facecolor='black', arrowstyle="-|>"),
-                        horizontalalignment='center',
-                        verticalalignment='bottom', size= 6)
+            plt.annotate(
+                str(code).replace("_0.0", ""),
+                xy=(lng, lat),  # theta, radius
+                xytext=(lng - 1, lat - 5),  # fraction, fraction
+                # arrowprops=dict(facecolor='black', arrowstyle="-|>"),
+                horizontalalignment="center",
+                verticalalignment="bottom",
+                size=6,
+            )
 
-            ab = AnnotationBbox(icon, (lng,lat), frameon=False)
+            ab = AnnotationBbox(icon, (lng, lat), frameon=False)
             self.axarr.add_artist(ab)
 
             # if code not in self.sim.mobile_fog_entities and \
@@ -196,8 +193,7 @@ class AnimationTrack:
 
         # draw number of connections by node
         # for k in self.connection:
-            # plt.text(20, 20 + (k * 30), "%s : %i" % (self.name_mobile[k], self.connection[k]), dict(size=10, color='black'))
-
+        # plt.text(20, 20 + (k * 30), "%s : %i" % (self.name_mobile[k], self.connection[k]), dict(size=10, color='black'))
 
     def clear_frequency(self):
         for val in self.connection:
@@ -211,29 +207,28 @@ class AnimationTrack:
         else:
             points = track_df.to_dict()
 
-        for point, next_point in zip_longest(tqdm(points, desc='Video generation process'), points[1:], fillvalue=None):
-            track_code = str(point['CodeRoute']) + "_" + str(point['Axes'])
+        for point, next_point in zip_longest(tqdm(points, desc="Video generation process"), points[1:], fillvalue=None):
+            track_code = str(point["CodeRoute"]) + "_" + str(point["Axes"])
 
             # Check if the track is in the data structure
             if track_code in track_points:
                 position = track_points[track_code]
 
-                if len(position['lat']) > 1 and len(position['lng']) > 1:
-                    del position['lat'][0]
-                    del position['lng'][0]
+                if len(position["lat"]) > 1 and len(position["lng"]) > 1:
+                    del position["lat"][0]
+                    del position["lng"][0]
 
             else:
-                position = {'lat': [], 'lng': []}
+                position = {"lat": [], "lng": []}
 
-            lat = point['Latitude']
-            lng = point['Longitude']
+            lat = point["Latitude"]
+            lng = point["Longitude"]
 
-            self.track_code_last_position[str(track_code).replace("_0.0","")]=(lat,lng)
+            self.track_code_last_position[str(track_code).replace("_0.0", "")] = (lat, lng)
 
             yield point, next_point
 
-
-    def get_all_points_from_videoframe(self,step, track_df=None, linewidth=0.5):
+    def get_all_points_from_videoframe(self, step, track_df=None, linewidth=0.5):
 
         df = self.track_df.df
         tt = df[df.VideoFrame == step]
@@ -250,31 +245,38 @@ class AnimationTrack:
     def compute_tracks(self, linewidth=0.5):
         df = self.track_df.get_tracks().df
 
-        df['track_code'] = df['CodeRoute'].map(str) + '_' + df['Axes'].map(str)
-        grouped = df['track_code'].unique()
+        df["track_code"] = df["CodeRoute"].map(str) + "_" + df["Axes"].map(str)
+        grouped = df["track_code"].unique()
 
-        for name in tqdm(grouped, desc='Groups'):
-            df_slice = df[df['track_code'] == name]
-            lat = df_slice['Latitude'].values
-            lng = df_slice['Longitude'].values
-            lng, lat = self.sim.map[int(df_slice['Axes'].unique())].to_pixels(lat, lng)
-            self.axarr[int(df_slice['Axes'].unique())].plot(lng, lat, color='deepskyblue', lw=linewidth, alpha=1)
+        for name in tqdm(grouped, desc="Groups"):
+            df_slice = df[df["track_code"] == name]
+            lat = df_slice["Latitude"].values
+            lng = df_slice["Longitude"].values
+            lng, lat = self.sim.map[int(df_slice["Axes"].unique())].to_pixels(lat, lng)
+            self.axarr[int(df_slice["Axes"].unique())].plot(lng, lat, color="deepskyblue", lw=linewidth, alpha=1)
 
-    def make_video(self, linewidth=0.5, output_file='video', framerate=5,G=None):
-        cmdstring = ('ffmpeg',
-                     '-y',
-                     '-loglevel', 'quiet',
-                     '-framerate', str(framerate),
-                     '-f', 'image2pipe',
-                     '-i', 'pipe:',
-                     '-r', '25',
-                     '-s', '1280x960',
-                     '-pix_fmt', 'yuv420p',
-                     output_file + '.mp4'
-                     )
+    def make_video(self, linewidth=0.5, output_file="video", framerate=5, G=None):
+        cmdstring = (
+            "ffmpeg",
+            "-y",
+            "-loglevel",
+            "quiet",
+            "-framerate",
+            str(framerate),
+            "-f",
+            "image2pipe",
+            "-i",
+            "pipe:",
+            "-r",
+            "25",
+            "-s",
+            "1280x960",
+            "-pix_fmt",
+            "yuv420p",
+            output_file + ".mp4",
+        )
 
         pipe = subprocess.Popen(cmdstring, stdin=subprocess.PIPE)
-
 
         for point, next_point in self.compute_points(linewidth=linewidth):
             if self.is_new_frame(point, next_point):
@@ -294,29 +296,24 @@ class AnimationTrack:
                     pos = [self.point_network_map(x, size) for x in pos]
                     pos = dict(list(zip(G.nodes(), pos)))
 
-                    nx.draw(G, pos, with_labels=False, node_size=100, nodelist=list(self.sim.name_endpoints.values()),
-                            node_color="#1260A0", node_shape="o")
+                    nx.draw(G, pos, with_labels=False, node_size=100, nodelist=list(self.sim.name_endpoints.values()), node_color="#1260A0", node_shape="o")
                     # rest_nodes = [e for e in G.nodes() if e not in self.sim.name_endpoints.values()]
                     nodes_level_mobile = self.get_nodes_by_level(G, -1)
                     nobes_upper_level = self.get_nodes_by_upper_level(G, 1)
-                    nx.draw(G, pos, with_labels=False, node_size=100, nodelist=nodes_level_mobile, node_shape="^",
-                            node_color="orange")
-                    nx.draw(G, pos, with_labels=True, node_size=100, nodelist=nobes_upper_level, node_shape="s",
-                            node_color="red", font_size=8)
-
+                    nx.draw(G, pos, with_labels=False, node_size=100, nodelist=nodes_level_mobile, node_shape="^", node_color="orange")
+                    nx.draw(G, pos, with_labels=True, node_size=100, nodelist=nobes_upper_level, node_shape="s", node_color="red", font_size=8)
 
                 buffer = io.BytesIO()
                 canvas = plt.get_current_fig_manager().canvas
                 canvas.draw()
-                pil_image = Image.frombytes('RGB', canvas.get_width_height(), canvas.tostring_rgb())
-                pil_image.save(buffer, 'PNG')
+                pil_image = Image.frombytes("RGB", canvas.get_width_height(), canvas.tostring_rgb())
+                pil_image.save(buffer, "PNG")
                 buffer.seek(0)
                 pipe.stdin.write(buffer.read())
 
         pipe.stdin.close()
 
-
-    def make_snap(self, step, output_file="None",draw_connection_line=False,G=None):
+    def make_snap(self, step, output_file="None", draw_connection_line=False, G=None):
         self.track_code_last_position = self.get_all_points_from_videoframe(step)
 
         self.axarr.texts = []
@@ -326,11 +323,11 @@ class AnimationTrack:
 
         # showing the STEP in the upper left corner of the figure
         size = self.fig.get_size_inches() * self.fig.dpi
-        plt.text(size[0]*0.02, size[1]*0.05,"Step: %i"%step, dict(size=10, color='b'))
+        plt.text(size[0] * 0.02, size[1] * 0.05, "Step: %i" % step, dict(size=10, color="b"))
 
         # showing the GRAPH
-        if G !=None:
-            pos = nx.spring_layout(G,seed=1)
+        if G != None:
+            pos = nx.spring_layout(G, seed=1)
             # pos = map_endpoints
             pos = [[pos[x][0], pos[x][1]] for x in G.nodes()]
             pos = np.array(pos)
@@ -338,29 +335,25 @@ class AnimationTrack:
             pos[:, 1] = (pos[:, 1] - pos[:, 1].min()) / (pos[:, 1].max() - pos[:, 1].min())
             size = self.fig.get_size_inches() * self.fig.dpi * 1.5
             pos = [self.point_network_map(x, size) for x in pos]
-            pos = dict(list(zip(G.nodes(),pos)))
+            pos = dict(list(zip(G.nodes(), pos)))
 
-            nx.draw(G, pos,with_labels=False,node_size=100,nodelist=list(self.sim.name_endpoints.values()),node_color="#1260A0",node_shape="o")
+            nx.draw(G, pos, with_labels=False, node_size=100, nodelist=list(self.sim.name_endpoints.values()), node_color="#1260A0", node_shape="o")
             # rest_nodes = [e for e in G.nodes() if e not in self.sim.name_endpoints.values()]
-            nodes_level_mobile = self.get_nodes_by_level(G,-1)
-            nobes_upper_level = self.get_nodes_by_upper_level(G,1)
-            nx.draw(G, pos,with_labels=False,node_size=100,nodelist=nodes_level_mobile,node_shape="^",node_color="orange")
-            nx.draw(G, pos,with_labels=True,node_size=100,nodelist=nobes_upper_level,node_shape="s",node_color="red",font_size=8)
+            nodes_level_mobile = self.get_nodes_by_level(G, -1)
+            nobes_upper_level = self.get_nodes_by_upper_level(G, 1)
+            nx.draw(G, pos, with_labels=False, node_size=100, nodelist=nodes_level_mobile, node_shape="^", node_color="orange")
+            nx.draw(G, pos, with_labels=True, node_size=100, nodelist=nobes_upper_level, node_shape="s", node_color="red", font_size=8)
             # labels = nx.draw_networkx_labels(G, pos)
-
-
 
         canvas = plt.get_current_fig_manager().canvas
         canvas.draw()
-        pil_image = Image.frombytes('RGB', canvas.get_width_height(), canvas.tostring_rgb())
-        pil_image.save(output_file+".png")
-        plt.close('all')
+        pil_image = Image.frombytes("RGB", canvas.get_width_height(), canvas.tostring_rgb())
+        pil_image.save(output_file + ".png")
+        plt.close("all")
 
-
-
-    def get_nodes_by_level(self,G,value):
-        labels = nx.get_node_attributes(G,"level")
-        nodes = [x for x in labels if labels[x]==value]
+    def get_nodes_by_level(self, G, value):
+        labels = nx.get_node_attributes(G, "level")
+        nodes = [x for x in labels if labels[x] == value]
         return nodes
 
     def get_nodes_by_upper_level(self, G, value):
@@ -368,7 +361,7 @@ class AnimationTrack:
         nodes = [x for x in labels if labels[x] > value]
         return nodes
 
-    def point_network_map(self,position, size):
+    def point_network_map(self, position, size):
         zx_pos = size[0] * 0.02
         zy_pos = size[1] * 0.05
         aspectx = size[0] * 0.20
@@ -379,16 +372,11 @@ class AnimationTrack:
 
     def is_new_frame(self, point, next_point):
         if next_point is not None:
-            if 'VideoFrame' in point:
-                new_frame = point['VideoFrame'] != next_point['VideoFrame']
+            if "VideoFrame" in point:
+                new_frame = point["VideoFrame"] != next_point["VideoFrame"]
             else:
-                new_frame = point['Date'] != next_point['Date']
+                new_frame = point["Date"] != next_point["Date"]
         else:
             new_frame = False
 
         return new_frame
-
-
-
-
-

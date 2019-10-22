@@ -41,16 +41,14 @@ def create_applications_from_json(data):
         ms = {}
         for message in app["message"]:
             # print "Creando mensaje: %s" %message["name"]
-            ms[message["name"]] = Message(message["name"], message["s"], message["d"],
-                                          instructions=message["instructions"], bytes=message["bytes"])
+            ms[message["name"]] = Message(message["name"], message["s"], message["d"], instructions=message["instructions"], bytes=message["bytes"])
             if message["s"] == "None":
                 a.add_source_messages(ms[message["name"]])
 
         # print "Total mensajes creados %i" %len(ms.keys())
         for idx, message in enumerate(app["transmission"]):
             if "message_out" in list(message.keys()):
-                a.add_service_module(message["module"], ms[message["message_in"]], ms[message["message_out"]],
-                                     fractional_selectivity, threshold=1.0)
+                a.add_service_module(message["module"], ms[message["message_in"]], ms[message["message_out"]], fractional_selectivity, threshold=1.0)
             else:
                 a.add_service_module(message["module"], ms[message["message_in"]])
 
@@ -121,11 +119,11 @@ def main(path, path_results, number_simulation_steps, tracks, topology, case, it
     mobile_fog_entities = {
         "6197472": {
             "connectionWith": [0, 5],  # ids of network entities (independent of its location)
-            "node_attributes":{
+            "node_attributes": {
                 "IPT": 30006,
                 "RAM": 4000
                 # and whatever you want for your especfic strategies
-            }
+            },
         },
         "20604255": {
             "connectionWith": None,  # it uses the coverage.connection_between_mobile_entities by default (dependent)
@@ -133,24 +131,23 @@ def main(path, path_results, number_simulation_steps, tracks, topology, case, it
                 "IPT": 30006,
                 "RAM": 4000
                 # and whatever you want for your especfic strategies
-            }
-        }
+            },
+        },
     }
 
     # mobile_fog_entities =["6197472"]
 
-
     """
     APPLICATION
     """
-    dataApp = json.load(open(path + 'appDefinition.json'))
+    dataApp = json.load(open(path + "appDefinition.json"))
     apps = create_applications_from_json(dataApp)
 
     """
     PLACEMENT algorithm
     """
     # In our model only initial cloud placements are enabled
-    placementJson = json.load(open(path + 'allocDefinition.json'))
+    placementJson = json.load(open(path + "allocDefinition.json"))
     placement = JSONPlacement(name="Placement", json=placementJson)
 
     """
@@ -175,13 +172,12 @@ def main(path, path_results, number_simulation_steps, tracks, topology, case, it
     # It generates a short video (mp4) with the movement of users in the coverage (without network update)
     # s.generate_animation(path_results+"animation_%s" % case)
 
-
     """
     Linking workload activity && Population phase
     """
     # Each user/mobile entity has an unique population politic
-    wl = json.load(open(path + 'workload.json'))  # workload behaviour
-    pop = JSONPopulation(name="Statical",json=wl,it=it)
+    wl = json.load(open(path + "workload.json"))  # workload behaviour
+    pop = JSONPopulation(name="Statical", json=wl, it=it)
 
     """
     Deploying application with specific distribution in the simulator
@@ -192,7 +188,7 @@ def main(path, path_results, number_simulation_steps, tracks, topology, case, it
         pop_app = JSONPopulation(name="Statical_%s" % aName, json={}, it=it)
         data = []
         for element in pop.data["sources"]:
-            if element['app'] == aName:
+            if element["app"] == aName:
                 data.append(element)
         pop_app.data["sources"] = data
 
@@ -203,11 +199,9 @@ def main(path, path_results, number_simulation_steps, tracks, topology, case, it
     """
     stop_time = number_simulation_steps * time_in_each_step
 
-
     dStart = deterministicDistributionStartPoint(0, time_in_each_step, name="Deterministic")
     evol = MovementUpdate(path_results, doExecutionVideo)
-    s.deploy_monitor("Traces_localization_update", evol, dStart,
-                     **{"sim": s, "routing": selectorPath, "case": case, "stop_time": stop_time, "it": it})
+    s.deploy_monitor("Traces_localization_update", evol, dStart, **{"sim": s, "routing": selectorPath, "case": case, "stop_time": stop_time, "it": it})
 
     s.set_movement_control(evol)
 
@@ -222,7 +216,6 @@ def main(path, path_results, number_simulation_steps, tracks, topology, case, it
     """
     # Getting some info
     s.print_debug_assignaments()
-
 
     # print "----"
     # entities = s.get_alloc_entities()
@@ -242,7 +235,6 @@ def main(path, path_results, number_simulation_steps, tracks, topology, case, it
     #
     # nx.write_gexf(s.topology.G, pathResults + "/network_assignments_%s_%i_%i.gexf" % (case, stop_time, it))
 
-
     # controlServices = selectorPath.controlServices
     # f = open(pathResults + "/file_assignments_%s_%i_%i.pkl" % (case, stop_time, it), "wb")
     # pickle.dump(controlServices, f)
@@ -250,26 +242,33 @@ def main(path, path_results, number_simulation_steps, tracks, topology, case, it
 
 
 def do_video_from_execution_snaps(output_file, png_names, framerate):
-    cmdstring = ('ffmpeg',
-                 '-loglevel', 'quiet',
-                 '-framerate', str(framerate),
-                 '-i', png_names,
-                 '-r', '25',
-                 '-s', '1280x960',
-                 '-pix_fmt', 'yuv420p',
-                 output_file + '.mp4'
-                 )
+    cmdstring = (
+        "ffmpeg",
+        "-loglevel",
+        "quiet",
+        "-framerate",
+        str(framerate),
+        "-i",
+        png_names,
+        "-r",
+        "25",
+        "-s",
+        "1280x960",
+        "-pix_fmt",
+        "yuv420p",
+        output_file + ".mp4",
+    )
 
     subprocess.call(cmdstring)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
 
     # Logging can be avoided comment these three lines
     import logging.config
 
     wd_path = os.getcwd()
-    logging.config.fileConfig(wd_path + '/logging.ini')
+    logging.config.fileConfig(wd_path + "/logging.ini")
     #
 
     ##
@@ -291,7 +290,7 @@ if __name__ == '__main__':
     number_simulation_steps = 100
     time_in_each_step = 1000
 
-    datestamp = time.strftime('%Y%m%d')
+    datestamp = time.strftime("%Y%m%d")
     datestamp = "20190326"
     temporal_folder = experiment_path + "results_" + datestamp + "/"
 
@@ -323,7 +322,7 @@ if __name__ == '__main__':
     # 1.2 Network infrastructure
     # Endpoint entities must have three attributes: level(=0) and lat/lng coordinates
     t = Topology()
-    dataNetwork = json.load(open(experiment_path + 'networkDefinition.json'))
+    dataNetwork = json.load(open(experiment_path + "networkDefinition.json"))
     t.load_all_node_attr(dataNetwork)
 
     # Performing multiple simulations
@@ -333,19 +332,21 @@ if __name__ == '__main__':
         logging.info("Running Mobility Case - %s" % experiment_path)
         start_time = time.time()
 
-        main(path=experiment_path,
-             path_results=temporal_folder,
-             number_simulation_steps=number_simulation_steps,
-             tracks=tracks,
-             topology=t,
-             case='one',
-             doExecutionVideo=True,  # expensive task
-             it=i)
+        main(
+            path=experiment_path,
+            path_results=temporal_folder,
+            number_simulation_steps=number_simulation_steps,
+            tracks=tracks,
+            topology=t,
+            case="one",
+            doExecutionVideo=True,  # expensive task
+            it=i,
+        )
 
         print(("\n--- %s seconds ---" % (time.time() - start_time)))
-        do_video_from_execution_snaps(temporal_folder + "animation_snaps", 'snap_%05d.png', 10)
+        do_video_from_execution_snaps(temporal_folder + "animation_snaps", "snap_%05d.png", 10)
 
     print("Simulation Done!")
     # ffmpeg -r 2 -i snap_%05d.png -c:v libx264 -vf fps=1 -pix_fmt yuv420p out.mp4
-#ffmpeg -c:v -framerate 10 -f image2pipe -i snap_%03d.png -r 25 -s 1280x960 -pix_fmt yuv420p video_test.mp4
-#ffmpeg -r 1 -i snap_%05d.png -c:v libx264 -vf fps=1 -pix_fmt yuv420p out2.mp4
+# ffmpeg -c:v -framerate 10 -f image2pipe -i snap_%03d.png -r 25 -s 1280x960 -pix_fmt yuv420p video_test.mp4
+# ffmpeg -r 1 -i snap_%05d.png -c:v libx264 -vf fps=1 -pix_fmt yuv420p out2.mp4

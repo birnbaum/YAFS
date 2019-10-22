@@ -1,11 +1,12 @@
 from yafs.population import Population
 import yafs.distribution
 
+
 class JSONPopulation(Population):
     def __init__(self, json, it, **kwargs):
         super(JSONPopulation, self).__init__(**kwargs)
         self.data = json
-        self.it =  it
+        self.it = it
 
     def initial_allocation(self, sim, app_name):
         for idx, behaviour in enumerate(self.data["sources"]):
@@ -30,4 +31,4 @@ class JSONPopulation(Population):
             #         idsrc = sim.deploy_source(app_name, id_node=int(entity), msg=msg, distribution=instance_distribution)
             # else:
 
-            idsrc = sim.deploy_source(app_name, id_node=behaviour["entity"], msg=msg,distribution=instance_distribution)
+            idsrc = sim.deploy_source(app_name, id_node=behaviour["entity"], msg=msg, distribution=instance_distribution)

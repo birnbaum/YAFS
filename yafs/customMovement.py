@@ -9,9 +9,9 @@ import time
 import copy
 import networkx as nx
 
-class MovementUpdate:
 
-    def __init__(self,pathResults, doExecutionVideo,logger=None):
+class MovementUpdate:
+    def __init__(self, pathResults, doExecutionVideo, logger=None):
         self.logger = logger or logging.getLogger(__name__)
         self.current_step = 0
         self.path_results = pathResults
@@ -20,17 +20,14 @@ class MovementUpdate:
         self.name_endpoints = {}
         self.doExecutionVideo = doExecutionVideo
 
-
-
     def summarize(self):
         print("Number of evolutions %i" % self.current_step)
 
-    def deploy_module(self,sim,service,idtopo):
-        app_name = service[0:service.index("_")]
+    def deploy_module(self, sim, service, idtopo):
+        app_name = service[0 : service.index("_")]
         app = sim.apps[app_name]
         services = app.services
         idDES = sim.deploy_module(app_name, service, services[service], [idtopo])
-
 
     def get_last_points(self, df, step):
 
@@ -45,7 +42,7 @@ class MovementUpdate:
 
         return coordinates
 
-    def update_topology_connections(self,sim,code,id_node,routing):
+    def update_topology_connections(self, sim, code, id_node, routing):
         # ##type: (Sim, String, int/String, Selection) -> None   ### CREATING ONLY ONE EDGE
         # or
         # ##type: (Sim, String, [int/String], Selection) -> None ### CREATING MORE EDGE
@@ -65,8 +62,8 @@ class MovementUpdate:
 
         # print " Removing edges of node: %s" %code
         edge = ()
-        #TODO Improve a dynamic assignament of BW / PR (edge link properties)
-        att = {"BW": 10,"PR": 10}
+        # TODO Improve a dynamic assignament of BW / PR (edge link properties)
+        att = {"BW": 10, "PR": 10}
         try:
             existNode = False
             edges_to_remove = [e for e in sim.topology.G.edges() if int(code) in e]
@@ -75,7 +72,7 @@ class MovementUpdate:
                 sim.topology.G.remove_edge(*edge)
                 existNode = True
 
-            if len(edges_to_remove)==0 and id_node != None:
+            if len(edges_to_remove) == 0 and id_node != None:
                 if code in sim.mobile_fog_entities:
                     sim.topology.G.add_node(int(code), level=-1, **sim.mobile_fog_entities[code]["node_attributes"])
 
@@ -90,21 +87,19 @@ class MovementUpdate:
             None
             # sim.topology.G.add_node(code,level=-1)
 
-
         # 2 - add new edge
         # print "a new link between nodes: %s -> %s"%(code,id_node)
-        if id_node!= None:
-            if type(id_node)==list:
+        if id_node != None:
+            if type(id_node) == list:
                 for id_n in id_node:
                     sim.topology.G.add_edge(int(code), int(id_n), **att)
             else:
                 sim.topology.G.add_edge(int(code), int(id_node), **att)
 
         # 3 we can interact with other own classes:
-        routing.invalid_cache_value = True # we can invalid the cache of routing packages
+        routing.invalid_cache_value = True  # we can invalid the cache of routing packages
 
-
-    def __call__(self, sim, routing,case, stop_time, it):
+    def __call__(self, sim, routing, case, stop_time, it):
         # type: (Sim, Selection, String, int, int) -> None
         """
         It updates network topology in function of user location and mobile agents in the scenario
@@ -122,17 +117,16 @@ class MovementUpdate:
         self.logger.info("Movement number (#%i) at time: %i" % (self.current_step, sim.env.now))
         start_time = time.time()
 
-
         ##
         # TEST: for debug control !
         # It takes a snapshot of a specific movement
         # if self.current_step == 0:
-        self.animation = AnimationTrack(sim, dpi=100, bg_map=True, aspect='equal')
+        self.animation = AnimationTrack(sim, dpi=100, bg_map=True, aspect="equal")
 
         ######
         # UPDATING LOCATION of MOBILE ENTITIES
         #
-        track_code_last_position = self.get_last_points(sim.user_tracks.df,self.current_step)
+        track_code_last_position = self.get_last_points(sim.user_tracks.df, self.current_step)
 
         # getting the position of mobile endpoint entities
         mobile_endpoints = []
@@ -143,7 +137,7 @@ class MovementUpdate:
                 mobile_endpoints.append(np.array([lng, lat]))
                 code_mobile_endpoints.append(code_mobile)
             else:
-                self.logger.critical(" Mobile entity: %s without a position !"%code_mobile)
+                self.logger.critical(" Mobile entity: %s without a position !" % code_mobile)
 
         mobile_endpoints = np.array(mobile_endpoints)
 
@@ -180,17 +174,16 @@ class MovementUpdate:
         fixed_location_endpoints = dict(list(zip(list(sim.name_endpoints.values()), sim.endpoints)))
         mobile_location_endpoints = dict(list(zip(code_mobile_endpoints, mobile_endpoints)))
 
-        print("STEP ",self.current_step)
+        print("STEP ", self.current_step)
         # print "FIX"
         # print fixed_location_endpoints
         # print "MOB"
         # print mobile_location_endpoints
-        connection_mobiles = sim.coverage.connection_between_mobile_entities(fixed_location_endpoints,
-                                                                             mobile_location_endpoints,sim.mobile_fog_entities)
+        connection_mobiles = sim.coverage.connection_between_mobile_entities(fixed_location_endpoints, mobile_location_endpoints, sim.mobile_fog_entities)
 
         # we merge both type of connections to generate the graph
         for k in connection_mobiles:
-            all_current_connection[k]=connection_mobiles[k]
+            all_current_connection[k] = connection_mobiles[k]
 
         # we detect the elements without a current disconection
         previous_code = set(all_current_connection)
@@ -205,7 +198,6 @@ class MovementUpdate:
         #     print "WITHOUT CONNECTION"
         #     print without_connection
 
-
         # updating previous network connections with the current ones
         # TODO Point of improvement: Decide if a user remains connected to the current point or connects to other options.
         changes = False
@@ -215,7 +207,7 @@ class MovementUpdate:
                 self.update_topology_connections(sim, k, self.previous_graph_connection[k], routing)
                 changes = True
             else:
-                if all_current_connection[k]==self.previous_graph_connection[k]:
+                if all_current_connection[k] == self.previous_graph_connection[k]:
                     # Position without changes
                     None
                 else:
@@ -232,18 +224,12 @@ class MovementUpdate:
             self.update_topology_connections(sim, k, None, routing)
             del self.previous_graph_connection[k]
 
-
-
         # WARNING:
         # This is an expensive task (optional)
         if self.doExecutionVideo:
             # sim.topology.draw_png(self.path_results + "network_%i" % self.current_step)
-            self.animation.make_snap(self.current_step, self.path_results + "snap_%05d" % self.current_step,
-                                     G=sim.topology.G, draw_connection_line=False)
+            self.animation.make_snap(self.current_step, self.path_results + "snap_%05d" % self.current_step, G=sim.topology.G, draw_connection_line=False)
 
-        self.logger.info("\texecution time of movement (#%i): %s" %(self.current_step,(time.time()- start_time)))
+        self.logger.info("\texecution time of movement (#%i): %s" % (self.current_step, (time.time() - start_time)))
         # we prepare the next execution of this function
         self.current_step += 1
-
-
-

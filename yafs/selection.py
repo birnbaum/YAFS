@@ -24,7 +24,7 @@ class Selection(object):
         self.lat_acc = 0.0
         self.propagation = 0.0
 
-    def get_path(self, sim, app_name, message, topology_src,alloc_DES, alloc_module, traffic, from_des):
+    def get_path(self, sim, app_name, message, topology_src, alloc_DES, alloc_module, traffic, from_des):
 
         """
         Args:
@@ -55,7 +55,7 @@ class Selection(object):
         ids = []
 
         """ END Selection """
-        return path,ids
+        return path, ids
 
     def get_path_from_failure(self, sim, message, link, alloc_DES, alloc_module, traffic, ctime, from_des):
         """
@@ -81,12 +81,13 @@ class Selection(object):
         """ END Selection """
         return path, ids
 
+
 class OneRandomPath(Selection):
     """
     Among all the possible options, it returns a random path.
     """
 
-    def get_path(self, sim, app_name, message, topology_src,alloc_DES, alloc_module, traffic,from_des):
+    def get_path(self, sim, app_name, message, topology_src, alloc_DES, alloc_module, traffic, from_des):
         paths = []
         dst_idDES = []
         src_node = topology_src
@@ -97,21 +98,20 @@ class OneRandomPath(Selection):
             one = random.randint(0, len(pathX) - 1)
             paths.append(pathX[one])
             dst_idDES.append(idDES)
-        return paths,dst_idDES
-
+        return paths, dst_idDES
 
 
 class First_ShortestPath(Selection):
     """Among all possible shorter paths, returns the first."""
 
-    def get_path(self, sim, app_name,message, topology_src, alloc_DES, alloc_module, traffic,from_des):
+    def get_path(self, sim, app_name, message, topology_src, alloc_DES, alloc_module, traffic, from_des):
         paths = []
         dst_idDES = []
 
-        node_src = topology_src #TOPOLOGY SOURCE where the message is generated
+        node_src = topology_src  # TOPOLOGY SOURCE where the message is generated
         DES_dst = alloc_module[app_name][message.dst]
 
-        #Among all possible path we choose the smallest
+        # Among all possible path we choose the smallest
         bestPath = []
         bestDES = []
         print(DES_dst)
@@ -121,8 +121,7 @@ class First_ShortestPath(Selection):
 
             path = list(nx.shortest_path(sim.topology.G, source=node_src, target=dst_node))
             bestPath = [path]
-            bestDES  = [des]
+            bestDES = [des]
             print(path)
 
-
-        return bestPath,bestDES
+        return bestPath, bestDES

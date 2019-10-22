@@ -8,15 +8,14 @@ import logging
 
 from yafs import Placement
 
-class JSONPlacementOnlyCloud(Placement):
 
-    def __init__(self, json,idcloud,logger = None, **kwargs):
+class JSONPlacementOnlyCloud(Placement):
+    def __init__(self, json, idcloud, logger=None, **kwargs):
         super(JSONPlacementOnlyCloud, self).__init__(**kwargs)
         self.data = json
         self.idcloud = idcloud
         self.logger = logger or logging.getLogger(__name__)
-        self.logger.info(" Placement Initialization of %s in NodeCLOUD: %i"%(self.name,self.idcloud))
-
+        self.logger.info(" Placement Initialization of %s in NodeCLOUD: %i" % (self.name, self.idcloud))
 
     def initial_allocation(self, sim, app_name):
         for item in self.data["initialAllocation"]:

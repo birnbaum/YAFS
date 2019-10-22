@@ -42,11 +42,10 @@ class DFTrack:
             self.df = df_points
         else:
             if columns is None:
-                columns = ['CodeRoute', 'Latitude', 'Longitude', 'Altitude', 'Date',
-                           'Speed', 'TimeDifference', 'Distance', 'FileName']
+                columns = ["CodeRoute", "Latitude", "Longitude", "Altitude", "Date", "Speed", "TimeDifference", "Distance", "FileName"]
             self.df = DataFrame(df_points, columns=columns)
 
-    def export(self, filename='exported_file', export_format='csv'):
+    def export(self, filename="exported_file", export_format="csv"):
         """
         Export a data frame of DFTrack to JSON or CSV.
 
@@ -57,12 +56,12 @@ class DFTrack:
         filename: string
             Name of the exported file
         """
-        if export_format.lower() == 'json':
-            self.df.reset_index().to_json(orient='records', path_or_buf=filename + '.json')
-        elif export_format.lower() == 'csv':
-            self.df.to_csv(path_or_buf=filename + '.csv')
+        if export_format.lower() == "json":
+            self.df.reset_index().to_json(orient="records", path_or_buf=filename + ".json")
+        elif export_format.lower() == "csv":
+            self.df.to_csv(path_or_buf=filename + ".csv")
         else:
-            raise TrackException('Must specify a valid format to export', "'%s'" % export_format)
+            raise TrackException("Must specify a valid format to export", "'%s'" % export_format)
 
     def getTracks(self):
         """
@@ -76,12 +75,9 @@ class DFTrack:
         copy: DFTrack
             The copy of DFTrack.
         """
-        warnings.warn("The getTracks function is deprecated and "
-                      "will be removed in version 2.0.0. "
-                      "Use the get_tracks function instead.",
-                      FutureWarning,
-                      stacklevel=8
-                      )
+        warnings.warn(
+            "The getTracks function is deprecated and " "will be removed in version 2.0.0. " "Use the get_tracks function instead.", FutureWarning, stacklevel=8
+        )
         return self.get_tracks()
 
     def get_tracks(self):
@@ -110,10 +106,10 @@ class DFTrack:
         if isinstance(column_name, list):
             for column in column_name:
                 if column not in self.df:
-                    raise TrackException('Column name not found', "'%s'" % column)
+                    raise TrackException("Column name not found", "'%s'" % column)
         else:
             if column_name not in self.df:
-                raise TrackException('Column name not found', "'%s'" % column_name)
+                raise TrackException("Column name not found", "'%s'" % column_name)
 
         return self.__class__(self.df.sort_values(column_name), list(self.df))
 
@@ -139,12 +135,11 @@ class DFTrack:
             A DFTrack with the points of the specified place or
             None if anything is found.
         """
-        warnings.warn("The getTracksByPlace function is deprecated and "
-                      "will be removed in version 2.0.0. "
-                      "Use the get_tracks_by_place function instead.",
-                      FutureWarning,
-                      stacklevel=8
-                      )
+        warnings.warn(
+            "The getTracksByPlace function is deprecated and " "will be removed in version 2.0.0. " "Use the get_tracks_by_place function instead.",
+            FutureWarning,
+            stacklevel=8,
+        )
         return self.get_tracks_by_place(place, timeout, only_points)
 
     def get_tracks_by_place(self, place, timeout=10, only_points=True):
@@ -200,12 +195,13 @@ class DFTrack:
             A DFTrack with the points of the specified place or
             None if anything is found.
         """
-        warnings.warn("The getTracksByPlaceGoogle function is deprecated and "
-                      "will be removed in version 2.0.0. "
-                      "Use the get_tracks_by_place_google function instead.",
-                      FutureWarning,
-                      stacklevel=8
-                      )
+        warnings.warn(
+            "The getTracksByPlaceGoogle function is deprecated and "
+            "will be removed in version 2.0.0. "
+            "Use the get_tracks_by_place_google function instead.",
+            FutureWarning,
+            stacklevel=8,
+        )
         return self.get_tracks_by_place_google(place, timeout, only_points)
 
     def get_tracks_by_place_google(self, place, timeout=10, only_points=True):
@@ -235,19 +231,23 @@ class DFTrack:
         except geopy.exc.GeopyError:
             return None
 
-        southwest_lat = float(location.raw['geometry']['bounds']['southwest']['lat'])
-        northeast_lat = float(location.raw['geometry']['bounds']['northeast']['lat'])
-        southwest_lng = float(location.raw['geometry']['bounds']['southwest']['lng'])
-        northeast_lng = float(location.raw['geometry']['bounds']['northeast']['lng'])
+        southwest_lat = float(location.raw["geometry"]["bounds"]["southwest"]["lat"])
+        northeast_lat = float(location.raw["geometry"]["bounds"]["northeast"]["lat"])
+        southwest_lng = float(location.raw["geometry"]["bounds"]["southwest"]["lng"])
+        northeast_lng = float(location.raw["geometry"]["bounds"]["northeast"]["lng"])
 
-        df_place = self.df[(self.df['Latitude'] < northeast_lat) & (self.df['Longitude'] < northeast_lng) &
-                           (self.df['Latitude'] > southwest_lat) & (self.df['Longitude'] > southwest_lng)]
+        df_place = self.df[
+            (self.df["Latitude"] < northeast_lat)
+            & (self.df["Longitude"] < northeast_lng)
+            & (self.df["Latitude"] > southwest_lat)
+            & (self.df["Longitude"] > southwest_lng)
+        ]
 
         if only_points:
             return self.__class__(df_place)
 
-        track_list = df_place['CodeRoute'].unique().tolist()
-        return self.__class__(self.df[self.df['CodeRoute'].isin(track_list)])
+        track_list = df_place["CodeRoute"].unique().tolist()
+        return self.__class__(self.df[self.df["CodeRoute"].isin(track_list)])
 
     def getTracksByPlaceOSM(self, place, timeout=10, only_points=True):
         """
@@ -270,12 +270,11 @@ class DFTrack:
             A DFTrack with the points of the specified place or
             None if anything is found.
         """
-        warnings.warn("The getTracksByPlaceOSM function is deprecated and "
-                      "will be removed in version 2.0.0. "
-                      "Use the get_tracks_by_place_osm function instead.",
-                      FutureWarning,
-                      stacklevel=8
-                      )
+        warnings.warn(
+            "The getTracksByPlaceOSM function is deprecated and " "will be removed in version 2.0.0. " "Use the get_tracks_by_place_osm function instead.",
+            FutureWarning,
+            stacklevel=8,
+        )
         return self.get_tracks_by_place_osm(place, timeout, only_points)
 
     def get_tracks_by_place_osm(self, place, timeout=10, only_points=True):
@@ -305,21 +304,25 @@ class DFTrack:
         except geopy.exc.GeopyError:
             return None
 
-        southwest_lat = float(location.raw['boundingbox'][0])
-        northeast_lat = float(location.raw['boundingbox'][1])
-        southwest_lng = float(location.raw['boundingbox'][2])
-        northeast_lng = float(location.raw['boundingbox'][3])
+        southwest_lat = float(location.raw["boundingbox"][0])
+        northeast_lat = float(location.raw["boundingbox"][1])
+        southwest_lng = float(location.raw["boundingbox"][2])
+        northeast_lng = float(location.raw["boundingbox"][3])
 
-        df_place = self.df[(self.df['Latitude'] < northeast_lat) & (self.df['Longitude'] < northeast_lng) &
-                           (self.df['Latitude'] > southwest_lat) & (self.df['Longitude'] > southwest_lng)]
+        df_place = self.df[
+            (self.df["Latitude"] < northeast_lat)
+            & (self.df["Longitude"] < northeast_lng)
+            & (self.df["Latitude"] > southwest_lat)
+            & (self.df["Longitude"] > southwest_lng)
+        ]
 
         if only_points:
             return self.__class__(df_place)
 
-        track_list = df_place['CodeRoute'].unique().tolist()
-        return self.__class__(self.df[self.df['CodeRoute'].isin(track_list)])
+        track_list = df_place["CodeRoute"].unique().tolist()
+        return self.__class__(self.df[self.df["CodeRoute"].isin(track_list)])
 
-    def getTracksByDate(self, start=None, end=None, periods=None, freq='D'):
+    def getTracksByDate(self, start=None, end=None, periods=None, freq="D"):
         """
         Gets the points of the specified date range
         using various combinations of parameters.
@@ -344,15 +347,14 @@ class DFTrack:
         df_date: DFTrack
             A DFTrack with the points of the specified date range.
         """
-        warnings.warn("The getTracksByDate function is deprecated and "
-                      "will be removed in version 2.0.0. "
-                      "Use the get_tracks_by_date function instead.",
-                      FutureWarning,
-                      stacklevel=8
-                      )
+        warnings.warn(
+            "The getTracksByDate function is deprecated and " "will be removed in version 2.0.0. " "Use the get_tracks_by_date function instead.",
+            FutureWarning,
+            stacklevel=8,
+        )
         return self.get_tracks_by_date(start, end, periods, freq)
 
-    def get_tracks_by_date(self, start=None, end=None, periods=None, freq='D'):
+    def get_tracks_by_date(self, start=None, end=None, periods=None, freq="D"):
         """
         Gets the points of the specified date range
         using various combinations of parameters.
@@ -378,15 +380,15 @@ class DFTrack:
             A DFTrack with the points of the specified date range.
         """
         if trk_utils.is_time_format(start) or trk_utils.is_time_format(end):
-            raise TrackException('Must specify an appropiate date format', 'Time format found')
+            raise TrackException("Must specify an appropiate date format", "Time format found")
 
         rng = pd.date_range(start=start, end=end, periods=periods, freq=freq)
 
         df_date = self.df.copy()
-        df_date['Date'] = pd.to_datetime(df_date['Date'])
-        df_date['ShortDate'] = df_date['Date'].apply(lambda date: date.date().strftime('%Y-%m-%d'))
-        df_date = df_date[df_date['ShortDate'].apply(lambda date: date in rng)]
-        del df_date['ShortDate']
+        df_date["Date"] = pd.to_datetime(df_date["Date"])
+        df_date["ShortDate"] = df_date["Date"].apply(lambda date: date.date().strftime("%Y-%m-%d"))
+        df_date = df_date[df_date["ShortDate"].apply(lambda date: date in rng)]
+        del df_date["ShortDate"]
 
         df_date = df_date.reset_index(drop=True)
 
@@ -410,12 +412,11 @@ class DFTrack:
         df_time: DFTrack
             A DFTrack with the points of the specified date and time periods.
         """
-        warnings.warn("The getTracksByTime function is deprecated and "
-                      "will be removed in version 2.0.0. "
-                      "Use the get_tracks_by_time function instead.",
-                      FutureWarning,
-                      stacklevel=8
-                      )
+        warnings.warn(
+            "The getTracksByTime function is deprecated and " "will be removed in version 2.0.0. " "Use the get_tracks_by_time function instead.",
+            FutureWarning,
+            stacklevel=8,
+        )
         return self.get_tracks_by_time(start, end, include_start, include_end)
 
     def get_tracks_by_time(self, start, end, include_start=True, include_end=True):
@@ -437,43 +438,41 @@ class DFTrack:
             A DFTrack with the points of the specified date and time periods.
         """
         if not trk_utils.is_time_format(start) or not trk_utils.is_time_format(end):
-            raise TrackException('Must specify an appropiate time format', trk_utils.TIME_FORMATS)
+            raise TrackException("Must specify an appropiate time format", trk_utils.TIME_FORMATS)
 
         df_time = self.df.copy()
 
-        index = pd.DatetimeIndex(df_time['Date'])
-        df_time = df_time.iloc[index.indexer_between_time(start_time=start, end_time=end, include_start=include_start,
-                                                          include_end=include_end)]
+        index = pd.DatetimeIndex(df_time["Date"])
+        df_time = df_time.iloc[index.indexer_between_time(start_time=start, end_time=end, include_start=include_start, include_end=include_end)]
 
         df_time = df_time.reset_index(drop=True)
 
         return self.__class__(df_time, list(df_time))
 
     def pointVideoNormalize(self):
-        warnings.warn("The pointVideoNormalize function is deprecated and "
-                      "will be removed in version 2.0.0. "
-                      "Use the point_video_normalize function instead.",
-                      FutureWarning,
-                      stacklevel=8
-                      )
+        warnings.warn(
+            "The pointVideoNormalize function is deprecated and " "will be removed in version 2.0.0. " "Use the point_video_normalize function instead.",
+            FutureWarning,
+            stacklevel=8,
+        )
         return self.point_video_normalize()
 
     def point_video_normalize(self):
         df = self.df.copy()
 
         df_norm = pd.DataFrame()
-        group_size = df.groupby('CodeRoute').size()
+        group_size = df.groupby("CodeRoute").size()
         max_value = group_size.max()
         name_max_value = group_size.idxmax()
 
-        grouped = df['CodeRoute'].unique()
+        grouped = df["CodeRoute"].unique()
 
-        for name in tqdm(grouped, desc='Groups'):
-            df_slice = df[df['CodeRoute'] == name]
+        for name in tqdm(grouped, desc="Groups"):
+            df_slice = df[df["CodeRoute"] == name]
             df_slice = df_slice.reset_index(drop=True)
             div = int(max_value / len(df_slice)) + 1
             df_index = DataFrame(df_slice.index)
-            df_slice['VideoFrame'] = df_index.apply(lambda x: x + 1 if name_max_value == name else x * div)
+            df_slice["VideoFrame"] = df_index.apply(lambda x: x + 1 if name_max_value == name else x * div)
             df_norm = pd.concat([df_norm, df_slice])
 
         df_norm = df_norm.reset_index(drop=True)
@@ -481,49 +480,47 @@ class DFTrack:
         return self.__class__(df_norm, list(df_norm))
 
     def timeVideoNormalize(self, time, framerate=5):
-        warnings.warn("The timeVideoNormalize function is deprecated and "
-                      "will be removed in version 2.0.0. "
-                      "Use the time_video_normalize function instead.",
-                      FutureWarning,
-                      stacklevel=8
-                      )
+        warnings.warn(
+            "The timeVideoNormalize function is deprecated and " "will be removed in version 2.0.0. " "Use the time_video_normalize function instead.",
+            FutureWarning,
+            stacklevel=8,
+        )
         return self.time_video_normalize(time, framerate)
 
     def time_video_normalize(self, time, framerate=5):
         df = self.df.copy()
         if time == 0:
-            df['VideoFrame'] = 0
+            df["VideoFrame"] = 0
             df = df.reset_index(drop=True)
             return self.__class__(df, list(df))
 
         n_fps = time * framerate
-        df = df.sort_values('Date')
+        df = df.sort_values("Date")
         df_cum = trk_utils.calculate_cum_time_diff(df)
-        grouped = df_cum['CodeRoute'].unique()
+        grouped = df_cum["CodeRoute"].unique()
 
         df_norm = pd.DataFrame()
         point_idx = 1
 
-        for name in tqdm(grouped, desc='Groups'):
-            df_slice = df_cum[df_cum['CodeRoute'] == name]
-            time_diff = float(
-                (df_slice[['TimeDifference']].sum() / time) / framerate)  # Track duration divided by time and framerate
+        for name in tqdm(grouped, desc="Groups"):
+            df_slice = df_cum[df_cum["CodeRoute"] == name]
+            time_diff = float((df_slice[["TimeDifference"]].sum() / time) / framerate)  # Track duration divided by time and framerate
 
-            df_range = df_slice[df_slice['CumTimeDiff'] == 0]
+            df_range = df_slice[df_slice["CumTimeDiff"] == 0]
             df_range = df_range.reset_index(drop=True)
-            df_range['VideoFrame'] = 0
+            df_range["VideoFrame"] = 0
             df_norm = pd.concat([df_norm, df_range])
 
-            for i in tqdm(list(range(1, n_fps + 1)), desc='Num FPS', leave=False):
+            for i in tqdm(list(range(1, n_fps + 1)), desc="Num FPS", leave=False):
                 x_start = time_diff * (i - 1)
                 x_end = time_diff * i
 
-                df_range = df_slice[(df_slice['CumTimeDiff'] > x_start) & (df_slice['CumTimeDiff'] <= x_end)]
+                df_range = df_slice[(df_slice["CumTimeDiff"] > x_start) & (df_slice["CumTimeDiff"] <= x_end)]
                 df_range = df_range.reset_index(drop=True)
 
                 if df_range.empty:
-                    df_start = df_slice[df_slice['CumTimeDiff'] <= x_start].tail(1)
-                    df_end = df_slice[df_slice['CumTimeDiff'] > x_end].head(1)
+                    df_start = df_slice[df_slice["CumTimeDiff"] <= x_start].tail(1)
+                    df_end = df_slice[df_slice["CumTimeDiff"] > x_end].head(1)
 
                     if not df_start.empty and not df_end.empty:
                         df_middlePoint = trk_utils.get_point_in_the_middle(df_start, df_end, time_diff, point_idx)
@@ -533,40 +530,37 @@ class DFTrack:
                 else:
                     point_idx = 1
 
-                df_range['VideoFrame'] = i
+                df_range["VideoFrame"] = i
                 df_norm = pd.concat([df_norm, df_range])
         df_norm = df_norm.reset_index(drop=True)
 
         return self.__class__(df_norm, list(df_norm))
 
     def setColors(self, column_name, individual_tracks=True):
-        warnings.warn("The setColors function is deprecated and "
-                      "will be removed in version 2.0.0. "
-                      "Use the set_colors function instead.",
-                      FutureWarning,
-                      stacklevel=8
-                      )
+        warnings.warn(
+            "The setColors function is deprecated and " "will be removed in version 2.0.0. " "Use the set_colors function instead.", FutureWarning, stacklevel=8
+        )
         return self.set_colors(column_name, individual_tracks)
 
     def set_colors(self, column_name, individual_tracks=True):
         if column_name not in self.df:
-            raise TrackException('Column name not found', "'%s'" % column_name)
+            raise TrackException("Column name not found", "'%s'" % column_name)
 
         df = self.df.copy()
 
         df_colors = pd.DataFrame()
 
         if individual_tracks:
-            grouped = df['CodeRoute'].unique()
+            grouped = df["CodeRoute"].unique()
 
             for name in grouped:
-                df_slice = df[df['CodeRoute'] == name]
+                df_slice = df[df["CodeRoute"] == name]
                 df_slice = df_slice.reset_index(drop=True)
 
                 min = df_slice[column_name].min()
                 max = df_slice[column_name].max()
 
-                df_slice['Color'] = df_slice[column_name].apply(trk_utils.rgb, minimum=min, maximum=max)
+                df_slice["Color"] = df_slice[column_name].apply(trk_utils.rgb, minimum=min, maximum=max)
                 df_colors = pd.concat([df_colors, df_slice])
 
             df_colors = df_colors.reset_index(drop=True)
@@ -575,7 +569,7 @@ class DFTrack:
             min = df[column_name].min()
             max = df[column_name].max()
 
-            df['Color'] = df[column_name].apply(trk_utils.rgb, minimum=min, maximum=max)
+            df["Color"] = df[column_name].apply(trk_utils.rgb, minimum=min, maximum=max)
             df = df.reset_index(drop=True)
 
             return self.__class__(df, list(df))
@@ -584,31 +578,27 @@ class DFTrack:
         """
         Drop points of the same track with the same Latitude and Longitude.
         """
-        warnings.warn("The dropDuplicates function is deprecated and "
-                      "will be removed in version 2.0.0. "
-                      "Use the drop_duplicates function instead.",
-                      FutureWarning,
-                      stacklevel=8
-                      )
+        warnings.warn(
+            "The dropDuplicates function is deprecated and " "will be removed in version 2.0.0. " "Use the drop_duplicates function instead.",
+            FutureWarning,
+            stacklevel=8,
+        )
         return self.drop_duplicates()
 
     def drop_duplicates(self):
         """
         Drop points of the same track with the same Latitude and Longitude.
         """
-        return self.__class__(self.df.drop_duplicates(['CodeRoute', 'Latitude', 'Longitude']))
+        return self.__class__(self.df.drop_duplicates(["CodeRoute", "Latitude", "Longitude"]))
 
     def toDict(self):
         """
         Convert de data frame to a dictionary
         like [{column -> value}, ... , {column -> value}]
         """
-        warnings.warn("The toDict function is deprecated and "
-                      "will be removed in version 2.0.0. "
-                      "Use the to_dict function instead.",
-                      FutureWarning,
-                      stacklevel=8
-                      )
+        warnings.warn(
+            "The toDict function is deprecated and " "will be removed in version 2.0.0. " "Use the to_dict function instead.", FutureWarning, stacklevel=8
+        )
         return self.to_dict()
 
     def to_dict(self):
@@ -616,7 +606,7 @@ class DFTrack:
         Convert de data frame to a dictionary
         like [{column -> value}, ... , {column -> value}]
         """
-        return self.df.to_dict('records')
+        return self.df.to_dict("records")
 
     def getBounds(self):
         """
@@ -626,12 +616,9 @@ class DFTrack:
         -------
         bounds: gpxpy.GPXBounds
         """
-        warnings.warn("The getBounds function is deprecated and "
-                      "will be removed in version 2.0.0. "
-                      "Use the get_bounds function instead.",
-                      FutureWarning,
-                      stacklevel=8
-                      )
+        warnings.warn(
+            "The getBounds function is deprecated and " "will be removed in version 2.0.0. " "Use the get_bounds function instead.", FutureWarning, stacklevel=8
+        )
         return self.get_bounds()
 
     def get_bounds(self):
@@ -642,10 +629,10 @@ class DFTrack:
         -------
         bounds: gpxpy.GPXBounds
         """
-        min_lat = self.df['Latitude'].min()
-        max_lat = self.df['Latitude'].max()
-        min_lng = self.df['Longitude'].min()
-        max_lng = self.df['Longitude'].max()
+        min_lat = self.df["Latitude"].min()
+        max_lat = self.df["Latitude"].max()
+        min_lng = self.df["Longitude"].min()
+        max_lng = self.df["Longitude"].max()
 
         return GPXBounds(min_lat, max_lat, min_lng, max_lng)
 
@@ -672,7 +659,7 @@ class DFTrack:
         # From list of 'df_track', create a list of their dataframes
         for df in df_track:
             if not isinstance(df, DFTrack):
-                raise TrackException("Parameter must be a 'DFTrack' object", '%s found' % type(df))
+                raise TrackException("Parameter must be a 'DFTrack' object", "%s found" % type(df))
 
             df_concat.append(df.df)
 
@@ -685,12 +672,11 @@ class ReadTrack:
         self.points_list = []
 
     def readGPXFile(self, filename):
-        warnings.warn("The readGPXFile function is deprecated and "
-                      "will be removed in version 2.0.0. "
-                      "Use the read_gpx_file function instead.",
-                      FutureWarning,
-                      stacklevel=8
-                      )
+        warnings.warn(
+            "The readGPXFile function is deprecated and " "will be removed in version 2.0.0. " "Use the read_gpx_file function instead.",
+            FutureWarning,
+            stacklevel=8,
+        )
         return self.read_gpx_file(filename)
 
     def read_gpx_file(self, filename):
@@ -716,8 +702,9 @@ class ReadTrack:
                         if distance is None:
                             distance = 0
 
-                        self.points_list.append([code_route, point.latitude, point.longitude, point.elevation,
-                                                 point.time, speed, time_difference, distance, gpx.name])
+                        self.points_list.append(
+                            [code_route, point.latitude, point.longitude, point.elevation, point.time, speed, time_difference, distance, gpx.name]
+                        )
 
                         prev_point = point
                 except Exception as e:
@@ -726,20 +713,17 @@ class ReadTrack:
             raise TrackException('GPX file "' + filename + '" not found', e)
 
     def readGPX(self, files_to_read=None):
-        warnings.warn("The readGPX function is deprecated and "
-                      "will be removed in version 2.0.0. "
-                      "Use the read_gpx function instead.",
-                      FutureWarning,
-                      stacklevel=8
-                      )
+        warnings.warn(
+            "The readGPX function is deprecated and " "will be removed in version 2.0.0. " "Use the read_gpx function instead.", FutureWarning, stacklevel=8
+        )
         return self.read_gpx(files_to_read)
 
     def read_gpx(self, files_to_read=None):
-        if self.directory_or_file.lower().endswith('.gpx'):
+        if self.directory_or_file.lower().endswith(".gpx"):
             self.read_gpx_file(self.directory_or_file)
         else:
             n_file_read = 1
-            for file in tqdm(glob.glob(self.directory_or_file + "*.gpx"), desc='Reading files'):
+            for file in tqdm(glob.glob(self.directory_or_file + "*.gpx"), desc="Reading files"):
                 try:
                     self.read_gpx_file(file)
                 except TrackException as e:
@@ -752,16 +736,13 @@ class ReadTrack:
         return DFTrack(self.points_list)
 
     def readCSV(self):
-        warnings.warn("The readCSV function is deprecated and "
-                      "will be removed in version 2.0.0. "
-                      "Use the read_csv function instead.",
-                      FutureWarning,
-                      stacklevel=8
-                      )
+        warnings.warn(
+            "The readCSV function is deprecated and " "will be removed in version 2.0.0. " "Use the read_csv function instead.", FutureWarning, stacklevel=8
+        )
         return self.read_csv()
 
     def read_csv(self):
         try:
-            return DFTrack(pd.read_csv(self.directory_or_file, sep=',', header=0, index_col=0))
+            return DFTrack(pd.read_csv(self.directory_or_file, sep=",", header=0, index_col=0))
         except FileNotFoundError as e:
-            raise TrackException('CSV file not found', e)
+            raise TrackException("CSV file not found", e)

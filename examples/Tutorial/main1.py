@@ -8,7 +8,7 @@
 import random
 
 from yafs.core import Sim
-from yafs.application import Application,Message
+from yafs.application import Application, Message
 
 from yafs.population import *
 from yafs.topology import Topology
@@ -23,20 +23,24 @@ import numpy as np
 
 RANDOM_SEED = 1
 
+
 def create_application():
     # APLICATION
     a = Application(name="SimpleCase")
 
     # (S) --> (ServiceA) --> (A)
-    a.set_modules([{"Sensor":{"Type":Application.TYPE_SOURCE}},
-                   {"ServiceA": {"RAM": 10, "Type": Application.TYPE_MODULE}},
-                   {"Actuator": {"Type": Application.TYPE_SINK}}
-                   ])
+    a.set_modules(
+        [
+            {"Sensor": {"Type": Application.TYPE_SOURCE}},
+            {"ServiceA": {"RAM": 10, "Type": Application.TYPE_MODULE}},
+            {"Actuator": {"Type": Application.TYPE_SINK}},
+        ]
+    )
     """
     Messages among MODULES (AppEdge in iFogSim)
     """
-    m_a = Message("M.A", "Sensor", "ServiceA", instructions=20*10^6, bytes=1000)
-    m_b = Message("M.B", "ServiceA", "Actuator", instructions=30*10^6, bytes=500)
+    m_a = Message("M.A", "Sensor", "ServiceA", instructions=20 * 10 ^ 6, bytes=1000)
+    m_b = Message("M.B", "ServiceA", "Actuator", instructions=30 * 10 ^ 6, bytes=500)
 
     """
     Defining which messages will be dynamically generated # the generation is controlled by Population algorithm
@@ -52,7 +56,6 @@ def create_application():
     return a
 
 
-
 def create_json_topology():
     """
        TOPOLOGY DEFINITION
@@ -65,9 +68,9 @@ def create_json_topology():
     topology_json["entity"] = []
     topology_json["link"] = []
 
-    cloud_dev    = {"id": 0, "model": "cloud","mytag":"cloud", "IPT": 5000 * 10 ^ 6, "RAM": 40000,"COST": 3,"WATT":20.0}
-    sensor_dev   = {"id": 1, "model": "sensor-device", "IPT": 100* 10 ^ 6, "RAM": 4000,"COST": 3,"WATT":40.0}
-    actuator_dev = {"id": 2, "model": "actuator-device", "IPT": 100 * 10 ^ 6, "RAM": 4000,"COST": 3, "WATT": 40.0}
+    cloud_dev = {"id": 0, "model": "cloud", "mytag": "cloud", "IPT": 5000 * 10 ^ 6, "RAM": 40000, "COST": 3, "WATT": 20.0}
+    sensor_dev = {"id": 1, "model": "sensor-device", "IPT": 100 * 10 ^ 6, "RAM": 4000, "COST": 3, "WATT": 40.0}
+    actuator_dev = {"id": 2, "model": "actuator-device", "IPT": 100 * 10 ^ 6, "RAM": 4000, "COST": 3, "WATT": 40.0}
 
     link1 = {"s": 0, "d": 1, "BW": 1, "PR": 10}
     link2 = {"s": 0, "d": 2, "BW": 1, "PR": 1}
@@ -79,7 +82,6 @@ def create_json_topology():
     topology_json["link"].append(link2)
 
     return topology_json
-
 
 
 # @profile
@@ -104,32 +106,32 @@ def main(simulated_time):
     """
     PLACEMENT algorithm
     """
-    placement = CloudPlacement("onCloud") # it defines the deployed rules: module-device
+    placement = CloudPlacement("onCloud")  # it defines the deployed rules: module-device
     placement.scaleService({"ServiceA": 1})
 
     """
     POPULATION algorithm
     """
-    #In ifogsim, during the creation of the application, the Sensors are assigned to the topology, in this case no. As mentioned, YAFS differentiates the adaptive sensors and their topological assignment.
-    #In their case, the use a statical assignment.
+    # In ifogsim, during the creation of the application, the Sensors are assigned to the topology, in this case no. As mentioned, YAFS differentiates the adaptive sensors and their topological assignment.
+    # In their case, the use a statical assignment.
     pop = Statical("Statical")
-    #For each type of sink modules we set a deployment on some type of devices
-    #A control sink consists on:
+    # For each type of sink modules we set a deployment on some type of devices
+    # A control sink consists on:
     #  args:
     #     model (str): identifies the device or devices where the sink is linked
     #     number (int): quantity of sinks linked in each device
     #     module (str): identifies the module from the app who receives the messages
-    pop.set_sink_control({"model": "actuator-device","number":1,"module":app.get_sink_modules()})
+    pop.set_sink_control({"model": "actuator-device", "number": 1, "module": app.get_sink_modules()})
 
-    #In addition, a source includes a distribution function:
-    dDistribution = deterministicDistribution(name="Deterministic",time=100)
-    pop.set_src_control({"model": "sensor-device", "number":1,"message": app.get_message("M.A"), "distribution": dDistribution})
+    # In addition, a source includes a distribution function:
+    dDistribution = deterministicDistribution(name="Deterministic", time=100)
+    pop.set_src_control({"model": "sensor-device", "number": 1, "message": app.get_message("M.A"), "distribution": dDistribution})
 
     """--
     SELECTOR algorithm
     """
-    #Their "selector" is actually the shortest way, there is not type of orchestration algorithm.
-    #This implementation is already created in selector.class,called: First_ShortestPath
+    # Their "selector" is actually the shortest way, there is not type of orchestration algorithm.
+    # This implementation is already created in selector.class,called: First_ShortestPath
     selectorPath = MinimunPath()
 
     """
@@ -139,15 +141,16 @@ def main(simulated_time):
     stop_time = simulated_time
     s = Sim(t, default_results_path="Results")
     s.deploy_app(app, placement, pop, selectorPath)
-    s.run(stop_time,show_progress_monitor=False)
+    s.run(stop_time, show_progress_monitor=False)
 
     # s.draw_allocated_topology() # for debugging
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     import logging.config
     import os
 
-    logging.config.fileConfig(os.getcwd()+'/logging.ini')
+    logging.config.fileConfig(os.getcwd() + "/logging.ini")
 
     start_time = time.time()
     main(simulated_time=1000)
@@ -158,7 +161,7 @@ if __name__ == '__main__':
     # print "-"*20
     # print "Results:"
     # print "-" * 20
-    m = Stats(defaultPath="Results") #Same name of the results
+    m = Stats(defaultPath="Results")  # Same name of the results
     time_loops = [["M.A", "M.B"]]
     m.showResults2(1000, time_loops=time_loops)
     # print "\t- Network saturation -"

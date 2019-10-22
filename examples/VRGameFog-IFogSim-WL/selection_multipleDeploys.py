@@ -1,14 +1,12 @@
-
 from yafs import Selection
 import networkx as nx
 
+
 class CloudPath_RR(Selection):
-
-
     def __init__(self):
         self.rr = {}  # for a each type of service, we have a mod-counter
 
-    def get_path(self, sim, app_name, message, topology_src, alloc_DES, alloc_module, traffic,from_des):
+    def get_path(self, sim, app_name, message, topology_src, alloc_DES, alloc_module, traffic, from_des):
 
         node_src = topology_src
         DES_dst = alloc_module[app_name][message.dst]  # returns an array with all DES process serving
@@ -55,11 +53,8 @@ class CloudPath_RR(Selection):
         return best_path, best_DES
 
 
-
-
 class BroadPath(Selection):
-
-    def __init__(self,numOfMobilesPerDept):
+    def __init__(self, numOfMobilesPerDept):
         super(BroadPath, self).__init__()
         self.numOfMobilesPerDept = numOfMobilesPerDept
         self.round_robin_module_calculator = {}
@@ -67,21 +62,20 @@ class BroadPath(Selection):
         self.rr = {}
 
         self.most_near_calculator_to_client = {}
-        self.running_services={}
+        self.running_services = {}
 
-
-    def compute_most_near(self,node_src,alloc_DES,sim,DES_dst):
+    def compute_most_near(self, node_src, alloc_DES, sim, DES_dst):
         """
         This functions caches the minimun path among client-devices and fog-devices-Module Calculator and it chooses the best calculator process deployed in that node
         """
-        #By Placement policy we know that:
+        # By Placement policy we know that:
         value = {"model": "d-"}
         topoDST = sim.topology.find_IDs(value)
-        minLenPath = float('inf')
+        minLenPath = float("inf")
         minPath = []
         for dev in topoDST:
             path = list(nx.shortest_path(sim.topology.G, source=node_src, target=dev))
-            if len(path)<minLenPath:
+            if len(path) < minLenPath:
                 minLenPath = len(path)
                 minPath = path
 
@@ -98,14 +92,14 @@ class BroadPath(Selection):
         # print self.running_services[last_dest_topo]
 
         if last_dest_topo not in self.round_robin_module_calculator:
-            self.round_robin_module_calculator[last_dest_topo]=0
+            self.round_robin_module_calculator[last_dest_topo] = 0
         else:
             self.round_robin_module_calculator[last_dest_topo] = (self.round_robin_module_calculator[last_dest_topo] + 1) % self.numOfMobilesPerDept
 
         nextDESServiceAtThatTopology = self.running_services[last_dest_topo][self.round_robin_module_calculator[last_dest_topo]]
-        return minPath,nextDESServiceAtThatTopology
+        return minPath, nextDESServiceAtThatTopology
 
-    def get_path(self, sim, app_name,message, topology_src, alloc_DES, alloc_module, traffic,from_des):
+    def get_path(self, sim, app_name, message, topology_src, alloc_DES, alloc_module, traffic, from_des):
         """
         Get the path between a node of the topology and a module deployed in a node. Furthermore it chooses the process deployed in that node.
 
@@ -122,14 +116,13 @@ class BroadPath(Selection):
             ## CACHING ROUTE - Between NODE_SRC and MESSAGE.DST - MOST NEAR
             # Warning. In this example, our topology is constant
             if node_src not in list(self.most_near_calculator_to_client.keys()):
-                self.most_near_calculator_to_client[node_src] = self.compute_most_near(
-                    node_src,alloc_DES, sim,DES_dst)
+                self.most_near_calculator_to_client[node_src] = self.compute_most_near(node_src, alloc_DES, sim, DES_dst)
 
-            path,des = self.most_near_calculator_to_client[node_src]
+            path, des = self.most_near_calculator_to_client[node_src]
 
             # print "PATH ",path
             # print "DES  ",des
-            return [path],[des]
+            return [path], [des]
 
         if message.dst == "Coordinator":  # ALL OF THEM ARE IN THE SAME ELEMENT  - CLOUD
             if message.dst not in list(self.rr.keys()):
@@ -143,7 +136,7 @@ class BroadPath(Selection):
                         self.rr[message.dst] = (self.rr[message.dst] + 1) % len(DES_dst)
                         return bestPath, bestDES
 
-        if message.name == "M.Concentration" :
+        if message.name == "M.Concentration":
             DES_dst = [message.last_idDes[0]]
 
         best_path = []
@@ -151,7 +144,7 @@ class BroadPath(Selection):
         min_path = float("inf")
         for des in DES_dst:
             dst_node = alloc_DES[des]
-            path = list(nx.shortest_path(sim.topology.G, source=node_src, target=dst_node)) ###
+            path = list(nx.shortest_path(sim.topology.G, source=node_src, target=dst_node))  ###
             if message.broadcasting:
                 best_path.append(path)
                 best_DES.append(des)
@@ -161,4 +154,4 @@ class BroadPath(Selection):
                     best_path = [path]
                     best_DES = [des]
 
-        return best_path,best_DES
+        return best_path, best_DES

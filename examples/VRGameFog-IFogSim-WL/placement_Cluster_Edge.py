@@ -9,6 +9,7 @@
 
 from yafs import Placement
 
+
 class CloudPlacement(Placement):
     """
     This implementation locates the services of the application in the cheapest cloud regardless of where the sources or sinks are located.
@@ -16,14 +17,15 @@ class CloudPlacement(Placement):
     It only runs once, in the initialization.
 
     """
+
     def initial_allocation(self, sim, app_name):
-        #We find the ID-nodo/resource
+        # We find the ID-nodo/resource
         value = {"model": "Cluster"}
-        id_cluster = sim.topology.find_IDs(value) #there is only ONE Cluster
+        id_cluster = sim.topology.find_IDs(value)  # there is only ONE Cluster
         value = {"model": "m-"}
         id_mobiles = sim.topology.find_IDs(value)
 
-        #Given an application we get its modules implemented
+        # Given an application we get its modules implemented
         app = sim.apps[app_name]
         services = app.services
 
@@ -31,18 +33,18 @@ class CloudPlacement(Placement):
             if "Coordinator" == module:
                 if "Coordinator" in list(self.scaleServices.keys()):
                     # print self.scaleServices["Coordinator"]
-                    for rep in range(0,self.scaleServices["Coordinator"]):
-                        idDES = sim.deploy_module(app_name,module,services[module],id_cluster) #Deploy as many modules as elements in the array
+                    for rep in range(0, self.scaleServices["Coordinator"]):
+                        idDES = sim.deploy_module(app_name, module, services[module], id_cluster)  # Deploy as many modules as elements in the array
 
             elif "Calculator" == module:
                 if "Calculator" in list(self.scaleServices.keys()):
                     for rep in range(0, self.scaleServices["Calculator"]):
-                        idDES = sim.deploy_module(app_name,module,services[module],id_cluster)
+                        idDES = sim.deploy_module(app_name, module, services[module], id_cluster)
 
             elif "Client" == module:
-                idDES = sim.deploy_module(app_name,module, services[module],id_mobiles)
+                idDES = sim.deploy_module(app_name, module, services[module], id_mobiles)
 
-    #end function
+    # end function
 
 
 class FogPlacement(Placement):
@@ -52,10 +54,11 @@ class FogPlacement(Placement):
     It only runs once, in the initialization.
 
     """
+
     def initial_allocation(self, sim, app_name):
-        #We find the ID-nodo/resource
+        # We find the ID-nodo/resource
         value = {"model": "Cluster"}
-        id_cluster = sim.topology.find_IDs(value) #there is only ONE Cluster
+        id_cluster = sim.topology.find_IDs(value)  # there is only ONE Cluster
 
         value = {"model": "d-"}
         id_proxies = sim.topology.find_IDs(value)
@@ -63,7 +66,7 @@ class FogPlacement(Placement):
         value = {"model": "m-"}
         id_mobiles = sim.topology.find_IDs(value)
 
-        #Given an application we get its modules implemented
+        # Given an application we get its modules implemented
         app = sim.apps[app_name]
         services = app.services
 
@@ -71,13 +74,10 @@ class FogPlacement(Placement):
             if "Coordinator" == module:
                 if "Coordinator" in list(self.scaleServices.keys()):
                     for rep in range(0, self.scaleServices["Coordinator"]):
-                        idDES = sim.deploy_module(app_name, module, services[module],id_cluster)  # Deploy as many modules as elements in the array
+                        idDES = sim.deploy_module(app_name, module, services[module], id_cluster)  # Deploy as many modules as elements in the array
             elif "Calculator" == module:
                 if "Calculator" in list(self.scaleServices.keys()):
                     for rep in range(0, self.scaleServices["Calculator"]):
                         idDES = sim.deploy_module(app_name, module, services[module], id_proxies)
             elif "Client" == module:
-                idDES = sim.deploy_module(app_name,module, services[module],id_mobiles)
-
-
-
+                idDES = sim.deploy_module(app_name, module, services[module], id_mobiles)

@@ -1,4 +1,5 @@
 import random
+
 """
 
     This example implements a simple evolutive deployment of fog devices to study the latency of two applications.
@@ -11,12 +12,12 @@ import random
 """
 
 from yafs.core import Sim
-from yafs.application import Application,Message
+from yafs.application import Application, Message
 from yafs import Topology
-from yafs.distribution import deterministicDistribution,deterministicDistributionStartPoint
+from yafs.distribution import deterministicDistribution, deterministicDistributionStartPoint
 
-from .Evolutive_population import Evolutive,Statical
-from .selection_multipleDeploys import  CloudPath_RR,BroadPath
+from .Evolutive_population import Evolutive, Statical
+from .selection_multipleDeploys import CloudPath_RR, BroadPath
 
 import networkx as nx
 import numpy as np
@@ -27,13 +28,12 @@ import operator
 
 RANDOM_SEED = 1
 
+
 def create_application(name):
     # APLICATION
     a = Application(name=name)
 
-    a.set_modules([{"Generator":{"Type":Application.TYPE_SOURCE}},
-                   {"Actuator": {"Type": Application.TYPE_SINK}}
-                   ])
+    a.set_modules([{"Generator": {"Type": Application.TYPE_SOURCE}}, {"Actuator": {"Type": Application.TYPE_SINK}}])
 
     m_egg = Message("M.Action", "Generator", "Actuator", instructions=100, bytes=10)
     a.add_source_messages(m_egg)
@@ -54,30 +54,30 @@ def main(simulated_time):
 
     ls = list(t.G.nodes)
     li = {x: int(x) for x in ls}
-    nx.relabel_nodes(t.G, li, False) #Transform str-labels to int-labels
+    nx.relabel_nodes(t.G, li, False)  # Transform str-labels to int-labels
 
-    print("Nodes: %i" %len(t.G.nodes()))
-    print("Edges: %i" %len(t.G.edges()))
-    #MANDATORY fields of a link
+    print("Nodes: %i" % len(t.G.nodes()))
+    print("Edges: %i" % len(t.G.edges()))
+    # MANDATORY fields of a link
     # Default values =  {"BW": 1, "PR": 1}
-    valuesOne = dict(zip(t.G.edges(),np.ones(len(t.G.edges()))))
+    valuesOne = dict(zip(t.G.edges(), np.ones(len(t.G.edges()))))
 
-    nx.set_edge_attributes(t.G, name='BW', values=valuesOne)
-    nx.set_edge_attributes(t.G, name='PR', values=valuesOne)
+    nx.set_edge_attributes(t.G, name="BW", values=valuesOne)
+    nx.set_edge_attributes(t.G, name="PR", values=valuesOne)
 
     centrality = nx.betweenness_centrality(t.G)
     nx.set_node_attributes(t.G, name="centrality", values=centrality)
 
     sorted_clustMeasure = sorted(list(centrality.items()), key=operator.itemgetter(1), reverse=True)
 
-    top20_devices =  sorted_clustMeasure[:20]
+    top20_devices = sorted_clustMeasure[:20]
     main_fog_device = copy.copy(top20_devices[0][0])
 
     print("-" * 20)
     print("Top 20 centralised nodes:")
     for item in top20_devices:
         print(item)
-    print("-"*20)
+    print("-" * 20)
     """
     APPLICATION
     """
@@ -87,30 +87,26 @@ def main(simulated_time):
     """
     PLACEMENT algorithm
     """
-    #There are not modules to place.
+    # There are not modules to place.
     placement = NoPlacementOfModules("NoPlacement")
 
     """
     POPULATION algorithm
     """
-    number_generators = int(len(t.G)*0.1)
+    number_generators = int(len(t.G) * 0.1)
     print(number_generators)
-    dDistribution = deterministicDistributionStartPoint(3000,300,name="Deterministic")
+    dDistribution = deterministicDistributionStartPoint(3000, 300, name="Deterministic")
     dDistributionSrc = deterministicDistribution(name="Deterministic", time=10)
-    pop1 = Evolutive(top20_devices,number_generators,name="top",activation_dist=dDistribution)
-    pop1.set_sink_control({"app":app1.name,"number": 1, "module": app1.get_sink_modules()})
-    pop1.set_src_control(
-        {"number": 1, "message": app1.get_message("M.Action"), "distribution": dDistributionSrc})
+    pop1 = Evolutive(top20_devices, number_generators, name="top", activation_dist=dDistribution)
+    pop1.set_sink_control({"app": app1.name, "number": 1, "module": app1.get_sink_modules()})
+    pop1.set_src_control({"number": 1, "message": app1.get_message("M.Action"), "distribution": dDistributionSrc})
 
-
-    pop2 = Statical(number_generators,name="Statical")
+    pop2 = Statical(number_generators, name="Statical")
     pop2.set_sink_control({"id": main_fog_device, "number": number_generators, "module": app2.get_sink_modules()})
 
-    pop2.set_src_control(
-        {"number": 1, "message": app2.get_message("M.Action"), "distribution": dDistributionSrc})
+    pop2.set_src_control({"number": 1, "message": app2.get_message("M.Action"), "distribution": dDistributionSrc})
 
-    #In addition, a source includes a distribution function:
-
+    # In addition, a source includes a distribution function:
 
     """--
     SELECTOR algorithm
@@ -118,7 +114,6 @@ def main(simulated_time):
     selectorPath1 = BroadPath()
 
     selectorPath2 = CloudPath_RR()
-
 
     """
     SIMULATION ENGINE
@@ -128,14 +123,15 @@ def main(simulated_time):
     s.deploy_app(app1, placement, pop1, selectorPath1)
     # s.deploy_app(app2, placement, pop2,  selectorPath2)
 
-    s.run(simulated_time,test_initial_deploy=False,show_progress_monitor=False)
+    s.run(simulated_time, test_initial_deploy=False, show_progress_monitor=False)
     # s.draw_allocated_topology() # for debugging
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     import logging.config
     import os
 
-    logging.config.fileConfig(os.getcwd()+'/logging.ini')
+    logging.config.fileConfig(os.getcwd() + "/logging.ini")
 
     start_time = time.time()
 

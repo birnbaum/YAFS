@@ -1,5 +1,6 @@
 from yafs.population import Population
 
+
 class Statical(Population):
     """
     This implementation of a population algorithm statically assigns the generation of a source in a node of the topology. It is only invoked in the initialization.
@@ -7,8 +8,8 @@ class Statical(Population):
     Extends: :mod: Population
     """
 
-    def initial_allocation(self,sim,app_name):
-        #Assignment of SINK and SOURCE pure modules
+    def initial_allocation(self, sim, app_name):
+        # Assignment of SINK and SOURCE pure modules
 
         for ctrl in self.sink_control:
             if "id" in list(ctrl.keys()):
@@ -23,5 +24,4 @@ class Statical(Population):
                 for idx in ctrl["id"]:
                     idsrc = sim.deploy_source(app_name, id_node=idx, msg=msg, distribution=dst)
 
-
-        #end assignments
+        # end assignments

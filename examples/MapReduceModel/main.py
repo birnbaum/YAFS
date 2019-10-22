@@ -6,7 +6,7 @@
 import json
 import argparse
 from yafs.core import Sim
-from yafs.application import Application,Message
+from yafs.application import Application, Message
 from yafs import Topology
 from yafs import JSONPlacement
 from yafs.distribution import *
@@ -19,13 +19,15 @@ from .jsonPopulation import JSONPopulation
 
 import time
 import networkx as nx
+
 RANDOM_SEED = 1
+
 
 def create_applications_from_json(data):
     applications = {}
     for app in data:
         a = Application(name=app["name"])
-        modules = [{"None":{"Type":Application.TYPE_SOURCE}}]
+        modules = [{"None": {"Type": Application.TYPE_SOURCE}}]
         for module in app["module"]:
             if "RAM" in list(module.keys()):
                 modules.append({module["name"]: {"RAM": module["RAM"], "Type": Application.TYPE_MODULE}})
@@ -35,24 +37,24 @@ def create_applications_from_json(data):
 
         ms = {}
         for message in app["message"]:
-            #print "Creando mensaje: %s" %message["name"]
-            ms[message["name"]] = Message(message["name"],message["s"],message["d"],instructions=message["instructions"],bytes=message["bytes"])
+            # print "Creando mensaje: %s" %message["name"]
+            ms[message["name"]] = Message(message["name"], message["s"], message["d"], instructions=message["instructions"], bytes=message["bytes"])
             if message["s"] == "None":
                 a.add_source_messages(ms[message["name"]])
 
-        #print "Total mensajes creados %i" %len(ms.keys())
+        # print "Total mensajes creados %i" %len(ms.keys())
         for idx, message in enumerate(app["transmission"]):
             if "message_out" in list(message.keys()):
                 value_treshld = 1.0
                 if "fractional" in list(message.keys()):
                     value_treshld = message["fractional"]
-                a.add_service_module(message["module"],ms[message["message_in"]], ms[message["message_out"]], fractional_selectivity, threshold=value_treshld)
+                a.add_service_module(message["module"], ms[message["message_in"]], ms[message["message_out"]], fractional_selectivity, threshold=value_treshld)
             else:
                 a.add_service_module(message["module"], ms[message["message_in"]])
 
-        applications[app["name"]]=a
+        applications[app["name"]] = a
 
-    #a.add_service_module("Client", m_egg, m_sensor, fractional_selectivity, threshold=0.9)
+    # a.add_service_module("Client", m_egg, m_sensor, fractional_selectivity, threshold=0.9)
     return applications
 
 
@@ -62,6 +64,8 @@ def create_applications_from_json(data):
 """
 It returns the software modules (a list of identifiers of DES process) deployed on this node
 """
+
+
 def getProcessFromThatNode(sim, node_to_remove):
     if node_to_remove in list(sim.alloc_DES.values()):
         DES = []
@@ -69,42 +73,43 @@ def getProcessFromThatNode(sim, node_to_remove):
         for k, v in list(sim.alloc_DES.items()):
             if v == node_to_remove:
                 DES.append(k)
-        return DES,True
+        return DES, True
     else:
-        return [],False
-
+        return [], False
 
 
 """
 It controls the elimination of a node
 """
 idxFControl = 0
-def failureControl(sim,filelog,ids):
+
+
+def failureControl(sim, filelog, ids):
     global idxFControl
     nodes = list(sim.topology.G.nodes())
-    if len(nodes)>1:
+    if len(nodes) > 1:
         node_to_remove = ids[idxFControl]
-        idxFControl +=1
+        idxFControl += 1
 
-        keys_DES,someModuleDeployed = getProcessFromThatNode(sim, node_to_remove)
+        keys_DES, someModuleDeployed = getProcessFromThatNode(sim, node_to_remove)
 
         print("\n\nRemoving node: %i, Total nodes: %i" % (node_to_remove, len(nodes)))
-        print("\tStopping some DES processes: %s\n\n"%keys_DES)
-        filelog.write("%i,%s,%d\n"%(node_to_remove, someModuleDeployed,sim.env.now))
+        print("\tStopping some DES processes: %s\n\n" % keys_DES)
+        filelog.write("%i,%s,%d\n" % (node_to_remove, someModuleDeployed, sim.env.now))
 
         ##Print some information:
         for des in keys_DES:
             if des in list(sim.alloc_source.keys()):
-                print("Removing a Gtw/User entity\t"*4)
+                print("Removing a Gtw/User entity\t" * 4)
 
         sim.remove_node(node_to_remove)
         for key in keys_DES:
             sim.stop_process(key)
     else:
-        sim.stop = True ## We stop the simulation
+        sim.stop = True  ## We stop the simulation
 
 
-def main(simulated_time,experimento,file,study,it):
+def main(simulated_time, experimento, file, study, it):
 
     random.seed(it)
     np.random.seed(it)
@@ -114,8 +119,7 @@ def main(simulated_time,experimento,file,study,it):
     """
     t = Topology()
 
-
-    dataNetwork = json.load(open(experimento+file+'-network.json'))
+    dataNetwork = json.load(open(experimento + file + "-network.json"))
     t.load(dataNetwork)
 
     attNodes = {}
@@ -129,21 +133,21 @@ def main(simulated_time,experimento,file,study,it):
     APPLICATION
     """
     studyApp = study
-    if study=="FstrRep":
-        studyApp="Replica"
+    if study == "FstrRep":
+        studyApp = "Replica"
     elif study == "Cloud":
-        studyApp="Single"
+        studyApp = "Single"
 
-    dataApp = json.load(open(experimento+file+'-app%s.json'%studyApp))
+    dataApp = json.load(open(experimento + file + "-app%s.json" % studyApp))
     apps = create_applications_from_json(dataApp)
-    #for app in apps:
+    # for app in apps:
     #  print apps[app]
 
     """
     PLACEMENT algorithm
     """
-    placementJson = json.load(open(experimento+file+'-alloc%s.json'%study))
-    placement = JSONPlacement(name="Placement",json=placementJson)
+    placementJson = json.load(open(experimento + file + "-alloc%s.json" % study))
+    placement = JSONPlacement(name="Placement", json=placementJson)
 
     ### Placement histogram
 
@@ -167,10 +171,8 @@ def main(simulated_time,experimento,file,study,it):
     elif study == "Cloud":
         studyUser = "Single"
 
-
-    dataPopulation = json.load(open(experimento+file+'-users%s.json'%studyUser))
-    pop = JSONPopulation(name="Statical",json=dataPopulation,it=it)
-
+    dataPopulation = json.load(open(experimento + file + "-users%s.json" % studyUser))
+    pop = JSONPopulation(name="Statical", json=dataPopulation, it=it)
 
     """
     SELECTOR algorithm
@@ -182,8 +184,7 @@ def main(simulated_time,experimento,file,study,it):
     """
 
     stop_time = simulated_time
-    s = Sim(t, default_results_path=experimento + "Results_%i_%s_%s_%i" % (it,file,study,stop_time))
-
+    s = Sim(t, default_results_path=experimento + "Results_%i_%s_%s_%i" % (it, file, study, stop_time))
 
     """
     Failure process
@@ -198,56 +199,41 @@ def main(simulated_time,experimento,file,study,it):
     # # s.deploy_monitor("Failure Generation", failureControl, distribution,sim=s,filelog=failurefilelog,ids=centrality)
     # s.deploy_monitor("Failure Generation", failureControl, distribution,sim=s,filelog=failurefilelog,ids=randomValues)
 
-    #For each deployment the user - population have to contain only its specific sources
+    # For each deployment the user - population have to contain only its specific sources
     for aName in list(apps.keys()):
-        #print "Deploying app: ",aName
-        pop_app = JSONPopulation(name="Statical_%s"%aName,json={},it=it)
+        # print "Deploying app: ",aName
+        pop_app = JSONPopulation(name="Statical_%s" % aName, json={}, it=it)
         data = []
         for element in pop.data["sources"]:
-            if element['app'] == aName:
+            if element["app"] == aName:
                 data.append(element)
-        pop_app.data["sources"]=data
+        pop_app.data["sources"] = data
 
         s.deploy_app(apps[aName], placement, pop_app, selectorPath)
 
-
-    s.run(stop_time, test_initial_deploy=False, show_progress_monitor=False) #TEST to TRUE
-
+    s.run(stop_time, test_initial_deploy=False, show_progress_monitor=False)  # TEST to TRUE
 
     ## Enrouting information
     # print "Values"
     # print selectorPath.cache.values()
 
-
     # failurefilelog.close()
 
     # #CHECKS
-    #print s.topology.G.nodes
+    # print s.topology.G.nodes
     # s.print_debug_assignaments()
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     """Main function"""
 
-    parser = argparse.ArgumentParser(
-        formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
-    parser.add_argument(
-        '--work-dir',
-        type=str,
-        default="",
-        help='Working directory')
+    parser.add_argument("--work-dir", type=str, default="", help="Working directory")
 
-    parser.add_argument(
-        '--simulations',
-        type=int,
-        default=1,
-        help='Number of simulations')
+    parser.add_argument("--simulations", type=int, default=1, help="Number of simulations")
 
-    parser.add_argument(
-        '--duration',
-        type=int,
-        default=100000,
-        help='Simulation time')
+    parser.add_argument("--duration", type=int, default=100000, help="Simulation time")
 
     args, pipeline_args = parser.parse_known_args()
 
@@ -255,11 +241,9 @@ if __name__ == '__main__':
     pathExperimento = args.work_dir
     duration = args.duration
 
-
-
     study = ""
 
-    #logging.config.fileConfig(os.getcwd()+'/logging.ini')
+    # logging.config.fileConfig(os.getcwd()+'/logging.ini')
 
     for i in range(nSimulations):
 
@@ -274,45 +258,43 @@ if __name__ == '__main__':
 
             study = "Replica"
             print("\tRunning %s" % study)
-            main(simulated_time=duration, experimento=pathExperimento, file=file, study=study,it=i)
+            main(simulated_time=duration, experimento=pathExperimento, file=file, study=study, it=i)
 
             study = "Single"
             print("\tRunning %s" % study)
-            main(simulated_time=duration, experimento=pathExperimento, file=file, study=study,it=i)
+            main(simulated_time=duration, experimento=pathExperimento, file=file, study=study, it=i)
 
             study = "FstrRep"
             print("\tRunning %s" % study)
-            main(simulated_time=duration, experimento=pathExperimento, file=file, study=study,it=i)
+            main(simulated_time=duration, experimento=pathExperimento, file=file, study=study, it=i)
 
-          #  study = "Cloud"
-          #  print "\tRunning %s" % study
-          #  main(simulated_time=duration, experimento=pathExperimento, file=file, study=study,it=i)
+        #  study = "Cloud"
+        #  print "\tRunning %s" % study
+        #  main(simulated_time=duration, experimento=pathExperimento, file=file, study=study,it=i)
 
         print("SEGUNDA PARTE")
 
         for n in range(100, 301, 20):
-        # for n in xrange(20, 220, 20):
+            # for n in xrange(20, 220, 20):
             file = "f100n%i" % n
             # file = "f100n%i" % n
             print(file)
 
             study = "Replica"
             print("\tRunning %s" % study)
-            main(simulated_time=duration, experimento=pathExperimento, file=file, study=study,it=i)
+            main(simulated_time=duration, experimento=pathExperimento, file=file, study=study, it=i)
 
             study = "Single"
             print("\tRunning %s" % study)
-            main(simulated_time=duration, experimento=pathExperimento, file=file, study=study,it=i)
+            main(simulated_time=duration, experimento=pathExperimento, file=file, study=study, it=i)
 
             study = "FstrRep"
             print("\tRunning %s" % study)
-            main(simulated_time=duration, experimento=pathExperimento, file=file, study=study,it=i)
+            main(simulated_time=duration, experimento=pathExperimento, file=file, study=study, it=i)
 
-           # study = "Cloud"
-           # print "\tRunning %s" % study
-           # main(simulated_time=duration, experimento=pathExperimento, file=file, study=study,it=i)
+        # study = "Cloud"
+        # print "\tRunning %s" % study
+        # main(simulated_time=duration, experimento=pathExperimento, file=file, study=study,it=i)
 
         print("Simulation Done")
         print(("\n--- %s seconds ---" % (time.time() - start_time)))
-
-

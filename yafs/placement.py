@@ -26,14 +26,13 @@ class Placement(object):
 
     """
 
-    def __init__(self,name,activation_dist=None,logger=None):
+    def __init__(self, name, activation_dist=None, logger=None):
         self.logger = logger or logging.getLogger(__name__)
-        self.name=name
+        self.name = name
         self.activation_dist = activation_dist
         self.scaleServices = []
 
-
-    def scaleService(self,scale):
+    def scaleService(self, scale):
         self.scaleServices = scale
 
     def get_next_activation(self):
@@ -43,8 +42,7 @@ class Placement(object):
         """
         return next(self.activation_dist)
 
-
-    def initial_allocation(self,sim,app_name):
+    def initial_allocation(self, sim, app_name):
         """
         Given an ecosystem, it starts the allocation of modules in the topology.
 
@@ -55,8 +53,7 @@ class Placement(object):
         .. attention:: override required
         """
 
-
-    def run(self,sim):
+    def run(self, sim):
         """
         This method will be invoked during the simulation to change the assignment of the modules to the topology
 
@@ -64,6 +61,7 @@ class Placement(object):
             sim (:mod: yafs.core.Sim)
         """
         self.logger.debug("Activiting - RUN - Placement")
+
 
 class JSONPlacement(Placement):
     def __init__(self, json, **kwargs):
@@ -78,11 +76,11 @@ class JSONPlacement(Placement):
                 idtopo = item["id_resource"]
                 app = sim.apps[app_name]
                 services = app.services
-                idDES = sim.deploy_module(app_name, module, services[module],[idtopo])
+                idDES = sim.deploy_module(app_name, module, services[module], [idtopo])
 
 
 class JSONPlacementOnCloud(Placement):
-    def __init__(self, json,idCloud, **kwargs):
+    def __init__(self, json, idCloud, **kwargs):
         super(JSONPlacementOnCloud, self).__init__(**kwargs)
         self.data = json
         self.idCloud = idCloud
@@ -96,8 +94,7 @@ class JSONPlacementOnCloud(Placement):
 
                 app = sim.apps[app_name]
                 services = app.services
-                idDES = sim.deploy_module(app_name, module, services[module],[self.idCloud])
-
+                idDES = sim.deploy_module(app_name, module, services[module], [self.idCloud])
 
 
 class ClusterPlacement(Placement):
@@ -107,14 +104,15 @@ class ClusterPlacement(Placement):
     It only runs once, in the initialization.
 
     """
+
     def initial_allocation(self, sim, app_name):
-        #We find the ID-nodo/resource
+        # We find the ID-nodo/resource
         value = {"model": "Cluster"}
-        id_cluster = sim.topology.find_IDs(value) #there is only ONE Cluster
+        id_cluster = sim.topology.find_IDs(value)  # there is only ONE Cluster
         value = {"model": "m-"}
         id_mobiles = sim.topology.find_IDs(value)
 
-        #Given an application we get its modules implemented
+        # Given an application we get its modules implemented
         app = sim.apps[app_name]
         services = app.services
 
@@ -122,18 +120,18 @@ class ClusterPlacement(Placement):
             if "Coordinator" == module:
                 if "Coordinator" in list(self.scaleServices.keys()):
                     # print self.scaleServices["Coordinator"]
-                    for rep in range(0,self.scaleServices["Coordinator"]):
-                        idDES = sim.deploy_module(app_name,module,services[module],id_cluster) #Deploy as many modules as elements in the array
+                    for rep in range(0, self.scaleServices["Coordinator"]):
+                        idDES = sim.deploy_module(app_name, module, services[module], id_cluster)  # Deploy as many modules as elements in the array
 
             elif "Calculator" == module:
                 if "Calculator" in list(self.scaleServices.keys()):
                     for rep in range(0, self.scaleServices["Calculator"]):
-                        idDES = sim.deploy_module(app_name,module,services[module],id_cluster)
+                        idDES = sim.deploy_module(app_name, module, services[module], id_cluster)
 
             elif "Client" == module:
-                idDES = sim.deploy_module(app_name,module, services[module],id_mobiles)
+                idDES = sim.deploy_module(app_name, module, services[module], id_mobiles)
 
-    #end function
+    # end function
 
     # def run(self, sim):
     #     """
@@ -152,19 +150,18 @@ class EdgePlacement(Placement):
     It only runs once, in the initialization.
 
     """
+
     def initial_allocation(self, sim, app_name):
-        #We find the ID-nodo/resource
+        # We find the ID-nodo/resource
         value = {"model": "Cluster"}
-        id_cluster = sim.topology.find_IDs(value) #there is only ONE Cluster
+        id_cluster = sim.topology.find_IDs(value)  # there is only ONE Cluster
         value = {"model": "d-"}
         id_proxies = sim.topology.find_IDs(value)
-
-
 
         value = {"model": "m-"}
         id_mobiles = sim.topology.find_IDs(value)
 
-        #Given an application we get its modules implemented
+        # Given an application we get its modules implemented
         app = sim.apps[app_name]
         services = app.services
 
@@ -173,13 +170,11 @@ class EdgePlacement(Placement):
             print(module)
 
             if "Coordinator" == module:
-                idDES = sim.deploy_module(app_name,module,services[module],id_cluster) #Deploy as many modules as elements in the array
+                idDES = sim.deploy_module(app_name, module, services[module], id_cluster)  # Deploy as many modules as elements in the array
             elif "Calculator" == module:
-                idDES = sim.deploy_module(app_name,module,services[module],id_proxies)
+                idDES = sim.deploy_module(app_name, module, services[module], id_proxies)
             elif "Client" == module:
-                idDES = sim.deploy_module(app_name,module, services[module],id_mobiles)
-
-
+                idDES = sim.deploy_module(app_name, module, services[module], id_mobiles)
 
 
 class NoPlacementOfModules(Placement):
@@ -190,7 +185,7 @@ class NoPlacementOfModules(Placement):
     It only runs once, in the initialization.
 
     """
-    def initial_allocation(self, sim, app_name):
-        #The are not modules to be allocated
-        None
 
+    def initial_allocation(self, sim, app_name):
+        # The are not modules to be allocated
+        None

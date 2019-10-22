@@ -10,12 +10,12 @@
 """
 
 from yafs.core import Sim
-from yafs.application import Application,Message
+from yafs.application import Application, Message
 from yafs import Topology
 from yafs.distribution import *
 
 from .Evolutive_population import Population_Move
-from .selection_multipleDeploys import  CloudPath_RR
+from .selection_multipleDeploys import CloudPath_RR
 
 import itertools
 import time
@@ -26,13 +26,12 @@ import numpy as np
 
 RANDOM_SEED = 1
 
+
 def create_application(name):
     # APLICATION
     a = Application(name=name)
 
-    a.set_modules([{"Generator":{"Type":Application.TYPE_SOURCE}},
-                   {"Actuator": {"Type": Application.TYPE_SINK}}
-                   ])
+    a.set_modules([{"Generator": {"Type": Application.TYPE_SOURCE}}, {"Actuator": {"Type": Application.TYPE_SINK}}])
 
     m_egg = Message("M.Action", "Generator", "Actuator", instructions=100, bytes=10)
     a.add_source_messages(m_egg)
@@ -53,23 +52,23 @@ def main(simulated_time):
 
     ls = list(t.G.nodes)
     li = {x: int(x) for x in ls}
-    nx.relabel_nodes(t.G, li, False) #Transform str-labels to int-labels
+    nx.relabel_nodes(t.G, li, False)  # Transform str-labels to int-labels
 
-    print("Nodes: %i" %len(t.G.nodes()))
-    print("Edges: %i" %len(t.G.edges()))
-    #MANDATORY fields of a link
+    print("Nodes: %i" % len(t.G.nodes()))
+    print("Edges: %i" % len(t.G.edges()))
+    # MANDATORY fields of a link
     # Default values =  {"BW": 1, "PR": 1}
-    valuesOne = dict(zip(t.G.edges(),np.ones(len(t.G.edges()))))
+    valuesOne = dict(zip(t.G.edges(), np.ones(len(t.G.edges()))))
 
-    nx.set_edge_attributes(t.G, name='BW', values=valuesOne)
-    nx.set_edge_attributes(t.G, name='PR', values=valuesOne)
+    nx.set_edge_attributes(t.G, name="BW", values=valuesOne)
+    nx.set_edge_attributes(t.G, name="PR", values=valuesOne)
 
     centrality = nx.betweenness_centrality(t.G)
     nx.set_node_attributes(t.G, name="centrality", values=centrality)
 
     sorted_clustMeasure = sorted(list(centrality.items()), key=operator.itemgetter(1), reverse=True)
 
-    top20_devices =  sorted_clustMeasure[0:20]
+    top20_devices = sorted_clustMeasure[0:20]
     main_fog_device = copy.copy(top20_devices[0][0])
 
     # df = pd.read_csv("pos_network.csv")
@@ -85,46 +84,40 @@ def main(simulated_time):
     # exit()
 
     print("-" * 20)
-    print("Best top centralized device: ",main_fog_device)
-    print("-"*20)
+    print("Best top centralized device: ", main_fog_device)
+    print("-" * 20)
 
     """
     APPLICATION
     """
     app1 = create_application("app1")
 
-
     """
     PLACEMENT algorithm
     """
-    #There are not modules to place.
+    # There are not modules to place.
     placement = NoPlacementOfModules("NoPlacement")
 
     """
     POPULATION algorithm
     """
-    number_generators = int(len(t.G)*0.1)
-    print("Number of generators %i"%number_generators)
+    number_generators = int(len(t.G) * 0.1)
+    print("Number of generators %i" % number_generators)
 
-    #you can use whatever funciton to change the topology
+    # you can use whatever funciton to change the topology
     dStart = deterministicDistributionStartPoint(500, 400, name="Deterministic")
-    pop = Population_Move(name="mttf-nodes",srcs = number_generators,node_dst=main_fog_device,activation_dist=dStart)
+    pop = Population_Move(name="mttf-nodes", srcs=number_generators, node_dst=main_fog_device, activation_dist=dStart)
     pop.set_sink_control({"id": main_fog_device, "number": number_generators, "module": app1.get_sink_modules()})
 
-
-
     dDistribution = deterministicDistribution(name="Deterministic", time=100)
-    pop.set_src_control(
-        {"number": 1, "message": app1.get_message("M.Action"), "distribution": dDistribution})
+    pop.set_src_control({"number": 1, "message": app1.get_message("M.Action"), "distribution": dDistribution})
 
-    #In addition, a source includes a distribution function:
-
+    # In addition, a source includes a distribution function:
 
     """--
     SELECTOR algorithm
     """
     selectorPath = CloudPath_RR()
-
 
     """
     SIMULATION ENGINE
@@ -132,18 +125,17 @@ def main(simulated_time):
     s = Sim(t, default_results_path="Results_%s" % (simulated_time))
     s.deploy_app(app1, placement, pop, selectorPath)
 
-    s.run(simulated_time,test_initial_deploy=False,show_progress_monitor=False)
-
+    s.run(simulated_time, test_initial_deploy=False, show_progress_monitor=False)
 
     # s.draw_allocated_topology() # for debugging
     s.print_debug_assignaments()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     import logging.config
     import os
 
-    logging.config.fileConfig(os.getcwd()+'/logging.ini')
+    logging.config.fileConfig(os.getcwd() + "/logging.ini")
 
     start_time = time.time()
 
@@ -151,4 +143,4 @@ if __name__ == '__main__':
 
     print(("\n--- %s seconds ---" % (time.time() - start_time)))
 
-#ffmpeg -i out5.mp4 -pix_fmt rgb24  out.gif
+# ffmpeg -i out5.mp4 -pix_fmt rgb24  out.gif

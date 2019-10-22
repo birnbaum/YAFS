@@ -23,30 +23,21 @@ class Topology:
     NODE_IPT = "IPT"
     "Node feature: IPS . Instructions per Simulation Time "
 
-
-
     def __init__(self, logger=None):
 
         self.__idNode = -1
         # G is a nx.networkx graph
         self.G = None
 
-
         # TODO VERSION 2. THIS VALUE SHOULD BE REMOVED
         # INSTEAD USE NX.G. attributes
         self.nodeAttributes = {}
-
 
         # A simple *cache* to have all cloud  nodes
         # TODO VERSION 2. THIS VALUE SHOULD BE REMOVED
         self.cloudNodes = []
 
-
-
         self.logger = logger or logging.getLogger(__name__)
-
-
-
 
     def __init_uptimes(self):
         for key in self.nodeAttributes:
@@ -59,7 +50,7 @@ class Topology:
         """
         return self.G.edges
 
-    def get_edge(self,key):
+    def get_edge(self, key):
         """
         Args:
             key (str): a edge identifier, i.e. (1,9)
@@ -85,7 +76,6 @@ class Topology:
             list: a list of node features
         """
         return self.G.node[key]
-
 
     def get_info(self):
         return self.nodeAttributes
@@ -129,13 +119,12 @@ class Topology:
         """
         self.G = nx.Graph()
         for edge in data["link"]:
-            self.G.add_edge(edge["s"], edge["d"], BW=edge[self.LINK_BW],PR=edge[self.LINK_PR])
+            self.G.add_edge(edge["s"], edge["d"], BW=edge[self.LINK_BW], PR=edge[self.LINK_PR])
 
-
-        #TODO This part can be removed in next versions
+        # TODO This part can be removed in next versions
         for node in data["entity"]:
             self.nodeAttributes[node["id"]] = node
-        #end remove
+        # end remove
 
         # Correct way to use custom and mandatory topology attributes
 
@@ -151,15 +140,13 @@ class Topology:
             except KeyError:
                 valuesRAM[node["id"]] = 0
 
-
-        nx.set_node_attributes(self.G,values=valuesIPT,name="IPT")
-        nx.set_node_attributes(self.G,values=valuesRAM,name="RAM")
-
+        nx.set_node_attributes(self.G, values=valuesIPT, name="IPT")
+        nx.set_node_attributes(self.G, values=valuesRAM, name="RAM")
 
         self.__idNode = len(self.G.nodes)
         self.__init_uptimes()
 
-    def load_all_node_attr(self,data):
+    def load_all_node_attr(self, data):
         self.G = nx.Graph()
         for edge in data["link"]:
             self.G.add_edge(edge["s"], edge["d"], BW=edge[self.LINK_BW], PR=edge[self.LINK_PR])
@@ -177,16 +164,12 @@ class Topology:
         self.__idNode = len(self.G.nodes)
         self.__init_uptimes()
 
-
-
-
-    def load_graphml(self,filename):
-        warnings.warn("The load_graphml function is deprecated and "
-                      "will be removed in version 2.0.0. "
-                      "Use NX.READ_GRAPHML function instead.",
-                      FutureWarning,
-                      stacklevel=8
-                      )
+    def load_graphml(self, filename):
+        warnings.warn(
+            "The load_graphml function is deprecated and " "will be removed in version 2.0.0. " "Use NX.READ_GRAPHML function instead.",
+            FutureWarning,
+            stacklevel=8,
+        )
 
         self.G = nx.read_graphml(filename)
         attEdges = {}
@@ -198,8 +181,7 @@ class Topology:
             attNodes[k] = {"IPT": 1}
         nx.set_node_attributes(self.G, values=attNodes)
         for k in self.G.nodes():
-            self.nodeAttributes[k] = self.G.node[k] #it has "id" att. TODO IMPROVE
-
+            self.nodeAttributes[k] = self.G.node[k]  # it has "id" att. TODO IMPROVE
 
     def get_nodes_att(self):
         """
@@ -208,7 +190,7 @@ class Topology:
         """
         return self.nodeAttributes
 
-    def find_IDs(self,value):
+    def find_IDs(self, value):
         """
         Search for nodes with the same attributes that value
 
@@ -228,7 +210,6 @@ class Topology:
                     result.append(key)
         return result
 
-
     def size(self):
         """
         Returns:
@@ -245,7 +226,7 @@ class Topology:
 
             edges (list): a list of destination edges
         """
-        self.__idNode = + 1
+        self.__idNode = +1
         self.G.add_node(self.__idNode)
         self.G.add_edges_from(list(zip(nodes, [self.__idNode] * len(nodes))))
 
@@ -262,13 +243,12 @@ class Topology:
         self.G.remove_node(id_node)
         return self.size()
 
-
-    def write(self,path):
+    def write(self, path):
         nx.write_gexf(self.G, path)
 
-
-    def draw_png(self,path_file):
+    def draw_png(self, path_file):
         import matplotlib.pyplot as plt
+
         fig, ax = plt.subplots(nrows=1, ncols=1)
         pos = nx.spring_layout(self.G)
         nx.draw(self.G, pos)

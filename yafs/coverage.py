@@ -1,4 +1,3 @@
-
 from collections import defaultdict
 
 import matplotlib.pyplot as plt
@@ -9,7 +8,7 @@ import math
 from yafs.utils import haversine_distance
 from functools import partial
 
-from matplotlib.collections import PatchCollection,PolyCollection
+from matplotlib.collections import PatchCollection, PolyCollection
 from matplotlib.patches import Circle
 
 
@@ -20,7 +19,7 @@ class Coverage(object):
     def update_coverage_of_endpoints(self, **kwargs):
         return None
 
-    def connection(self,point):
+    def connection(self, point):
         return None
 
     @staticmethod
@@ -42,31 +41,27 @@ class Coverage(object):
         return {}
 
 
-
-
 class CircleCoverage(Coverage):
-    def __init__(self, map, points,radius):
+    def __init__(self, map, points, radius):
         self.points = points
-        self.radius = radius #radius in km
+        self.radius = radius  # radius in km
 
-        #Points on the map projection
-        self.points_to_map  = [map.to_pixels(p[0], p[1]) for p in self.points]
+        # Points on the map projection
+        self.points_to_map = [map.to_pixels(p[0], p[1]) for p in self.points]
 
         # Radius in the map projection
         b = self.__geodesic_point_buffer(points[0][0], points[0][1], self.radius)
         bonmap = map.to_pixels(b[0])
-        ponmap = map.to_pixels(points[0][0],points[0][1])
-        distance = math.sqrt(math.pow((bonmap[0]-ponmap[0]),2)+math.pow((bonmap[1]-ponmap[1]),2))
+        ponmap = map.to_pixels(points[0][0], points[0][1])
+        distance = math.sqrt(math.pow((bonmap[0] - ponmap[0]), 2) + math.pow((bonmap[1] - ponmap[1]), 2))
         self.radius_on_coordinates = distance
 
         # Region on the map projection
-        self.regions_to_map = [Circle((region[0],region[1]),self.radius_on_coordinates) for region in self.points_to_map]
+        self.regions_to_map = [Circle((region[0], region[1]), self.radius_on_coordinates) for region in self.points_to_map]
 
         # Color of the regions
         self.cmap = plt.cm.Accent
-        self.colors_cells = self.cmap(np.linspace(0., 1., len(self.points)))[:, :3]
-
-
+        self.colors_cells = self.cmap(np.linspace(0.0, 1.0, len(self.points)))[:, :3]
 
     def update_coverage_of_endpoints(self, map, points):
         """
@@ -81,8 +76,7 @@ class CircleCoverage(Coverage):
 
         self.regions_to_map = [Circle((region[0], region[1]), self.radius_on_coordinates) for region in self.points_to_map]
 
-        self.colors_cells = self.cmap(np.linspace(0., 1., len(self.points)))[:, :3]
-
+        self.colors_cells = self.cmap(np.linspace(0.0, 1.0, len(self.points)))[:, :3]
 
     def get_polygons_on_map(self):
         """
@@ -90,8 +84,7 @@ class CircleCoverage(Coverage):
         Returns:
             a list of matplotlib Polygons
         """
-        return PatchCollection(self.regions_to_map, facecolors=self.colors_cells, alpha=.25)
-
+        return PatchCollection(self.regions_to_map, facecolors=self.colors_cells, alpha=0.25)
 
     def connection(self, point):
         """
@@ -107,10 +100,10 @@ class CircleCoverage(Coverage):
             the index on self.points
         """
 
-        most_close = [999999999] # the minimun value in all var. of array are infinity
-        for idx,center in enumerate(self.points):
-            dist = haversine_distance(point,center)
-            if dist <= self.radius: #km to meters
+        most_close = [999999999]  # the minimun value in all var. of array are infinity
+        for idx, center in enumerate(self.points):
+            dist = haversine_distance(point, center)
+            if dist <= self.radius:  # km to meters
                 most_close.append(dist)
             else:
                 most_close.append(float("inf"))
@@ -118,11 +111,9 @@ class CircleCoverage(Coverage):
         min = np.argmin(most_close)
         if min == 0:
             return None
-        return min-1
+        return min - 1
 
-
-
-    def connection_between_mobile_entities(self, fixed_endpoints, mobile_endpoints,mobile_fog_entities):
+    def connection_between_mobile_entities(self, fixed_endpoints, mobile_endpoints, mobile_fog_entities):
         # type: (dict, dict) -> dict
         """
 
@@ -146,7 +137,7 @@ class CircleCoverage(Coverage):
 
                 id_node = list(fixed_endpoints)[idx]
                 pnode = fixed_endpoints[id_node]
-                if self.__circle_intersection(point,pnode):
+                if self.__circle_intersection(point, pnode):
                     result[code] = [list(fixed_endpoints)[idx]]
         return result
 
@@ -162,20 +153,17 @@ class CircleCoverage(Coverage):
 
         """
 
-
         # return self.circle_intersection_sympy(circle1,circle2)
-        x1, y1  = center1
-        x2, y2  = center2
+        x1, y1 = center1
+        x2, y2 = center2
         r1 = self.radius
         # http://stackoverflow.com/a/3349134/798588
         dx, dy = x2 - x1, y2 - y1
         d = math.sqrt(dx * dx + dy * dy)
         if d > r1 + r1:
-            return False ## no solutions, the circles are separate
+            return False  ## no solutions, the circles are separate
 
         return True  # no solutions because one circle is contained within the other
-
-
 
     def __geodesic_point_buffer(self, lon, lat, km):
         """
@@ -193,13 +181,10 @@ class CircleCoverage(Coverage):
         from shapely.ops import transform
         from shapely.geometry import Point
 
-        proj_wgs84 = pyproj.Proj(init='epsg:4326')
+        proj_wgs84 = pyproj.Proj(init="epsg:4326")
         # Azimuthal equidistant projection
-        aeqd_proj = '+proj=aeqd +lat_0={lat} +lon_0={lon} +x_0=0 +y_0=0'
-        project = partial(
-            pyproj.transform,
-            pyproj.Proj(aeqd_proj.format(lat=lat, lon=lon)),
-            proj_wgs84)
+        aeqd_proj = "+proj=aeqd +lat_0={lat} +lon_0={lon} +x_0=0 +y_0=0"
+        project = partial(pyproj.transform, pyproj.Proj(aeqd_proj.format(lat=lat, lon=lon)), proj_wgs84)
         buf = Point(0, 0).buffer(km * 1000)  # distance in metres
         return transform(project, buf).exterior.coords[:]
 
@@ -213,7 +198,7 @@ class Voronoi(Coverage):
 
         self.cells = [map.to_pixels(self.vertices[region]) for region in self.regions]
         cmap = plt.cm.Set3
-        self.colors_cells = cmap(np.linspace(0., 1., len(self.points)))[:, :3]
+        self.colors_cells = cmap(np.linspace(0.0, 1.0, len(self.points)))[:, :3]
 
     def update_coverage_of_endpoints(self, map, points):
         self.points = points
@@ -221,14 +206,12 @@ class Voronoi(Coverage):
         self.regions, self.vertices = self.voronoi_finite_polygons_2d(self.__vor)
         self.cells = [map.to_pixels(self.vertices[region]) for region in self.regions]
         cmap = plt.cm.Set3
-        self.colors_cells = cmap(np.linspace(0., 1., len(self.points)))[:, :3]
-
+        self.colors_cells = cmap(np.linspace(0.0, 1.0, len(self.points)))[:, :3]
 
     def get_polygons_on_map(self):
-        return PolyCollection(self.cells, facecolors=self.colors_cells, alpha=.25,edgecolors="gray")
+        return PolyCollection(self.cells, facecolors=self.colors_cells, alpha=0.25, edgecolors="gray")
 
-
-    def connection(self,point):
+    def connection(self, point):
         """
 
         Args:
@@ -240,10 +223,7 @@ class Voronoi(Coverage):
         """
         return np.argmin(np.sum((self.points - point) ** 2, axis=1))
 
-
-
-
-    def connection_between_mobile_entities(self,fixed_endpoints,mobile_endpoints):
+    def connection_between_mobile_entities(self, fixed_endpoints, mobile_endpoints):
         # type: (dict, dict) -> dict
         """
 
@@ -280,12 +260,9 @@ class Voronoi(Coverage):
         # Construct a map containing all ridges for a
         # given point
         all_ridges = {}
-        for (p1, p2), (v1, v2) in zip(vor.ridge_points,
-                                      vor.ridge_vertices):
-            all_ridges.setdefault(
-                p1, []).append((p2, v1, v2))
-            all_ridges.setdefault(
-                p2, []).append((p1, v1, v2))
+        for (p1, p2), (v1, v2) in zip(vor.ridge_points, vor.ridge_vertices):
+            all_ridges.setdefault(p1, []).append((p2, v1, v2))
+            all_ridges.setdefault(p2, []).append((p1, v1, v2))
         # Reconstruct infinite regions
         for p1, region in enumerate(vor.point_region):
             vertices = vor.regions[region]
@@ -304,26 +281,18 @@ class Voronoi(Coverage):
                     continue
                 # Compute the missing endpoint of an
                 # infinite ridge
-                t = vor.points[p2] - \
-                    vor.points[p1]  # tangent
+                t = vor.points[p2] - vor.points[p1]  # tangent
                 t /= np.linalg.norm(t)
                 n = np.array([-t[1], t[0]])  # normal
-                midpoint = vor.points[[p1, p2]]. \
-                    mean(axis=0)
-                direction = np.sign(
-                    np.dot(midpoint - center, n)) * n
-                far_point = vor.vertices[v2] + \
-                            direction * radius
+                midpoint = vor.points[[p1, p2]].mean(axis=0)
+                direction = np.sign(np.dot(midpoint - center, n)) * n
+                far_point = vor.vertices[v2] + direction * radius
                 new_region.append(len(new_vertices))
                 new_vertices.append(far_point.tolist())
             # Sort region counterclockwise.
-            vs = np.asarray([new_vertices[v]
-                             for v in new_region])
+            vs = np.asarray([new_vertices[v] for v in new_region])
             c = vs.mean(axis=0)
-            angles = np.arctan2(
-                vs[:, 1] - c[1], vs[:, 0] - c[0])
-            new_region = np.array(new_region)[
-                np.argsort(angles)]
+            angles = np.arctan2(vs[:, 1] - c[1], vs[:, 0] - c[0])
+            new_region = np.array(new_region)[np.argsort(angles)]
             new_regions.append(new_region.tolist())
         return new_regions, np.asarray(new_vertices)
-

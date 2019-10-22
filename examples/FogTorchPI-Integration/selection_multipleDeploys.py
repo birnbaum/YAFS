@@ -1,12 +1,12 @@
 from yafs import Selection
 import networkx as nx
 
-class MinShortPath(Selection):
 
+class MinShortPath(Selection):
     def __init__(self):
         super(MinShortPath, self).__init__()
-        #Always it choices the first DES process, It means only one controller.
-        #This implementations is so simple, please see the VRGameFog-IfogSim-WL Selection placement to understand better the selection process
+        # Always it choices the first DES process, It means only one controller.
+        # This implementations is so simple, please see the VRGameFog-IfogSim-WL Selection placement to understand better the selection process
 
     def get_path(self, sim, app_name, message, topology_src, alloc_DES, alloc_module, traffic, from_des):
         """
@@ -18,7 +18,7 @@ class MinShortPath(Selection):
         # print "Service DST: %s "%message.dst
         DES_dst = alloc_module[app_name][message.dst]
         # print "DES DST: %s" % DES_dst
-        minLenPath = float('inf')
+        minLenPath = float("inf")
         minPath = []
         bestDES = 0
         for des in DES_dst:
@@ -30,5 +30,3 @@ class MinShortPath(Selection):
                 bestDES = [des]
 
         return minPath, bestDES
-
-

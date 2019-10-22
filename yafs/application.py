@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 
+
 class Message:
     """
     A message is set by the following values:
@@ -25,7 +26,7 @@ class Message:
         app_name (str): the name of the application
     """
 
-    def __init__(self, name, src, dst, instructions=0, bytes=0,broadcasting=False):
+    def __init__(self, name, src, dst, instructions=0, bytes=0, broadcasting=False):
         self.name = name
         self.src = src
         self.dst = dst
@@ -44,11 +45,11 @@ class Message:
         self.id = -1
 
     def __str__(self):
-        print  ("{--")
-        print((" Name: %s (%s)" %(self.name,self.id)))
-        print((" From (src): %s  to (dst): %s" %(self.src,self.dst)))
+        print("{--")
+        print((" Name: %s (%s)" % (self.name, self.id)))
+        print((" From (src): %s  to (dst): %s" % (self.src, self.dst)))
         print(" --}")
-        return ("")
+        return ""
 
 
 class Application:
@@ -62,6 +63,7 @@ class Application:
         an application
 
     """
+
     TYPE_SOURCE = "SOURCE"  # "SENSOR"
     "A source is like sensor"
 
@@ -84,20 +86,20 @@ class Application:
         print(("___ APP. Name: %s" % self.name))
         print(" __ Transmissions ")
         for m in list(self.messages.values()):
-            print(("\tModule: None : M_In: %s  -> M_Out: %s " %(m.src,m.dst)))
+            print(("\tModule: None : M_In: %s  -> M_Out: %s " % (m.src, m.dst)))
 
         for modulename in list(self.services.keys()):
             m = self.services[modulename]
-            print(("\t",modulename))
+            print(("\t", modulename))
             for ser in m:
                 if "message_in" in list(ser.keys()):
                     try:
-                            print(("\t\t M_In: %s  -> M_Out: %s " % (ser["message_in"].name, ser["message_out"].name)))
+                        print(("\t\t M_In: %s  -> M_Out: %s " % (ser["message_in"].name, ser["message_out"].name)))
                     except:
-                            print(("\t\t M_In: %s  -> M_Out: [NOTHING] " % (ser["message_in"].name)))
+                        print(("\t\t M_In: %s  -> M_Out: [NOTHING] " % (ser["message_in"].name)))
         return ""
 
-    def set_modules(self,data):
+    def set_modules(self, data):
         """
         Pure source or sink modules must be typified
 
@@ -117,6 +119,7 @@ class Application:
         self.data = data
 
         # self.modules_sink = modules
+
     # def set_module(self, modules, type_module):
     #     """
     #     Pure source or sink modules must be typified
@@ -152,8 +155,7 @@ class Application:
         """
         self.messages[msg.name] = msg
 
-
-    def get_message(self,name):
+    def get_message(self, name):
         """
         Returns: a message instance from the identifier name
         """
@@ -186,11 +188,10 @@ class Application:
             if module_name not in self.services:
                 self.services[module_name] = []
             self.services[module_name].append(
-                {"type": Application.TYPE_SOURCE, "dist": distribution,
-                 "message_out": message, "module_dest": module_dest, "p": p})
+                {"type": Application.TYPE_SOURCE, "dist": distribution, "message_out": message, "module_dest": module_dest, "p": p}
+            )
 
-    def add_service_module(self, module_name, message_in, message_out="", distribution="", module_dest=[], p=[],
-                           **param):
+    def add_service_module(self, module_name, message_in, message_out="", distribution="", module_dest=[], p=[], **param):
 
         """
         Link to each non-pure module a management of transfering of messages
@@ -215,6 +216,14 @@ class Application:
         if not module_name in self.services:
             self.services[module_name] = []
 
-        self.services[module_name].append({"type": Application.TYPE_MODULE, "dist": distribution, "param": param,
-                                           "message_in": message_in, "message_out": message_out,
-                                           "module_dest": module_dest, "p": p})
+        self.services[module_name].append(
+            {
+                "type": Application.TYPE_MODULE,
+                "dist": distribution,
+                "param": param,
+                "message_in": message_in,
+                "message_out": message_out,
+                "module_dest": module_dest,
+                "p": p,
+            }
+        )

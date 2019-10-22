@@ -8,7 +8,7 @@
 import json
 
 from yafs.core import Sim
-from yafs.application import Application,Message
+from yafs.application import Application, Message
 from yafs import Topology
 from yafs import JSONPlacement
 from yafs.distribution import *
@@ -22,31 +22,30 @@ from .jsonPopulation import JSONPopulation
 import time
 
 
-
 def create_applications_from_json(data):
     applications = {}
     for app in data:
         a = Application(name=app["name"])
-        modules = [{"None":{"Type":Application.TYPE_SOURCE}}]
+        modules = [{"None": {"Type": Application.TYPE_SOURCE}}]
         for module in app["module"]:
             modules.append({module["name"]: {"RAM": module["RAM"], "Type": Application.TYPE_MODULE}})
         a.set_modules(modules)
 
         ms = {}
         for message in app["message"]:
-            #print "Creando mensaje: %s" %message["name"]
-            ms[message["name"]] = Message(message["name"],message["s"],message["d"],instructions=message["instructions"],bytes=message["bytes"])
+            # print "Creando mensaje: %s" %message["name"]
+            ms[message["name"]] = Message(message["name"], message["s"], message["d"], instructions=message["instructions"], bytes=message["bytes"])
             if message["s"] == "None":
                 a.add_source_messages(ms[message["name"]])
 
-        #print "Total mensajes creados %i" %len(ms.keys())
+        # print "Total mensajes creados %i" %len(ms.keys())
         for idx, message in enumerate(app["transmission"]):
             if "message_out" in list(message.keys()):
-                a.add_service_module(message["module"],ms[message["message_in"]], ms[message["message_out"]], fractional_selectivity, threshold=1.0)
+                a.add_service_module(message["module"], ms[message["message_in"]], ms[message["message_out"]], fractional_selectivity, threshold=1.0)
             else:
                 a.add_service_module(message["module"], ms[message["message_in"]])
 
-        applications[app["name"]]=a
+        applications[app["name"]] = a
 
     return applications
 
@@ -57,6 +56,8 @@ def create_applications_from_json(data):
 """
 It returns the software modules (a list of identifiers of DES process) deployed on this node
 """
+
+
 def getProcessFromThatNode(sim, node_to_remove):
     if node_to_remove in list(sim.alloc_DES.values()):
         DES = []
@@ -64,29 +65,30 @@ def getProcessFromThatNode(sim, node_to_remove):
         for k, v in list(sim.alloc_DES.items()):
             if v == node_to_remove:
                 DES.append(k)
-        return DES,True
+        return DES, True
     else:
-        return [],False
-
+        return [], False
 
 
 """
 It controls the elimination of a node
 """
 idxFControl = 0
-def failureControl(sim,filelog,ids):
+
+
+def failureControl(sim, filelog, ids):
     global idxFControl
     nodes = list(sim.topology.G.nodes())
-    if len(nodes)>1:
+    if len(nodes) > 1:
         try:
             node_to_remove = ids[idxFControl]
-            idxFControl +=1
+            idxFControl += 1
 
-            keys_DES,someModuleDeployed = getProcessFromThatNode(sim, node_to_remove)
+            keys_DES, someModuleDeployed = getProcessFromThatNode(sim, node_to_remove)
 
             # print "\n\nRemoving node: %i, Total nodes: %i" % (node_to_remove, len(nodes))
             # print "\tStopping some DES processes: %s\n\n"%keys_DES
-            filelog.write("%i,%s,%d\n"%(node_to_remove, someModuleDeployed,sim.env.now))
+            filelog.write("%i,%s,%d\n" % (node_to_remove, someModuleDeployed, sim.env.now))
 
             ##Print some information:
             # for des in keys_DES:
@@ -100,31 +102,31 @@ def failureControl(sim,filelog,ids):
             None
 
     else:
-        sim.stop = True ## We stop the simulation
+        sim.stop = True  ## We stop the simulation
 
 
-def main(simulated_time,experimento,ilpPath,it):
+def main(simulated_time, experimento, ilpPath, it):
     """
     TOPOLOGY from a json
     """
     t = Topology()
-    dataNetwork = json.load(open(experimento+'networkDefinition.json'))
+    dataNetwork = json.load(open(experimento + "networkDefinition.json"))
     t.load(dataNetwork)
     t.write("network.gexf")
 
     """
     APPLICATION
     """
-    dataApp = json.load(open(experimento+'appDefinition.json'))
+    dataApp = json.load(open(experimento + "appDefinition.json"))
     apps = create_applications_from_json(dataApp)
-    #for app in apps:
+    # for app in apps:
     #  print apps[app]
 
     """
     PLACEMENT algorithm
     """
-    placementJson = json.load(open(experimento+'allocDefinition%s.json'%ilpPath))
-    placement = JSONPlacement(name="Placement",json=placementJson)
+    placementJson = json.load(open(experimento + "allocDefinition%s.json" % ilpPath))
+    placement = JSONPlacement(name="Placement", json=placementJson)
 
     ### Placement histogram
 
@@ -141,9 +143,8 @@ def main(simulated_time,experimento,ilpPath,it):
     """
     POPULATION algorithm
     """
-    dataPopulation = json.load(open(experimento+'usersDefinition.json'))
+    dataPopulation = json.load(open(experimento + "usersDefinition.json"))
     pop = JSONPopulation(name="Statical", json=dataPopulation, iteration=it)
-
 
     """
     SELECTOR algorithm
@@ -155,7 +156,7 @@ def main(simulated_time,experimento,ilpPath,it):
     """
 
     stop_time = simulated_time
-    s = Sim(t, default_results_path=experimento + "Results_%s_%i_%i" % (ilpPath, stop_time,it))
+    s = Sim(t, default_results_path=experimento + "Results_%s_%i_%i" % (ilpPath, stop_time, it))
 
     """
     Failure process
@@ -170,36 +171,35 @@ def main(simulated_time,experimento,ilpPath,it):
     # # s.deploy_monitor("Failure Generation", failureControl, distribution,sim=s,filelog=failurefilelog,ids=centrality)
     # s.deploy_monitor("Failure Generation", failureControl, distribution,sim=s,filelog=failurefilelog,ids=randomValues)
 
-    #For each deployment the user - population have to contain only its specific sources
+    # For each deployment the user - population have to contain only its specific sources
     for aName in list(apps.keys()):
-        print("Deploying app: ",aName)
+        print("Deploying app: ", aName)
         pop_app = JSONPopulation(name="Statical_%s" % aName, json={}, iteration=it)
         data = []
         for element in pop.data["sources"]:
-            if element['app'] == aName:
+            if element["app"] == aName:
                 data.append(element)
-        pop_app.data["sources"]=data
+        pop_app.data["sources"] = data
 
         s.deploy_app(apps[aName], placement, pop_app, selectorPath)
 
-
-    s.run(stop_time, test_initial_deploy=False, show_progress_monitor=False) #TEST to TRUE
-
+    s.run(stop_time, test_initial_deploy=False, show_progress_monitor=False)  # TEST to TRUE
 
     ## Enrouting information
     # print "Values"
     # print selectorPath.cache.values()
 
-
     # failurefilelog.close()
 
     # #CHECKS
-    #print s.topology.G.nodes
-    #s.print_debug_assignaments()
+    # print s.topology.G.nodes
+    # s.print_debug_assignaments()
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     # import logging.config
     import os
+
     pathExperimento = "exp_rev/"
     pathExperimento = "/home/uib/src/YAFS/src/examples/PartitionILPPlacement/exp_rev/"
 
@@ -209,15 +209,13 @@ if __name__ == '__main__':
         start_time = time.time()
         random.seed(i)
         np.random.seed(i)
-# 1000000
+        # 1000000
         print("Running Partition")
-        main(simulated_time=1000000,  experimento=pathExperimento,ilpPath='',it=i)
+        main(simulated_time=1000000, experimento=pathExperimento, ilpPath="", it=i)
         print(("\n--- %s seconds ---" % (time.time() - start_time)))
         start_time = time.time()
         print("Running: ILP ")
-        main(simulated_time=1000000,  experimento=pathExperimento, ilpPath='ILP',it=i)
+        main(simulated_time=1000000, experimento=pathExperimento, ilpPath="ILP", it=i)
         print(("\n--- %s seconds ---" % (time.time() - start_time)))
 
     print("Simulation Done")
-
-

@@ -10,12 +10,12 @@
 """
 
 from yafs.core import Sim
-from yafs.application import Application,Message
+from yafs.application import Application, Message
 from yafs import Topology
 from yafs.distribution import *
 
 from .Evolutive_population import Pop_and_Failures
-from .selection_multipleDeploys import  BroadPath
+from .selection_multipleDeploys import BroadPath
 
 
 import itertools
@@ -27,13 +27,12 @@ import numpy as np
 
 RANDOM_SEED = 1
 
+
 def create_application(name):
     # APLICATION
     a = Application(name=name)
 
-    a.set_modules([{"Generator":{"Type":Application.TYPE_SOURCE}},
-                   {"Actuator": {"Type": Application.TYPE_SINK}}
-                   ])
+    a.set_modules([{"Generator": {"Type": Application.TYPE_SOURCE}}, {"Actuator": {"Type": Application.TYPE_SINK}}])
 
     m_egg = Message("M.Action", "Generator", "Actuator", instructions=100, bytes=10)
     a.add_source_messages(m_egg)
@@ -54,67 +53,62 @@ def main(simulated_time):
 
     ls = list(t.G.nodes)
     li = {x: int(x) for x in ls}
-    nx.relabel_nodes(t.G, li, False) #Transform str-labels to int-labels
+    nx.relabel_nodes(t.G, li, False)  # Transform str-labels to int-labels
 
-
-    print("Nodes: %i" %len(t.G.nodes()))
-    print("Edges: %i" %len(t.G.edges()))
-    #MANDATORY fields of a link
+    print("Nodes: %i" % len(t.G.nodes()))
+    print("Edges: %i" % len(t.G.edges()))
+    # MANDATORY fields of a link
     # Default values =  {"BW": 1, "PR": 1}
-    valuesOne = dict(zip(t.G.edges(),np.ones(len(t.G.edges()))))
+    valuesOne = dict(zip(t.G.edges(), np.ones(len(t.G.edges()))))
 
-    nx.set_edge_attributes(t.G, name='BW', values=valuesOne)
-    nx.set_edge_attributes(t.G, name='PR', values=valuesOne)
+    nx.set_edge_attributes(t.G, name="BW", values=valuesOne)
+    nx.set_edge_attributes(t.G, name="PR", values=valuesOne)
 
     centrality = nx.betweenness_centrality(t.G)
     nx.set_node_attributes(t.G, name="centrality", values=centrality)
 
     sorted_clustMeasure = sorted(list(centrality.items()), key=operator.itemgetter(1), reverse=True)
 
-    top20_devices =  sorted_clustMeasure[:20]
+    top20_devices = sorted_clustMeasure[:20]
     main_fog_device = copy.copy(top20_devices[0][0])
 
     print("-" * 20)
     print("Top 20 centralised nodes:")
     for item in top20_devices:
         print(item)
-    print("-"*20)
+    print("-" * 20)
     """
     APPLICATION
     """
     app1 = create_application("app1")
 
-
     """
     PLACEMENT algorithm
     """
-    #There are not modules to place.
+    # There are not modules to place.
     placement = NoPlacementOfModules("NoPlacement")
 
     """
     POPULATION algorithm
     """
-    number_generators = int(len(t.G)*0.1)
+    number_generators = int(len(t.G) * 0.1)
     print(number_generators)
 
-    #you can use whatever funciton to change the topology
+    # you can use whatever funciton to change the topology
     dStart = deterministicDistributionStartPoint(0, 100, name="Deterministic")
     dStart2 = exponentialDistributionStartPoint(500, 100.0, name="Deterministic")
-    pop = Pop_and_Failures(name="mttf-nodes",srcs = number_generators,activation_dist=dStart2 )
+    pop = Pop_and_Failures(name="mttf-nodes", srcs=number_generators, activation_dist=dStart2)
     pop.set_sink_control({"ids": top20_devices, "number": 1, "module": app1.get_sink_modules()})
 
     dDistribution = deterministicDistribution(name="Deterministic", time=10)
-    pop.set_src_control(
-        {"number": 1, "message": app1.get_message("M.Action"), "distribution": dDistribution})
+    pop.set_src_control({"number": 1, "message": app1.get_message("M.Action"), "distribution": dDistribution})
 
-    #In addition, a source includes a distribution function:
-
+    # In addition, a source includes a distribution function:
 
     """--
     SELECTOR algorithm
     """
     selectorPath = BroadPath()
-
 
     """
     SIMULATION ENGINE
@@ -122,20 +116,20 @@ def main(simulated_time):
     s = Sim(t, default_results_path="Results_%s_exp" % (simulated_time))
     s.deploy_app(app1, placement, pop, selectorPath)
 
-
-    s.run(simulated_time,test_initial_deploy=False,show_progress_monitor=False)
+    s.run(simulated_time, test_initial_deploy=False, show_progress_monitor=False)
     # s.draw_allocated_topology() # for debugging
-    print("Total nodes available in the  toopology %i" %len(s.topology.G.nodes()))
-    print("Total edges available in the  toopology %i" %len(s.topology.G.edges()))
+    print("Total nodes available in the  toopology %i" % len(s.topology.G.nodes()))
+    print("Total edges available in the  toopology %i" % len(s.topology.G.edges()))
 
     print(pop.nodes_removed)
     nx.write_graphml_lxml(s.topology.G, "final_network.graphml")
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     import logging.config
     import os
 
-    logging.config.fileConfig(os.getcwd()+'/logging.ini')
+    logging.config.fileConfig(os.getcwd() + "/logging.ini")
 
     start_time = time.time()
 

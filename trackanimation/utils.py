@@ -27,7 +27,7 @@ import geopy
 import geopy.distance as geo_dist
 import pandas as pd
 
-TIME_FORMATS = ['%H:%M', '%H%M', '%I:%M%p', '%I%M%p', '%H:%M:%S', '%H%M%S', '%I:%M:%S%p', '%I%M%S%p']
+TIME_FORMATS = ["%H:%M", "%H%M", "%I:%M%p", "%I%M%p", "%H:%M:%S", "%H%M%S", "%I:%M:%S%p", "%I%M%S%p"]
 
 
 class TrackException(Exception):
@@ -54,12 +54,9 @@ def getBearing(start_point, end_point):
     point: int
         Bearing in degrees between the start and end points.
     """
-    warnings.warn("The getBearing function is deprecated and "
-                  "will be removed in version 2.0.0. "
-                  "Use the get_bearing function instead.",
-                  FutureWarning,
-                  stacklevel=8
-                  )
+    warnings.warn(
+        "The getBearing function is deprecated and " "will be removed in version 2.0.0. " "Use the get_bearing function instead.", FutureWarning, stacklevel=8
+    )
     return get_bearing(start_point, end_point)
 
 
@@ -87,7 +84,7 @@ def get_bearing(start_point, end_point):
         if d_lng > 0.0:
             d_lng = -(2.0 * math.pi - d_lng)
         else:
-            d_lng = (2.0 * math.pi + d_lng)
+            d_lng = 2.0 * math.pi + d_lng
 
     tan_start = math.tan(start_lat / 2.0 + math.pi / 4.0)
     tan_end = math.tan(end_lat / 2.0 + math.pi / 4.0)
@@ -113,12 +110,11 @@ def getCoordinates(start_point, end_point, distance_meters):
     point: geopy.Point
         A new point between the start and the end points.
     """
-    warnings.warn("The getCoordinates function is deprecated and "
-                  "will be removed in version 2.0.0. "
-                  "Use the get_coordinates function instead.",
-                  FutureWarning,
-                  stacklevel=8
-                  )
+    warnings.warn(
+        "The getCoordinates function is deprecated and " "will be removed in version 2.0.0. " "Use the get_coordinates function instead.",
+        FutureWarning,
+        stacklevel=8,
+    )
     return get_coordinates(start_point, end_point, distance_meters)
 
 
@@ -165,12 +161,11 @@ def getPointInTheMiddle(start_point, end_point, time_diff, point_idx):
     point: list
         A new point between the start and the end points.
     """
-    warnings.warn("The getPointInTheMiddle function is deprecated and "
-                  "will be removed in version 2.0.0. "
-                  "Use the get_point_in_the_middle function instead.",
-                  FutureWarning,
-                  stacklevel=8
-                  )
+    warnings.warn(
+        "The getPointInTheMiddle function is deprecated and " "will be removed in version 2.0.0. " "Use the get_point_in_the_middle function instead.",
+        FutureWarning,
+        stacklevel=8,
+    )
     return get_point_in_the_middle(start_point, end_point, time_diff, point_idx)
 
 
@@ -192,26 +187,24 @@ def get_point_in_the_middle(start_point, end_point, time_diff, point_idx):
     point: list
         A new point between the start and the end points.
     """
-    time_proportion = (time_diff * point_idx) / end_point['TimeDifference'].item()
+    time_proportion = (time_diff * point_idx) / end_point["TimeDifference"].item()
 
-    distance_proportion = end_point['Distance'].item() * time_proportion
-    time_diff_proportion = end_point['TimeDifference'].item() * time_proportion
+    distance_proportion = end_point["Distance"].item() * time_proportion
+    time_diff_proportion = end_point["TimeDifference"].item() * time_proportion
     speed = distance_proportion / time_diff_proportion
     distance = time_diff * speed
-    cum_time_diff = int(start_point['CumTimeDiff'].item() + time_diff_proportion)
+    cum_time_diff = int(start_point["CumTimeDiff"].item() + time_diff_proportion)
     # date = datetime.strptime(start_point['Date'].item(), '%Y-%m-%d %H:%M:%S') + dt.timedelta(seconds=int(
     # time_diff_proportion))
-    date = pd.to_datetime(start_point['Date'].astype(str), format='%Y-%m-%d %H:%M:%S') + dt.timedelta(
-        seconds=int(time_diff_proportion))
-    altitude = (end_point['Altitude'].item() + start_point['Altitude'].item()) / 2
-    name = start_point['CodeRoute'].item()
+    date = pd.to_datetime(start_point["Date"].astype(str), format="%Y-%m-%d %H:%M:%S") + dt.timedelta(seconds=int(time_diff_proportion))
+    altitude = (end_point["Altitude"].item() + start_point["Altitude"].item()) / 2
+    name = start_point["CodeRoute"].item()
 
-    geo_start = geopy.Point(start_point['Latitude'].item(), start_point['Longitude'].item())
-    geo_end = geopy.Point(end_point['Latitude'].item(), end_point['Longitude'].item())
+    geo_start = geopy.Point(start_point["Latitude"].item(), start_point["Longitude"].item())
+    geo_end = geopy.Point(end_point["Latitude"].item(), end_point["Longitude"].item())
     middle_point = get_coordinates(geo_start, geo_end, distance_proportion)
 
-    df_middle_point = ([[name, middle_point.latitude, middle_point.longitude, altitude,
-                         date, speed, int(time_diff), distance, None, cum_time_diff]])
+    df_middle_point = [[name, middle_point.latitude, middle_point.longitude, altitude, date, speed, int(time_diff), distance, None, cum_time_diff]]
 
     return df_middle_point
 
@@ -252,12 +245,11 @@ def calculateCumTimeDiff(df):
     Calculates the cumulative of the time difference
     between points for each track of 'dfTrack'.
     """
-    warnings.warn("The calculateCumTimeDiff function is deprecated and "
-                  "will be removed in version 2.0.0. "
-                  "Use the calculate_cum_time_diff function instead.",
-                  FutureWarning,
-                  stacklevel=8
-                  )
+    warnings.warn(
+        "The calculateCumTimeDiff function is deprecated and " "will be removed in version 2.0.0. " "Use the calculate_cum_time_diff function instead.",
+        FutureWarning,
+        stacklevel=8,
+    )
     return calculate_cum_time_diff(df)
 
 
@@ -269,12 +261,12 @@ def calculate_cum_time_diff(df):
     df = df.copy()
 
     df_cum = pd.DataFrame()
-    grouped = df['CodeRoute'].unique()
+    grouped = df["CodeRoute"].unique()
 
     for name in grouped:
-        df_slice = df[df['CodeRoute'] == name]
+        df_slice = df[df["CodeRoute"] == name]
         df_slice = df_slice.reset_index(drop=True)
-        df_slice['CumTimeDiff'] = df_slice['TimeDifference'].cumsum()
+        df_slice["CumTimeDiff"] = df_slice["TimeDifference"].cumsum()
         df_cum = pd.concat([df_cum, df_slice])
 
     df_cum = df_cum.reset_index(drop=True)
@@ -287,12 +279,11 @@ def isTimeFormat(time):
     Check if 'time' variable has the format of one
     of the 'time_formats'
     """
-    warnings.warn("The isTimeFormat function is deprecated and "
-                  "will be removed in version 2.0.0. "
-                  "Use the is_time_format function instead.",
-                  FutureWarning,
-                  stacklevel=8
-                  )
+    warnings.warn(
+        "The isTimeFormat function is deprecated and " "will be removed in version 2.0.0. " "Use the is_time_format function instead.",
+        FutureWarning,
+        stacklevel=8,
+    )
     return is_time_format(time)
 
 

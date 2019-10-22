@@ -1,12 +1,10 @@
-
 from yafs.population import Population
 
 import random
 
 
 class Pop_and_Failures(Population):
-
-    def __init__(self,srcs, **kwargs):
+    def __init__(self, srcs, **kwargs):
         self.number_generators = srcs
         self.nodes_removed = []
         self.count_down = 20
@@ -14,7 +12,7 @@ class Pop_and_Failures(Population):
         super(Pop_and_Failures, self).__init__(**kwargs)
 
     def initial_allocation(self, sim, app_name):
-        #ASSIGNAMENT of SOURCE - GENERATORS - ACTUATORS
+        # ASSIGNAMENT of SOURCE - GENERATORS - ACTUATORS
         id_nodes = list(sim.topology.G.nodes())
         for ctrl in self.src_control:
             msg = ctrl["message"]
@@ -31,8 +29,7 @@ class Pop_and_Failures(Population):
                 for number in range(ctrl["number"]):
                     sim.deploy_sink(app_name, node=id[0], module=module)
 
-
-    def getProcessFromThatNode(self,sim,node_to_remove):
+    def getProcessFromThatNode(self, sim, node_to_remove):
         if node_to_remove in list(sim.alloc_DES.values()):
             someModuleDeployed = False
             keys = []
@@ -48,42 +45,37 @@ class Pop_and_Failures(Population):
                 if key in list(sim.alloc_source.keys()):
                     # print "\t\t a sensor: %s" % sim.alloc_source[key]["module"]
                     ## Sources/Sensors modules are not removed
-                    return False,[],False
+                    return False, [], False
                 someModuleAssignament = sim.get_assigned_structured_modules_from_DES()
                 if key in list(someModuleAssignament.keys()):
                     # print "\t\t a module: %s" % someModuleAssignament[key]["module"]
-                    if self.count_down<3:
+                    if self.count_down < 3:
                         return False, [], False
                     else:
-                        self.count_down-=1
+                        self.count_down -= 1
                         someModuleDeployed = True
 
-            return True,keys,someModuleDeployed
+            return True, keys, someModuleDeployed
         else:
-            return True,[],False
-
+            return True, [], False
 
     def run(self, sim):
         self.logger.debug("Activiting - Failure -  Removing a topology nodo == a network element, including edges")
-        if self.limit >0:
-            nodes =list(sim.topology.G.nodes())
-            #print sim.alloc_DES
+        if self.limit > 0:
+            nodes = list(sim.topology.G.nodes())
+            # print sim.alloc_DES
             is_removable = False
             node_to_remove = -1
             someModuleDeployed = False
-            while not is_removable: ## WARNING: In this case there is a possibility of an infinite loop
+            while not is_removable:  ## WARNING: In this case there is a possibility of an infinite loop
                 node_to_remove = random.choice(nodes)
-                is_removable,keys_DES,someModuleDeployed = self.getProcessFromThatNode(sim,node_to_remove)
+                is_removable, keys_DES, someModuleDeployed = self.getProcessFromThatNode(sim, node_to_remove)
 
             self.logger.debug("Removing node: %i, Total nodes: %i" % (node_to_remove, len(nodes)))
-            print("\tStopping some DES processes: %s"%keys_DES)
+            print("\tStopping some DES processes: %s" % keys_DES)
 
-            self.nodes_removed.append({"id":node_to_remove,"module":someModuleDeployed,"time":sim.env.now})
+            self.nodes_removed.append({"id": node_to_remove, "module": someModuleDeployed, "time": sim.env.now})
 
             sim.remove_node(node_to_remove)
-            
 
-            self.limit -=1
-
-
-
+            self.limit -= 1

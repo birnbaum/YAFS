@@ -1,6 +1,7 @@
 from yafs import Selection
 import networkx as nx
 
+
 class First_ShortestPath(Selection):
     """Among all possible shorter paths, returns the first."""
 
@@ -15,15 +16,15 @@ class First_ShortestPath(Selection):
         for des in DES_dst:
             dst_node = alloc_DES[des]
 
-       #     print type(node_src)
-        #    print type(dst_node)
-         #   print "NODE SRC: %s" %node_src
-          #  print "NODE DST: %s" %dst_node
+            #     print type(node_src)
+            #    print type(dst_node)
+            #   print "NODE SRC: %s" %node_src
+            #  print "NODE DST: %s" %dst_node
 
             path = list(nx.shortest_path(sim.topology.G, source=node_src, target=str(dst_node)))
-           # print path
+            # print path
 
             bestPath = [path]
-            bestDES  = [des]
+            bestDES = [des]
 
-        return bestPath,bestDES
+        return bestPath, bestDES

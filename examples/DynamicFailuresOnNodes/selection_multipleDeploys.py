@@ -1,15 +1,13 @@
-
 from yafs import Selection
 import networkx as nx
 import copy
 import math
+
+
 class CloudPath_RR(Selection):
-
-
     def __init__(self):
         self.rr = {}  # for a each type of service, we have a mod-counter
         self.messages_affected = []
-
 
     def get_path(self, sim, app_name, message, topology_src, alloc_DES, alloc_module, traffic, from_des):
 
@@ -24,7 +22,7 @@ class CloudPath_RR(Selection):
         # print "\tRequest service: %s " % (message.dst)
         # print "\tProcess serving that service: %s (pos ID: %i)" % (DES_dst, self.rr[message.dst])
 
-        next_DES_dst =DES_dst[self.rr[message.dst]]
+        next_DES_dst = DES_dst[self.rr[message.dst]]
 
         dst_node = alloc_DES[next_DES_dst]
         path = list(nx.shortest_path(sim.topology.G, source=node_src, target=dst_node))
@@ -34,31 +32,31 @@ class CloudPath_RR(Selection):
 
         return bestPath, bestDES
 
-class BroadPath(Selection):
 
+class BroadPath(Selection):
     def __init__(self):
         self.most_near_calculator_to_client = {}
         self.invalid_cache_value = -1
         super(BroadPath, self).__init__()
 
-    def compute_most_near(self,node_src,alloc_DES,sim,DES_dst):
+    def compute_most_near(self, node_src, alloc_DES, sim, DES_dst):
         """
         This functions caches the minimun path among client-devices and fog-devices-Module Calculator and it chooses the best calculator process deployed in that node
         """
-        #By Placement policy we know that:
+        # By Placement policy we know that:
         try:
-            minLenPath = float('inf')
+            minLenPath = float("inf")
             minPath = []
             bestDES = []
             for dev in DES_dst:
                 node_dst = alloc_DES[dev]
                 path = list(nx.shortest_path(sim.topology.G, source=node_src, target=node_dst))
-                if len(path)<minLenPath:
+                if len(path) < minLenPath:
                     minLenPath = len(path)
                     minPath = path
                     bestDES = dev
 
-            return minPath,bestDES
+            return minPath, bestDES
         except nx.NetworkXNoPath as e:
             self.logger.warning("There is no path between two nodes: %s - %s " % (node_src, node_dst))
             print("Simulation ends?. Time:", sim.env.now)
@@ -66,10 +64,10 @@ class BroadPath(Selection):
             return [], None
 
         except nx.NodeNotFound as e:
-            self.logger.warning("Node not found: %s - %s "%(node_src,node_dst))
-            print("Simulation ends?. Time:",sim.env.now)
+            self.logger.warning("Node not found: %s - %s " % (node_src, node_dst))
+            print("Simulation ends?. Time:", sim.env.now)
             # sim.stop = True ## You can stop all DES process
-            return [],None
+            return [], None
 
     def get_path(self, sim, app_name, message, topology_src, alloc_DES, alloc_module, traffic, from_des):
         """
@@ -77,7 +75,7 @@ class BroadPath(Selection):
 
 
         """
-        #In this case, there is not a cached system.
+        # In this case, there is not a cached system.
         node_src = topology_src
 
         # print "Node (Topo id): %s" %node_src
@@ -97,17 +95,15 @@ class BroadPath(Selection):
         # self.most_near_calculator_to_client = {}
 
         if node_src not in list(self.most_near_calculator_to_client.keys()):
-            self.most_near_calculator_to_client[node_src] = self.compute_most_near(
-                 node_src,alloc_DES, sim,DES_dst)
+            self.most_near_calculator_to_client[node_src] = self.compute_most_near(node_src, alloc_DES, sim, DES_dst)
 
-        path,des = self.most_near_calculator_to_client[node_src]
+        path, des = self.most_near_calculator_to_client[node_src]
 
-            # print "\t NEW DES_DST: %s" % DES_dst
-            # print "PATH ",path
-            # print "DES  ",des
+        # print "\t NEW DES_DST: %s" % DES_dst
+        # print "PATH ",path
+        # print "DES  ",des
 
-        return [path],[des]
-
+        return [path], [des]
 
     def get_path_from_failure(self, sim, message, link, alloc_DES, alloc_module, traffic, ctime, from_des):
         # print "Example of enrouting"
@@ -120,27 +116,22 @@ class BroadPath(Selection):
 
         if idx == len(message.path):
             # The node who serves ... not possible case
-            return [],[]
+            return [], []
         else:
-            node_src = message.path[idx-1]
+            node_src = message.path[idx - 1]
             # print "SRC: ",node_src # 164
 
-            node_dst = message.path[len(message.path)-1]
-            #print "DST: ",node_dst #261
-            #print "INT: ",message.dst_int #301
+            node_dst = message.path[len(message.path) - 1]
+            # print "DST: ",node_dst #261
+            # print "INT: ",message.dst_int #301
 
-
-            path, des = self.get_path(sim, message.app_name, message, node_src, alloc_DES, alloc_module, traffic,
-                                      from_des)
-
-
-
+            path, des = self.get_path(sim, message.app_name, message, node_src, alloc_DES, alloc_module, traffic, from_des)
 
             if len(path[0]) > 1:
                 # print "PAHT ",path # [[164, 130, 380, 110, 216]]
                 # print "DES ",des # [40]
 
-                concPath = message.path[0:message.path.index(path[0][0])] + path[0]
+                concPath = message.path[0 : message.path.index(path[0][0])] + path[0]
                 # print "CPATH ",concPath # [86, 242, 160, 164, 130, 380, 110, 216]
                 newINT = path[0][2]
                 # print "NI ",newINT # 380
@@ -149,5 +140,3 @@ class BroadPath(Selection):
                 return [concPath], des
             else:
                 return [], []
-
-

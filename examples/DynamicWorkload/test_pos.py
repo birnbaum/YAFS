@@ -6,5 +6,3 @@ for r in df.iterrows():
     print(r)
     lat = r[1].height
     lng = r[1].width
-
-
