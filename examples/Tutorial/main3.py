@@ -7,15 +7,15 @@
 from yafs.core import Sim
 from yafs.application import Application,Message
 
-from yafs import Topology
+from yafs.topology import Topology
 
-from .simpleSelection import MinPath_RoundRobin
-from .simplePlacement import CloudPlacement
-from .evolutivePopulationTopology import SimpleDynamicChanges
+from examples.Tutorial.simpleSelection import MinPath_RoundRobin
+from examples.Tutorial.simplePlacement import CloudPlacement
+from examples.Tutorial.evolutivePopulationTopology import SimpleDynamicChanges
 
 from yafs.distribution import deterministicDistribution
 from yafs.utils import fractional_selectivity
-from yafs import Stats
+from yafs.stats import Stats
 import time
 
 RANDOM_SEED = 1

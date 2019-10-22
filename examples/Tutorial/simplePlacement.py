@@ -7,7 +7,7 @@
 
 """
 
-from yafs import Placement
+from yafs.placement import Placement
 
 class CloudPlacement(Placement):
     """

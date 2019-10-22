@@ -18,8 +18,6 @@ from yafs.metrics import Metrics
 from yafs.distribution import *
 from yafs import utils
 
-from trackanimation.animation import AnimationTrack
-
 import numpy as np
 
 EVENT_UP_ENTITY = "node_up"
@@ -1161,6 +1159,8 @@ class Sim:
         # exit()
 
     def generate_animation(self,pathFile):
+        from trackanimation.animation import AnimationTrack
+
         if len(self.endpoints)==0: self.__update_connection_points()
         if self.map == None: self.__load_map()
 
