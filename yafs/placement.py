@@ -2,8 +2,6 @@ import logging
 from abc import abstractmethod, ABC
 from typing import Callable
 
-from yafs.core import Simulation
-
 
 class Placement(ABC):
     """A placement (or allocation) algorithm controls where to locate the service modules and their replicas in the different nodes of the topology, according to load criteria or other objectives.
@@ -37,10 +35,10 @@ class Placement(ABC):
         return next(self.activation_dist)  # TODO Data type?
 
     @abstractmethod
-    def initial_allocation(self, sim: Simulation, app_name: str):
+    def initial_allocation(self, sim: "Simulation", app_name: str):  # TODO Why does this know about the simulation?
         """Given an ecosystem, it starts the allocation of modules in the topology."""
 
-    def run(self, sim: Simulation):  # TODO Does this have to be implemented?
+    def run(self, sim: "Simulation"):  # TODO Does this have to be implemented?  # TODO Why does this know about the simulation?
         """This method will be invoked during the simulation to change the assignment of the modules to the topology."""
         self.logger.debug("Activiting - RUN - Placement")
 
@@ -84,7 +82,7 @@ class ClusterPlacement(Placement):
     Only runs once during initialization.
     """
 
-    def initial_allocation(self, sim: Simulation, app_name: str):
+    def initial_allocation(self, sim: "Simulation", app_name: str):  # TODO Why does this know about the simulation?
         # We find the ID-nodo/resource
         value = {"model": "Cluster"}
         id_cluster = sim.topology.find_IDs(value)  # there is only ONE Cluster

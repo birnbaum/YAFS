@@ -1,4 +1,13 @@
-from typing import Callable, List, Dict
+from collections import defaultdict
+from typing import Callable, List, Optional, Dict
+
+
+class Module:
+    def __init__(self, name: str, is_source: bool = False, is_sink: bool = False, data: Optional[Dict] = None):
+        self.name = name
+        self.is_source = is_source
+        self.is_sink = is_sink
+        self.data = data if data else {}  # TODO find better name
 
 
 class Message:
@@ -47,18 +56,11 @@ class Application:
         name: Application name, unique within the same topology.
     """
 
-    TYPE_SOURCE = "SOURCE"  # Sensor
-    TYPE_MODULE = "MODULE"
-    TYPE_SINK = "SINK"  # Actuator
-
-    def __init__(self, name: str):
+    def __init__(self, name: str, modules: List[Module]):
         self.name = name
-        self.services = {}  # TODO Document or private
+        self.modules = modules
+        self.services = defaultdict(list)  # TODO Document or private
         self.messages = {}  # TODO Document or private
-        self.modules = []  # TODO Document or private
-        self.modules_src = []  # TODO Document or private
-        self.modules_sink = []  # TODO Document or private
-        self.data = {}  # TODO Document or private
 
     def __str__(self):  # TODO Refactor this
         result = f"___ APP. Name: {self.name}"
@@ -77,57 +79,19 @@ class Application:
                         result += f"\t\t M_In: {ser['message_in'].name}  -> M_Out: [NOTHING] "
         return result
 
-    def set_modules(self, data: List[Dict]):
-        """Pure source or sink modules must be typified
+    @property
+    def src_modules(self):
+        return [module for module in self.modules if module.is_source]
 
-        Args:
-            data: Set of characteristics of modules
-        """
-        for module in data:
-            name = list(module.keys())[0]
-            type_ = list(module.values())[0]["Type"]
-            if type_ == self.TYPE_SOURCE:
-                self.modules_src.append(name)
-            elif type_ == self.TYPE_SINK:
-                self.modules_sink = name
-
-            self.modules.append(name)
-
-        self.data = data
-
-        # self.modules_sink = modules
-        # TODO Remove??
-
-    # def set_module(self, modules, type_module):
-    #     """
-    #     Pure source or sink modules must be typified
-    #
-    #     Args:
-    #         modules (list): a list of modules names
-    #         type_module (str): TYPE_SOURCE or TYPE_SINK
-    #     """
-    #     if type_module == self.TYPE_SOURCE:
-    #         self.modules_src = modules
-    #     elif type_module == self.TYPE_SINK:
-    #         self.modules_sink = modules
-    #     elif type_module == self.TYPE_MODULE:
-    #         self.modules_pure = modules
-
-    def get_pure_modules(self):
-        """Returns a list of pure source and sink modules"""
-        return [s for s in self.modules if s not in self.modules_src and s not in self.modules_sink]
-
-    def get_sink_modules(self):
-        """Returns a list of sink modules"""
-        return self.modules_sink
+    @property
+    def sink_modules(self):
+        return [module for module in self.modules if module.is_sink]
 
     def add_source_messages(self, msg):
         """Adds messages that come from pure sources (sensors).  This distinction allows them to be controlled by the (:mod:`Population`) algorithm."""
+        # Defining which messages will be dynamically generated # the generation is controlled by Population algorithm
+        # TODO Check
         self.messages[msg.name] = msg
-
-    def get_message(self, name):
-        """Returns a message instance from the identifier name"""
-        return self.messages[name]
 
     def add_service_source(self, module_name: str, distribution: Callable = None, message: Message = None, module_dst: List = None, p: List = None):
         """
@@ -143,6 +107,7 @@ class Application:
         Kwargs:
             param_distribution (dict): the parameters for *distribution* function  # TODO ???
         """
+        # TODO Check
         if not module_dst:
             module_dst = []
         if not p:
@@ -158,7 +123,7 @@ class Application:
     def add_service_module(self, module_name: str, message_in, message_out="", distribution="", module_dst: List = None, p: List = None, **param):
         # TODO Is message_out of type Message or str?
         # TODO Fix mutable default arguments
-
+        # MODULES/SERVICES: Definition of Generators and Consumers (AppEdges and TupleMappings in iFogSim)
         """
         Link to each non-pure module a management of transfering of messages
 
@@ -174,9 +139,6 @@ class Application:
             param (dict): the parameters for *distribution* function
 
         """
-        if module_name not in self.services:
-            self.services[module_name] = []
-
         self.services[module_name].append(
             {
                 "type": Application.TYPE_MODULE,
@@ -188,3 +150,8 @@ class Application:
                 "p": p,
             }
         )
+
+    TYPE_SOURCE = "SOURCE"  # Sensor
+    TYPE_MODULE = "MODULE"
+    TYPE_SINK = "SINK"  # Actuator
+

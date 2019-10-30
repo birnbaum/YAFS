@@ -133,8 +133,8 @@ The most simple case, it is a statical creation of requests. For each message of
     from yafs.population import Statical
 
     pop = Statical("Statical")
-    pop.set_src_control({"model": "sensor-device", "number":1,"message": app.get_message("M.A"), "distribution": deterministicDistribution,"param": {"time_shift": 100}})#5.1}})
-    pop.set_sink_control({"model": "actuator-device","number":1,"module":app.get_sink_modules()})
+    pop.set_src_control({"model": "sensor-device", "number":1,"message": app.get_message[get_message["M.A"]], "distribution": deterministicDistribution,"param": {"time_shift": 100}})#5.1}})
+    pop.set_sink_control({"model": "actuator-device","number":1,"module":app.sink_modules})
 
 
 

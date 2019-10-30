@@ -26,14 +26,13 @@ RANDOM_SEED = 1
 def create_applications_from_json(data):
     applications = {}
     for app in data:
-        a = Application(name=app["name"])
         modules = [{"None": {"Type": Application.TYPE_SOURCE}}]
         for module in app["module"]:
             if "RAM" in list(module.keys()):
                 modules.append({module["name"]: {"RAM": module["RAM"], "Type": Application.TYPE_MODULE}})
             else:
                 modules.append({module["name"]: {"RAM": 1, "Type": Application.TYPE_MODULE}})
-        a.set_modules(modules)
+        a = Application(name=app["name"], modules=modules)
 
         ms = {}
         for message in app["message"]:

@@ -22,7 +22,7 @@ class JSONPopulation(Population):
             # Getting information from the APP
             app_name = behaviour["app"]
             app = sim.apps[app_name]
-            msg = app.get_message(behaviour["message"])
+            msg = app.messages[behaviour["message"]]
 
             # TODO Include a more flexible constructor
             # if behaviour["entity"] == "all":

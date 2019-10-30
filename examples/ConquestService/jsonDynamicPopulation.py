@@ -43,7 +43,7 @@ class DynamicPopulation(Population):
             self.logger.info("Launching user %i (app: %s), in node: %i, at time: %i " % (item["id_resource"], app_name, idtopo, sim.env.now))
 
             app = sim.apps[app_name]
-            msg = app.get_message(item["message"])
+            msg = app.messages[item["message"]]
 
             # A basic creation of the seed: unique for each user and different in each simulation repetition
             seed = item["id_resource"] * 1000 + item["lambda"] + self.it

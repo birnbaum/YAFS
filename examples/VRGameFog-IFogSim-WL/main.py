@@ -174,11 +174,11 @@ def main(simulated_time, depth, police):
     #     model (str): identifies the device or devices where the sink is linked
     #     number (int): quantity of sinks linked in each device
     #     module (str): identifies the module from the app who receives the messages
-    pop.set_sink_control({"model": "a", "number": 1, "module": app.get_sink_modules()})
+    pop.set_sink_control({"model": "a", "number": 1, "module": app.sink_modules})
 
     # In addition, a source includes a distribution function:
     dDistribution = DeterministicDistribution(name="Deterministic", time=100)
-    pop.set_src_control({"model": "s", "number": 1, "message": app.get_message("M.EGG"), "distribution": dDistribution})
+    pop.set_src_control({"model": "s", "number": 1, "message": app.messages["M.EGG"], "distribution": dDistribution})
 
     """--
     SELECTOR algorithm

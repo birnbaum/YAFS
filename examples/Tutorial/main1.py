@@ -25,17 +25,12 @@ RANDOM_SEED = 1
 
 
 def create_application():
-    # APLICATION
-    a = Application(name="SimpleCase")
+    a = Application(name="SimpleCase", modules=[  # (S) --> (ServiceA) --> (A)
+        {"Sensor": {"Type": Application.TYPE_SOURCE}},
+        {"ServiceA": {"RAM": 10, "Type": Application.TYPE_MODULE}},
+        {"Actuator": {"Type": Application.TYPE_SINK}},
+    ])
 
-    # (S) --> (ServiceA) --> (A)
-    a.set_modules(
-        [
-            {"Sensor": {"Type": Application.TYPE_SOURCE}},
-            {"ServiceA": {"RAM": 10, "Type": Application.TYPE_MODULE}},
-            {"Actuator": {"Type": Application.TYPE_SINK}},
-        ]
-    )
     """
     Messages among MODULES (AppEdge in iFogSim)
     """
@@ -121,11 +116,11 @@ def main(simulated_time):
     #     model (str): identifies the device or devices where the sink is linked
     #     number (int): quantity of sinks linked in each device
     #     module (str): identifies the module from the app who receives the messages
-    pop.set_sink_control({"model": "actuator-device", "number": 1, "module": app.get_sink_modules()})
+    pop.set_sink_control({"model": "actuator-device", "number": 1, "module": app.sink_modules})
 
     # In addition, a source includes a distribution function:
     dDistribution = DeterministicDistribution(name="Deterministic", time=100)
-    pop.set_src_control({"model": "sensor-device", "number": 1, "message": app.get_message("M.A"), "distribution": dDistribution})
+    pop.set_src_control({"model": "sensor-device", "number": 1, "message": app.get_message[get_message["M.A"]], "distribution": dDistribution})
 
     """--
     SELECTOR algorithm
@@ -150,7 +145,7 @@ if __name__ == "__main__":
     import logging.config
     import os
 
-    logging.config.fileConfig(os.getcwd() + "/logging.ini")
+    # logging.config.fileConfig(os.getcwd() + "/logging.ini")
 
     start_time = time.time()
     main(simulated_time=1000)
@@ -158,13 +153,13 @@ if __name__ == "__main__":
     print(("\n--- %s seconds ---" % (time.time() - start_time)))
 
     ### Finally, you can analyse the results:
-    # print "-"*20
-    # print "Results:"
-    # print "-" * 20
+    # print("-"*20)
+    # print("Results:")
+    # print("-" * 20)
     m = Stats(default_path="Results")  # Same name of the results
     time_loops = [["M.A", "M.B"]]
     m.showResults2(1000, time_loops=time_loops)
-    # print "\t- Network saturation -"
-    # print "\t\tAverage waiting messages : %i" % m.average_messages_not_transmitted()
-    # print "\t\tPeak of waiting messages : %i" % m.peak_messages_not_transmitted()PartitionILPPlacement
-    # print "\t\tTOTAL messages not transmitted: %i" % m.messages_not_transmitted()
+    # print("\t- Network saturation -")
+    # print("\t\tAverage waiting messages : %i" % m.average_messages_not_transmitted())
+    # print("\t\tPeak of waiting messages : %i" % m.peak_messages_not_transmitted())
+    # print("\t\tTOTAL messages not transmitted: %i" % m.messages_not_transmitted())

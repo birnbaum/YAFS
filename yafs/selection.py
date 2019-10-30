@@ -5,8 +5,6 @@ from typing import Tuple
 
 import networkx as nx
 
-from yafs.core import Simulation
-
 
 class Selection(ABC):
     """Provides the route among topology entities for that a message reach the destiny module, it can also be seen as an orchestration algorithm."""
@@ -18,7 +16,7 @@ class Selection(ABC):
         self.propagation = 0.0
 
     @abstractmethod
-    def get_path(self, sim: Simulation, app_name: str, message, topology_src, alloc_DES, alloc_module, traffic, from_des) -> Tuple:
+    def get_path(self, sim: "Simulation", app_name: str, message, topology_src, alloc_DES, alloc_module, traffic, from_des) -> Tuple:  # TODO Why does this know about the simulation?
         """Provides the route to follow the message within the topology to reach the destination module,.
         
         both empty arrays implies that the message will not send to the destination.  # TODO ???

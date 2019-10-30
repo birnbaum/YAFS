@@ -11,12 +11,13 @@ from yafs import utils
 from yafs.application import Application, Message
 from yafs.distribution import *
 from yafs.metrics import Metrics
+from yafs.placement import Placement
+from yafs.population import Population
+from yafs.selection import Selection
 from yafs.topology import Topology
 
 EVENT_UP_ENTITY = "node_up"
 EVENT_DOWN_ENTITY = "node_down"
-
-NETWORK_LIMIT = 100000000
 
 
 class Simulation:
@@ -62,7 +63,7 @@ class Simulation:
 
         self.stop = False  # Any algorithm can stop internally the simulation putting these value to True. By default is False.
 
-        self.apps = {}
+        self.applications = {}
 
         self.until = 0  # End time simulation
         # self.db = TinyDB(name_register)
@@ -282,9 +283,6 @@ class Simulation:
                         shift_time = last_used - self.env.now
                         last_used = self.env.now + shift_time + latency_msg_link
 
-                    # print "Send next WakeUp : ", last_used
-                    # print "-" * 30
-
                     self.last_busy_time[link] = last_used
                     self.env.process(self.__wait_message(message, latency_msg_link, shift_time))
                 except:  # TODO Too broad exception clause
@@ -296,16 +294,12 @@ class Simulation:
                     )
 
                     if DES_dst == [] and paths == []:
-                        # Message communication ending:
-                        # The message have arrived to the destination node but it is unavailable.
-                        None
+                        # Message communication ending: The message have arrived to the destination node but it is unavailable.
                         self.logger.debug("\t No path given. Message is lost")
                     else:
-
                         message.path = copy.copy(paths[0])
                         message.idDES = DES_dst[0]
                         self.logger.debug("(\t New path given. Message is enrouting again.")
-                        # print "\t",msg.path
                         self.network_ctrl_pipe.put(message)
 
     def __wait_message(self, msg, latency, shift_time):
@@ -315,7 +309,7 @@ class Simulation:
         self.network_pump -= 1
         self.network_ctrl_pipe.put(msg)
 
-    def __get_id_process(self):
+    def _get_id_process(self):
         """Every DES-process has an unique identifier"""
         self.__idProcess += 1
         return self.__idProcess
@@ -338,7 +332,7 @@ class Simulation:
         """
         A DES-process who controls the invocation of Placement.run
         """
-        myId = self.__get_id_process()
+        myId = self._get_id_process()
         self.des_process_running[myId] = True
         self.des_control_process[placement.name] = myId
 
@@ -353,7 +347,7 @@ class Simulation:
         """
         A DES-process who controls the invocation of Population.run
         """
-        myId = self.__get_id_process()
+        myId = self._get_id_process()
         self.des_process_running[myId] = True
         self.des_control_process[population.name] = myId
 
@@ -392,7 +386,7 @@ class Simulation:
             """
             It computes the service time in processing a message and record this event
             """
-            if module in self.apps[app].get_sink_modules():
+            if module in self.applications[app].sink_modules:
                 """
                 The module is a SINK (Actuactor)
                 """
@@ -441,7 +435,9 @@ class Simulation:
             # # print "ALLOC:  ", tmp
             # # print "PATH 0: " ,message.path[0]
 
-            # WARNING. If there are more than two equal modules deployed in the same entity, it will not be possible to determine which process sent this package at this point. That information will have to be calculated by the trace of the message (message.id)
+            # WARNING. If there are more than two equal modules deployed in the same entity,
+            # it will not be possible to determine which process sent this package at this point.
+            # That information will have to be calculated by the trace of the message (message.id)
             sourceDES = -1
             try:
                 DES_possible = self.alloc_module[app][message.src]
@@ -492,7 +488,7 @@ class Simulation:
     """
 
     def __add_up_node_process(self, next_event, **param):
-        myId = self.__get_id_process()
+        myId = self._get_id_process()
         self.logger.debug("Added_Process - UP entity Creation\t#DES:%i" % myId)
         while not self.stop:
             # TODO Define function to ADD a new NODE in topology
@@ -505,7 +501,7 @@ class Simulation:
     """
 
     def __add_down_node_process(self, next_event, **param):
-        myId = self.__get_id_process()
+        myId = self._get_id_process()
         self.des_process_running[myId] = True
         self.logger.debug("Added_Process - Down entity Creation\t#DES:%i" % myId)
         while not self.stop and self.des_process_running[myId]:
@@ -539,7 +535,7 @@ class Simulation:
                 msg = yield self.consumer_pipes["%s%s%i" % (app_name, module, ides)].get()
                 # One pipe for each module name
 
-                m = self.apps[app_name].services[module]
+                m = self.applications[app_name].services[module]
 
                 # for ser in m:
                 #     if "message_in" in ser.keys():
@@ -645,7 +641,7 @@ class Simulation:
         """
         Add a DES process for Stop/Progress bar monitor
         """
-        myId = self.__get_id_process()
+        myId = self._get_id_process()
         self.logger.debug("Added_Process - Internal Monitor: %s\t#DES:%i" % (name, myId))
         if show_progress_monitor:
             self.pbar = tqdm(total=self.until)
@@ -658,7 +654,7 @@ class Simulation:
         """
         Add a DES process for user purpose
         """
-        myId = self.__get_id_process()
+        myId = self._get_id_process()
         self.logger.debug("Added_Process - Internal Monitor: %s\t#DES:%i" % (name, myId))
         while not self.stop:
             yield self.env.timeout(next(distribution))
@@ -750,7 +746,7 @@ class Simulation:
             id (int) the same input *id*
 
         """
-        idDES = self.__get_id_process()
+        idDES = self._get_id_process()
         self.des_process_running[idDES] = True
         self.env.process(self.__add_source_population(idDES, app_name, msg, distribution))
         self.alloc_DES[idDES] = id_node
@@ -776,7 +772,7 @@ class Simulation:
             id (int) the same input *id*
 
         """
-        idDES = self.__get_id_process()
+        idDES = self._get_id_process()
         self.des_process_running[idDES] = True
         self.env.process(self.__add_source_module(idDES, app_name, module, msg, distribution))
         self.alloc_DES[idDES] = id_node
@@ -804,7 +800,7 @@ class Simulation:
             id (int) the same input *id*
 
         """
-        idDES = self.__get_id_process()
+        idDES = self._get_id_process()
         self.des_process_running[idDES] = True
         self.env.process(self.__add_consumer_module(idDES, app_name, module, register_consumer_msg))
         # To generate the QUEUE of a SERVICE module
@@ -817,20 +813,17 @@ class Simulation:
 
         return idDES
 
-    def deploy_sink(self, app_name, node, module):
-        """
-        Add a DES process for deploy pure SINK modules (actuators)
-        This function its used by (:mod:`Placement`): algorithm
-        Internatlly, there is not a DES PROCESS for this type of behaviour
+    def deploy_sink(self, app_name: str, node: int, module: str):
+        """Add a DES process to deploy pure SINK modules (actuators).
+
+        This function its used by the placement algorithm internally, there is no DES PROCESS for this type of behaviour
 
         Args:
-            app_name (str): application name
-
-            node (int): entity.id of the topology who will create the messages
-
-            module (str): module
+            app_name: application name
+            node: entity.id of the topology who will create the messages
+            module: module
         """
-        idDES = self.__get_id_process()
+        idDES = self._get_id_process()
         self.des_process_running[idDES] = True
         self.alloc_DES[idDES] = node
         self.__add_consumer_service_pipe(app_name, module, idDES)
@@ -861,23 +854,9 @@ class Simulation:
         """
         self.des_process_running[id] = True
 
-    def deploy_app(self, app, placement, population, selector):
-        """
-        This process is responsible for linking the *application* to the different algorithms (placement, population, and service)
-
-        Args:
-            app (object): :mod:`Application` class
-
-            placement (object): :mod:`Placement` class
-
-            population (object): :mod:`Population` class
-
-            selector (object): :mod:`Selector` class
-        """
-        # Application
-        self.apps[app.name] = app
-
-        # Initialization
+    def deploy_app(self, app: Application, placement: Placement, population: Population, selection: Selection):
+        """This process is responsible for linking the *application* to the different algorithms (placement, population, and service)"""
+        self.applications[app.name] = app
         self.alloc_module[app.name] = {}
 
         # Add Placement controls to the App
@@ -896,7 +875,7 @@ class Simulation:
         self.population_policy[population.name]["apps"].append(app.name)
 
         # Add Selection control to the App
-        self.selector_path[app.name] = selector
+        self.selector_path[app.name] = selection
 
     def get_alloc_entities(self):
         """ It returns a dictionary of deployed services
@@ -1031,7 +1010,7 @@ class Simulation:
 
         print("-" * 40)
         print("DES\t| TOPO \t| Src.Mod \t| Modules")
-        print(("-" * 40))
+        print("-" * 40)
         for k in self.alloc_DES:
             print(
                 k,
@@ -1043,7 +1022,6 @@ class Simulation:
                 fullAssignation[k]["Module"] if k in list(fullAssignation.keys()) else "--",
             )
         print("-" * 40)
-        # exit()
 
     #
     # ### MOBILE ADAPTATION SECTION
@@ -1105,7 +1083,7 @@ class Simulation:
         # print "Mobile agent: %s ends " % gme.plate
 
     def add_mobile_agent(self, gme):
-        ides = self.__get_id_process()
+        ides = self._get_id_process()
         self.des_process_running[ides] = True
         self.env.process(self.__add_mobile_agent(ides, gme))
 

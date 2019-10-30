@@ -98,13 +98,13 @@ def main(simulated_time):
     dDistribution = DeterministicDistributionStartPoint(3000, 300, name="Deterministic")
     dDistributionSrc = DeterministicDistribution(name="Deterministic", time=10)
     pop1 = Evolutive(top20_devices, number_generators, name="top", activation_dist=dDistribution)
-    pop1.set_sink_control({"app": app1.name, "number": 1, "module": app1.get_sink_modules()})
-    pop1.set_src_control({"number": 1, "message": app1.get_message("M.Action"), "distribution": dDistributionSrc})
+    pop1.set_sink_control({"app": app1.name, "number": 1, "module": app1.sink_modules})
+    pop1.set_src_control({"number": 1, "message": app1.get_message["M.Action"], "distribution": dDistributionSrc})
 
     pop2 = Statical(number_generators, name="Statical")
-    pop2.set_sink_control({"id": main_fog_device, "number": number_generators, "module": app2.get_sink_modules()})
+    pop2.set_sink_control({"id": main_fog_device, "number": number_generators, "module": app2.sink_modules})
 
-    pop2.set_src_control({"number": 1, "message": app2.get_message("M.Action"), "distribution": dDistributionSrc})
+    pop2.set_src_control({"number": 1, "message": app2.get_message["M.Action"], "distribution": dDistributionSrc})
 
     # In addition, a source includes a distribution function:
 

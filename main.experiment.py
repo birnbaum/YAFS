@@ -1,5 +1,7 @@
 """
 
+    Created on Wed Nov 22 15:03:21 2017
+
     @author: isaac
 
 """
@@ -11,11 +13,11 @@ from yafs.application import Application, Message
 from yafs.population import *
 from yafs.topology import Topology
 
-from examples.Tutorial.simpleSelection import MinPath_RoundRobin
+from examples.Tutorial.simpleSelection import MinimunPath
 from examples.Tutorial.simplePlacement import CloudPlacement
+from yafs.stats import Stats
 from yafs.distribution import DeterministicDistribution
 from yafs.utils import fractional_selectivity
-from yafs.stats import Stats
 import time
 import numpy as np
 
@@ -23,7 +25,14 @@ RANDOM_SEED = 1
 
 
 def create_application():
-    # APLICATION
+    from yafs.application import Module
+    a = Application(name="SimpleApp", modules=[  # (S) --> (ServiceA) --> (A)
+        Module("Sensor", is_source=True),
+        Module("ServiceA", data={"RAM": 10}),
+        Module("Actuator", is_sink=True),
+    ])
+
+    """
     a = Application(name="SimpleCase")
 
     # (S) --> (ServiceA) --> (A)
@@ -35,23 +44,19 @@ def create_application():
         ]
     )
     """
-    Messages among MODULES (AppEdge in iFogSim)
-    """
-    m_a = Message("M.A", "Sensor", "ServiceA", instructions=20 * 10 ^ 6, size=1000)
-    m_b = Message("M.B", "ServiceA", "Actuator", instructions=30 * 10 ^ 6, size=500, broadcasting=True)
 
-    """
-    Defining which messages will be dynamically generated # the generation is controlled by Population algorithm
-    """
-    a.add_source_messages(m_a)
+    # Messages among MODULES (AppEdge in iFogSim)
+    message_a = Message("M.A", src="Sensor", dst="ServiceA", instructions=20 * 10 ^ 6, size=1000)
+    message_b = Message("M.B", src="ServiceA", dst="Actuator", instructions=30 * 10 ^ 6, size=500)
 
-    """
-    MODULES/SERVICES: Definition of Generators and Consumers (AppEdges and TupleMappings in iFogSim)
-    """
-    # MODULE SERVICES
-    a.add_service_module("ServiceA", m_a, m_b, fractional_selectivity, threshold=1.0)
+    # Defining which messages will be dynamically generated # the generation is controlled by Population algorithm
+    a.add_source_messages(message_a)
+
+    # MODULES/SERVICES: Definition of Generators and Consumers (AppEdges and TupleMappings in iFogSim)
+    a.add_service_module("ServiceA", message_a, message_b, fractional_selectivity, threshold=1.0)
 
     return a
+
 
 
 def create_json_topology():
@@ -105,7 +110,7 @@ def main(simulated_time):
     PLACEMENT algorithm
     """
     placement = CloudPlacement("onCloud")  # it defines the deployed rules: module-device
-    placement.scaleService({"ServiceA": 4})
+    placement.scaleService({"ServiceA": 1})
 
     """
     POPULATION algorithm
@@ -119,37 +124,37 @@ def main(simulated_time):
     #     model (str): identifies the device or devices where the sink is linked
     #     number (int): quantity of sinks linked in each device
     #     module (str): identifies the module from the app who receives the messages
-    pop.set_sink_control({"model": "actuator-device", "number": 2, "module": app.sink_modules})
+    pop.set_sink_control({"model": "actuator-device", "number": 1, "module": "Actuator"})
+    # pop.set_sink_control({"model": "actuator-device", "number": 1, "module": app.get_sink_modules()})
 
     # In addition, a source includes a distribution function:
     dDistribution = DeterministicDistribution(name="Deterministic", time=100)
-    pop.set_src_control({"model": "sensor-device", "number": 1, "message": app.get_message["M.A"], "distribution": dDistribution})  # 5.1}})
+    pop.set_src_control({"model": "sensor-device", "number": 1, "message": app.messages["M.A"], "distribution": dDistribution})
 
     """--
     SELECTOR algorithm
     """
     # Their "selector" is actually the shortest way, there is not type of orchestration algorithm.
     # This implementation is already created in selector.class,called: First_ShortestPath
-    selectorPath = MinPath_RoundRobin()
+    selectorPath = MinimunPath()
 
     """
     SIMULATION ENGINE
     """
 
     stop_time = simulated_time
-    s = Simulation(t, default_results_path="Results_multiple")
+    s = Simulation(t, default_results_path="Results")
     s.deploy_app(app, placement, pop, selectorPath)
-
     s.run(stop_time, show_progress_monitor=False)
 
-    s.draw_allocated_topology()  # for debugging
+    # s.draw_allocated_topology() # for debugging
 
 
 if __name__ == "__main__":
     import logging.config
     import os
 
-    logging.config.fileConfig(os.getcwd() + "/logging.ini")
+    # logging.config.fileConfig(os.getcwd() + "/logging.ini")
 
     start_time = time.time()
     main(simulated_time=1000)
@@ -157,20 +162,13 @@ if __name__ == "__main__":
     print(("\n--- %s seconds ---" % (time.time() - start_time)))
 
     ### Finally, you can analyse the results:
-    print("-" * 20)
-    print("Results:")
-    print("-" * 20)
-    m = Stats(default_path="Results_multiple")  # Same name of the results
+    # print("-"*20)
+    # print("Results:")
+    # print("-" * 20)
+    m = Stats(default_path="Results")  # Same name of the results
     time_loops = [["M.A", "M.B"]]
     m.showResults2(1000, time_loops=time_loops)
-    print("\t- Network saturation -")
-    print("\t\tAverage waiting messages : %i" % m.average_messages_not_transmitted())
-    print("\t\tPeak of waiting messages : %i" % m.peak_messages_not_transmitted())
-    print("\t\tTOTAL messages not transmitted: %i" % m.messages_not_transmitted())
-
-    print("\n\t- Stats of each service deployed -")
-    print(m.get_df_modules())
-    print(m.get_df_service_utilization("ServiceA", 1000))
-
-    print("\n\t- Stats of each DEVICE -")
-    # TODO
+    # print("\t- Network saturation -")
+    # print("\t\tAverage waiting messages : %i" % m.average_messages_not_transmitted())
+    # print("\t\tPeak of waiting messages : %i" % m.peak_messages_not_transmitted())
+    # print("\t\tTOTAL messages not transmitted: %i" % m.messages_not_transmitted())

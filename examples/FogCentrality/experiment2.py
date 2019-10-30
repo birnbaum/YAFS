@@ -330,13 +330,13 @@ def main():
 
                             ### ALL SINKS  goes to Cluster ID: NODE 0
                             # print "\t", "SINK"
-                            pops[idx].set_sink_control({"id": [cloud_device], "number": 1, "module": apps[idx].get_sink_modules()})
+                            pops[idx].set_sink_control({"id": [cloud_device], "number": 1, "module": apps[idx].sink_modules})
                             # print "\t", "SOURCE"
                             # In addition, a source includes a distribution function:
 
                             dDistribution = DeterministicDistribution(name="Deterministic", time=idWL[1])
                             pops[idx].set_src_control(
-                                {"id": sensor_workload_types[idx], "number": 1, "message": apps[idx].get_message("m-st"), "distribution": dDistribution}
+                                {"id": sensor_workload_types[idx], "number": 1, "message": apps[idx].get_message["m-st"], "distribution": dDistribution}
                             )
 
                     else:
@@ -370,11 +370,11 @@ def main():
                             # print "\t Device:",dev
                             # Each application have a correspondence SRC/SINK among APPS
 
-                            pops[idx].set_sink_control({"id": [dev], "number": 1, "module": apps[idx].get_sink_modules()})
+                            pops[idx].set_sink_control({"id": [dev], "number": 1, "module": apps[idx].sink_modules})
                             dDistribution = DeterministicDistribution(name="Deterministic", time=idWL[1])
                             # In addition, a source includes a distribution function:
                             pops[idx].set_src_control(
-                                {"id": sensor_workload_types[idx], "number": 1, "message": apps[idx].get_message("m-st"), "distribution": dDistribution}
+                                {"id": sensor_workload_types[idx], "number": 1, "message": apps[idx].get_message["m-st"], "distribution": dDistribution}
                             )
 
                     """

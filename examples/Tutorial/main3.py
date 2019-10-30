@@ -124,11 +124,11 @@ def main(simulated_time):
     #     model (str): identifies the device or devices where the sink is linked
     #     number (int): quantity of sinks linked in each device
     #     module (str): identifies the module from the app who receives the messages
-    pop.set_sink_control({"model": "actuator-device", "number": 2, "module": app.get_sink_modules()})
+    pop.set_sink_control({"model": "actuator-device", "number": 2, "module": app.sink_modules})
 
     # In addition, a source includes a distribution function:
     dDistribution2 = DeterministicDistribution(name="Deterministic2", time=100)
-    pop.set_src_control({"model": "sensor-device-1", "number": 1, "message": app.get_message("M.A"), "distribution": dDistribution2})
+    pop.set_src_control({"model": "sensor-device-1", "number": 1, "message": app.get_message["M.A"], "distribution": dDistribution2})
 
     """
     Topology and Changes on the population dynamically

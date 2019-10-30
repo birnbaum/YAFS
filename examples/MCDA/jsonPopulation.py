@@ -22,7 +22,7 @@ class JSONPopulation(Population):
                 lambd = item["lambda"]
 
                 app = sim.apps[app_name]
-                msg = app.get_message(item["message"])
+                msg = app.get_message[get_message[item["message"]]]
 
                 seed = item["id_resource"] * 1000 + item["lambda"] + self.it
 

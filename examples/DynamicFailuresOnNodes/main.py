@@ -98,10 +98,10 @@ def main(simulated_time):
     dStart = DeterministicDistributionStartPoint(0, 100, name="Deterministic")
     dStart2 = ExponentialDistributionStartPoint(500, 100.0, name="Deterministic")
     pop = Pop_and_Failures(name="mttf-nodes", srcs=number_generators, activation_dist=dStart2)
-    pop.set_sink_control({"ids": top20_devices, "number": 1, "module": app1.get_sink_modules()})
+    pop.set_sink_control({"ids": top20_devices, "number": 1, "module": app1.sink_modules})
 
     dDistribution = DeterministicDistribution(name="Deterministic", time=10)
-    pop.set_src_control({"number": 1, "message": app1.get_message("M.Action"), "distribution": dDistribution})
+    pop.set_src_control({"number": 1, "message": app1.messages["M.Action"], "distribution": dDistribution})
 
     # In addition, a source includes a distribution function:
 

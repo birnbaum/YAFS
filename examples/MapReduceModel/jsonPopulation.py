@@ -21,7 +21,7 @@ class JSONPopulation(Population):
                 idtopo = item["id_resource"]
                 lambd = item["lambda"]
                 app = sim.apps[app_name]
-                msg = app.get_message(item["message"])
+                msg = app.messages[item["message"]]
 
                 dDistribution = ExponentialDistribution(name="Exp", lambd=lambd, seed=(int(self.it) * 100000 + counter))
 
