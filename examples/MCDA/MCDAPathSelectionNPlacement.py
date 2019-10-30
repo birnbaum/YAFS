@@ -3,7 +3,7 @@ import os
 import pandas as pd
 from subprocess import Popen, PIPE
 from collections import namedtuple
-from yafs import Selection
+from yafs.selection import Selection
 import operator
 import numpy as np
 

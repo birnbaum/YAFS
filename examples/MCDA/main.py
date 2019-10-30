@@ -6,6 +6,7 @@
 
 """
 import os
+import random
 import time
 import json
 import networkx as nx
@@ -14,17 +15,16 @@ import collections
 import pickle
 import numpy as np
 
-from yafs.core import Simulation
+from yafs.core import Simulation, ExponentialDistribution
 from yafs.application import Application, Message
-from yafs import Topology
-from yafs.distribution import *
+from yafs.topology import Topology
 from yafs.utils import fractional_selectivity
 
-from yafs import JSONPlacement
-from .MCDAPathSelectionNPlacement import MCDARoutingAndDeploying
-from .WAPathSelectionNPlacement import WARoutingAndDeploying
-from .jsonDynamicPopulation import DynamicPopulation
-from .placementOnlyCloud import JSONPlacementOnlyCloud
+from yafs.placement import JSONPlacement
+from examples.MCDA.MCDAPathSelectionNPlacement import MCDARoutingAndDeploying
+from examples.MCDA.WAPathSelectionNPlacement import WARoutingAndDeploying
+from examples.MCDA.jsonDynamicPopulation import DynamicPopulation
+from examples.MCDA.placementOnlyCloud import JSONPlacementOnlyCloud
 
 
 def create_applications_from_json(data):

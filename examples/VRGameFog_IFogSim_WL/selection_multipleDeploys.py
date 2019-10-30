@@ -1,4 +1,4 @@
-from yafs import Selection
+from yafs.selection import Selection
 import networkx as nx
 
 

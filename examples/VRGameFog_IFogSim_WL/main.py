@@ -14,32 +14,29 @@
 import argparse
 
 from yafs.core import Simulation
-from yafs.application import Application, Message
+from yafs.application import Application, Message, Module
 
 from yafs.population import *
-from yafs import Topology
+from yafs.topology import Topology
 
-from .selection_multipleDeploys import BroadPath, CloudPath_RR
-from .placement_Cluster_Edge import CloudPlacement, FogPlacement
+from examples.VRGameFog_IFogSim_WL.selection_multipleDeploys import BroadPath, CloudPath_RR
+from examples.VRGameFog_IFogSim_WL.placement_Cluster_Edge import CloudPlacement, FogPlacement
 from yafs.distribution import DeterministicDistribution
 from yafs.utils import fractional_selectivity
 import time
-from yafs import Stats
+from yafs.stats import Stats
 
 
 def create_application():
     # APLICATION
-    a = Application(name="EGG_GAME")
+    a = Application(name="EGG_GAME", modules=[
+        Module("EGG", is_source=True),
+        Module("Display", is_sink=True),
+        Module("Client", data={"RAM": 10}),
+        Module("Calculator", data={"RAM": 10}),
+        Module("Coordinator", data={"RAM": 10}),
+    ])
 
-    a.set_modules(
-        [
-            {"EGG": {"Type": Application.TYPE_SOURCE}},
-            {"Display": {"Type": Application.TYPE_SINK}},
-            {"Client": {"RAM": 10, "Type": Application.TYPE_MODULE}},
-            {"Calculator": {"RAM": 10, "Type": Application.TYPE_MODULE}},
-            {"Coordinator": {"RAM": 10, "Type": Application.TYPE_MODULE}},
-        ]
-    )
     """
     Messages among MODULES (AppEdge in iFogSim)
     """
@@ -174,7 +171,7 @@ def main(simulated_time, depth, police):
     #     model (str): identifies the device or devices where the sink is linked
     #     number (int): quantity of sinks linked in each device
     #     module (str): identifies the module from the app who receives the messages
-    pop.set_sink_control({"model": "a", "number": 1, "module": app.sink_modules})
+    pop.set_sink_control({"model": "a", "number": 1, "module": "Display"})  # TODO module hardcoded
 
     # In addition, a source includes a distribution function:
     dDistribution = DeterministicDistribution(name="Deterministic", time=100)
