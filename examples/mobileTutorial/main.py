@@ -337,7 +337,7 @@ if __name__ == "__main__":
             nx.set_node_attributes(self.G, values=dc[x], name=str(x))
 
         for node in data["entity"]:
-            self.nodeAttributes[node["id"]] = node
+            self.G.nodes[node["id"]] = node
 
         self._init_uptimes()
     """

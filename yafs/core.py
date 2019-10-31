@@ -315,7 +315,7 @@ class Simulation:
 
     def __init_metrics(self):
         """Each entity and node metrics are initialized with empty values"""
-        nodes_att = self.topology.get_nodes_att()
+        nodes_att = self.topology.G.nodes
         measures = {"node": {}, "link": {}}
         for key in nodes_att:
             measures["node"][key] = {}
@@ -397,7 +397,7 @@ class Simulation:
                 """
                 id_node = self.alloc_DES[des]
 
-                # att_node = self.topology.get_nodes_att()[id_node] # WARNING DEPRECATED from V1.0
+                # att_node = self.topology.G.nodes[id_node] # WARNING DEPRECATED from V1.0
                 att_node = self.topology.G.nodes[id_node]
 
                 time_service = message.instructions / float(att_node["IPT"])

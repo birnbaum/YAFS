@@ -1,5 +1,4 @@
 import logging
-import warnings
 from typing import Dict
 
 import networkx as nx
@@ -18,59 +17,19 @@ class Topology:
     LINK_PR = "PR"  # Link feature: Propagation delay
     NODE_IPT = "IPT"  # Node feature: Instructions per Simulation Time
 
-    def __init__(self, logger=None):  # TODO Remove logger  G: nx.Graph,
-        self.G = None # G
-
-        # TODO VERSION 2. THIS VALUE SHOULD BE REMOVED
-        # INSTEAD USE NX.G. attributes
-        self.nodeAttributes = {}
+    def __init__(self, data: Dict, logger=None):  # TODO Remove logger  G: nx.Graph,
+        self.G = nx.Graph()
+        for entity in data["entity"]:
+            self.G.add_node(entity["id"], **entity)
+        for edge in data["link"]:
+            self.G.add_edge(edge["s"], edge["d"], BW=edge[self.LINK_BW], PR=edge[self.LINK_PR])
+        self._init_uptimes()
 
         self.logger = logger or logging.getLogger(__name__)
 
     def _init_uptimes(self):  # TODO What is this used for?
-        for key in self.nodeAttributes:
-            self.nodeAttributes[key]["uptime"] = (0, None)
-
-    def load(self, data: Dict):
-        """Generates the topology from a JSON file"""
-        self.G = nx.Graph()
-        for edge in data["link"]:
-            self.G.add_edge(edge["s"], edge["d"], BW=edge[self.LINK_BW], PR=edge[self.LINK_PR])
-
-        # TODO This part can be removed in next versions
-        for node in data["entity"]:
-            self.nodeAttributes[node["id"]] = node
-        # end remove
-
-        # Correct way to use custom and mandatory topology attributes
-        valuesIPT = {node["id"]: (node["IPT"] if "IPT" in node else 0) for node in data["entity"]}
-        valuesRAM = {node["id"]: (node["RAM"] if "RAM" in node else 0) for node in data["entity"]}
-
-        nx.set_node_attributes(self.G, values=valuesIPT, name="IPT")
-        nx.set_node_attributes(self.G, values=valuesRAM, name="RAM")
-
-        self._init_uptimes()
-
-    def load_graphml(self, filename):
-        warnings.warn(
-            "The load_graphml function is deprecated and " "will be removed in version 2.0.0. " "Use NX.READ_GRAPHML function instead.",
-            FutureWarning,
-            stacklevel=8,
-        )
-        self.G = nx.read_graphml(filename)
-
-        nx.set_edge_attributes(self.G, values={k: {"BW": 1, "PR": 1} for k in self.G.edges()})
-        nx.set_node_attributes(self.G, values={k: {"IPT": 1} for k in self.G.nodes()})
-
-        for k in self.G.nodes():
-            self.nodeAttributes[k] = self.G.node[k]  # it has "id" att. TODO IMPROVE
-
-    def get_nodes_att(self):
-        """
-        Returns:
-            A dictionary with the features of the nodes
-        """
-        return self.nodeAttributes
+        for key in self.G.nodes:
+            self.G.nodes[key]["uptime"] = (0, None)
 
     def find_IDs(self, value):
         """Search for nodes with the same attributes that value
@@ -84,8 +43,8 @@ class Topology:
         keyS = list(value.keys())[0]
 
         result = []
-        for key in list(self.nodeAttributes.keys()):
-            val = self.nodeAttributes[key]
+        for key in list(self.G.nodes.keys()):
+            val = self.G.nodes[key]
             if keyS in val:
                 if value[keyS] == val[keyS]:
                     result.append(key)

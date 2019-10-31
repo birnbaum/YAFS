@@ -28,7 +28,7 @@ class DeviceSpeedAwareRouting(Selection):
                     # print " Spped :" , speed
                     # print sim.topology.G.edges[link][Topology.LINK_BW]
 
-                att_node = sim.topology.get_nodes_att()[path[-1]]
+                att_node = sim.topology.G.nodes[path[-1]]
 
                 time_service = message.instructions / float(att_node["IPT"])
                 # print "Tims serviice %s" %time_service

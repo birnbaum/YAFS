@@ -93,7 +93,7 @@ class WARoutingAndDeploying(Selection):
     #                 message.bytes / sim.topology.G.edges[link][Topology.LINK_BW])
     #             # print sim.topology.G.edges[link][Topology.LINK_BW]
     #
-    #         att_node = sim.topology.get_nodes_att()[path[-1]]
+    #         att_node = sim.topology.G.nodes[path[-1]]
     #         time_service = message.instructions / float(att_node["IPT"])
     #         totalTimelatency += time_service  # HW - computation of last node
     #         print totalTimelatency
@@ -133,7 +133,7 @@ class WARoutingAndDeploying(Selection):
     #                 speed += sim.topology.G.edges[link][Topology.LINK_PR] + (message.bytes/sim.topology.G.edges[link][Topology.LINK_BW])
     #                 #print sim.topology.G.edges[link][Topology.LINK_BW]
     #
-    #             att_node = sim.topology.get_nodes_att()[path[-1]]
+    #             att_node = sim.topology.G.nodes[path[-1]]
     #             #TODO ISAAC
     #             # if att_node["id"]==100:
     #             #     print "\t last cloud"
@@ -203,7 +203,7 @@ class WARoutingAndDeploying(Selection):
 
         for i in sim.topology.G.nodes():
             if i in nodes:
-                power.append((sim.topology.get_nodes_att()[i]["POWERmin"] + sim.topology.get_nodes_att()[i]["POWERmax"]) / 2.0)
+                power.append((sim.topology.G.nodes[i]["POWERmin"] + sim.topology.G.nodes[i]["POWERmax"]) / 2.0)
 
         return power
 
@@ -264,7 +264,7 @@ class WARoutingAndDeploying(Selection):
         df["cost"] = values
 
         # if sim.get_DES_from_Service_In_Node(node, app_name, service) == []:
-        #     values.append(20 * sim.topology.get_nodes_att()[node]["IPT"])
+        #     values.append(20 * sim.topology.G.nodes[node]["IPT"])
         # else:
 
         # criteriaMinMax += ",min"

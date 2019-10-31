@@ -59,7 +59,7 @@ class Stats:
 
     def get_watt(self, totaltime, topology, by=Metrics.WATT_SERVICE):
         results = {}
-        nodeInfo = topology.get_nodes_att()
+        nodeInfo = topology.G.nodes
         if by == Metrics.WATT_SERVICE:
             # Tiempo de actividad / runeo
             if "time_response" not in self.df.columns:  # cached
@@ -89,7 +89,7 @@ class Stats:
 
     # def get_cost_cloud(self, topology):
     #     cost = 0.0
-    #     nodeInfo = topology.get_nodes_att()
+    #     nodeInfo = topology.G.nodes
     #     results = {}
     #     # Tiempo de actividad / runeo
     #     if "time_response" not in self.df.columns:  # cached

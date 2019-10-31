@@ -83,9 +83,7 @@ def main(simulated_time):
     """
     TOPOLOGY from a json
     """
-    t = Topology()
-    t_json = create_json_topology()
-    t.load(t_json)
+    t = Topology(create_json_topology())
 
     """
     APPLICATION

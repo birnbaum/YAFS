@@ -15,8 +15,8 @@ class SimpleDynamicChanges(Population):
     def initial_allocation(self, sim, app_name):
 
         # Assignment of SINK and SOURCE pure modules
-        for id_entity in sim.topology.nodeAttributes:
-            entity = sim.topology.nodeAttributes[id_entity]
+        for id_entity in sim.topology.G.nodes:
+            entity = sim.topology.G.nodes[id_entity]
             for ctrl in self.sink_control:
                 # A node can have several sinks modules
                 if entity["model"] == ctrl["model"]:

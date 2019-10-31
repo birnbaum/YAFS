@@ -116,8 +116,8 @@ def draw_topology(topology, alloc_entity):
     pos = nx.spring_layout(G)
 
     # Change the labels by model names
-    # for key in topology.nodeAttributes:
-    #     labels[key]=topology.nodeAttributes[key]["model"]
+    # for key in topology.G.nodes:
+    #     labels[key]=topology.G.nodes[key]["model"]
 
     fig, ax = plt.subplots()
     nx.draw_networkx_nodes(G, nodelist=G.nodes() - nodesM, node_shape="s", pos=pos, ax=ax)
