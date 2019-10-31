@@ -1,4 +1,4 @@
-from yafs import Placement
+from yafs.placement import Placement
 
 
 class NoPlacementOfModules(Placement):

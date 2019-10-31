@@ -15,13 +15,13 @@ import numpy as np
 
 from yafs.core import Simulation
 from yafs.application import Application, Message
-from yafs import Topology
+from yafs.customMovement import MovementUpdate
+from yafs.topology import Topology
 from yafs.distribution import *
-from yafs import CircleCoverage
+from yafs.coverage import CircleCoverage
 from yafs.utils import *
 
-from yafs import JSONPlacement
-from yafs import MovementUpdate
+from yafs.placement import JSONPlacement
 from .selection_multipleDeploys import DeviceSpeedAwareRouting
 
 import trackanimation
@@ -323,6 +323,24 @@ if __name__ == "__main__":
     # Endpoint entities must have three attributes: level(=0) and lat/lng coordinates
     t = Topology()
     dataNetwork = json.load(open(experiment_path + "networkDefinition.json"))
+    # TODO This method got removed in order to simplify/remove the topology class. All graph construction should happen outside of the class.
+    """
+    self.G = nx.Graph()
+        for edge in data["link"]:
+            self.G.add_edge(edge["s"], edge["d"], BW=edge[self.LINK_BW], PR=edge[self.LINK_PR])
+
+        dc = {str(x): {} for x in list(data["entity"][0].keys())}
+        for ent in data["entity"]:
+            for key in list(ent.keys()):
+                dc[key][ent["id"]] = ent[key]
+        for x in list(data["entity"][0].keys()):
+            nx.set_node_attributes(self.G, values=dc[x], name=str(x))
+
+        for node in data["entity"]:
+            self.nodeAttributes[node["id"]] = node
+
+        self._init_uptimes()
+    """
     t.load_all_node_attr(dataNetwork)
 
     # Performing multiple simulations

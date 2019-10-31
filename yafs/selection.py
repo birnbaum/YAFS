@@ -82,24 +82,16 @@ class FirstShortestPathSelection(Selection):
     """Among all possible shorter paths, returns the first."""
 
     def get_path(self, sim, app_name, message, topology_src, alloc_DES, alloc_module, traffic, from_des):
-        # TODO Refactor, unused variables etc.
-        paths = []
-        dst_idDES = []
-
         node_src = topology_src  # TOPOLOGY SOURCE where the message is generated
         DES_dst = alloc_module[app_name][message.dst]
 
         # Among all possible path we choose the smallest
         bestPath = []
         bestDES = []
-        print(DES_dst)
         for des in DES_dst:
             dst_node = alloc_DES[des]
-            # print "DES Node %i " %dst_node
-
             path = list(nx.shortest_path(sim.topology.G, source=node_src, target=dst_node))
             bestPath = [path]
             bestDES = [des]
-            print(path)
 
         return bestPath, bestDES

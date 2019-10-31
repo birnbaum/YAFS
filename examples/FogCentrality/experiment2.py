@@ -8,12 +8,12 @@
 
 from yafs.core import Simulation
 from yafs.application import Application, Message
-from yafs import Topology
+from yafs.topology import Topology
 from yafs.distribution import DeterministicDistribution
 
-from .CentricityPlacement import NoPlacementOfModules
-from .CentricityPopulation import Statical
-from .CentricitySelection import First_ShortestPath
+from examples.FogCentrality.CentricityPlacement import NoPlacementOfModules
+from examples.FogCentrality.CentricityPopulation import Statical
+
 import networkx as nx
 import numpy as np
 import pandas as pd
@@ -168,11 +168,7 @@ def main():
             """
             TOPOLOGY from a json
             """
-            t = Topology()
-            # t_json = create_json_topology()
-            # t.load(t_json)
-
-            t.load_graphml(topologies[key_topo])
+            t = Topology(nx.read_graphml(topologies[key_topo]))
             print("TOPOLOGY: %s" % key_topo)
             print("Total Nodes: %i" % len(t.G.nodes()))
             print("Total Vertexs: %i" % len(t.G.edges()))
@@ -294,7 +290,7 @@ def main():
                 SELECTOR algorithm
                 """
                 # This implementation is already created in selector.class,called: First_ShortestPath
-                selectorPath = First_ShortestPath()
+                selectorPath = FirstShortestPathSelection()
 
                 # In this point, the study analizes the behaviour of the deployment of (sink, src) modules (population) in different set of centroide algorithms
                 # functions = {"Cluster":"Cluster","Eigenvector":nx.eigenvector_centrality,"Current_flow_betweenness_centrality":nx.current_flow_betweenness_centrality,
