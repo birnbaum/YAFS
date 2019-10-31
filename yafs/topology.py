@@ -1,6 +1,6 @@
 import logging
 import warnings
-from typing import Tuple, Dict
+from typing import Dict
 
 import networkx as nx
 
@@ -21,80 +21,30 @@ class Topology:
     NODE_IPT = "IPT"  # Node feature: Instructions per Simulation Time
 
     def __init__(self, logger=None):  # TODO Remove logger
-        self.__idNode = -1
-        self.G: nx.networkx = None  # TODO ??
+        self._idNode = -1
+        self.G: nx.Graph = None  # TODO ??
 
         # TODO VERSION 2. THIS VALUE SHOULD BE REMOVED
         # INSTEAD USE NX.G. attributes
         self.nodeAttributes = {}
 
-        # A simple *cache* to have all cloud  nodes
-        # TODO VERSION 2. THIS VALUE SHOULD BE REMOVED
-        self.cloudNodes = []
-
         self.logger = logger or logging.getLogger(__name__)
 
-    def __init_uptimes(self):
+    def _init_uptimes(self):  # TODO What is this used for?
         for key in self.nodeAttributes:
             self.nodeAttributes[key]["uptime"] = (0, None)
 
-    def get_edges(self):
-        """Returns a list of graph edges, i.e.: ((1,0),(0,2),...)"""
+    @property
+    def edges(self):
         return self.G.edges
-
-    def get_edge(self, key: Tuple[int, int]):
-        """
-        Args:
-            key: a edge identifier, i.e. (1,9)
-
-        Returns:
-            list: a list of edge attributes
-        """
-        return self.G.edges[key]
-
-    def get_nodes(self):
-        """
-        Returns:
-            list: a list of all nodes features
-        """
-        return self.G.nodes
-
-    def get_node(self, key: int):
-        """
-        Args:
-            key: a node identifier
-
-        Returns:
-            list: a list of node features
-        """
-        return self.G.node[key]
-
-    def get_info(self):
-        return self.nodeAttributes
 
     def create_topology_from_graph(self, G: nx.Graph):
         """Generates the topology from a NetworkX graph"""
-        if isinstance(G, nx.classes.graph.Graph):
+        if isinstance(G, nx.Graph):
             self.G = G
-            self.__idNode = len(G.nodes)
+            self._idNode = len(G.nodes)
         else:
             raise TypeError
-
-    def create_random_topology(self, nxGraphGenerator, params):
-        """
-        It generates the topology from a Graph generators of NetworkX
-
-        Args:
-             nxGraphGenerator (function): a graph generator function
-
-        Kwargs:
-            params (dict): a list of parameters of *nxGraphGenerator* function
-        """
-        try:
-            self.G = nxGraphGenerator(*params)
-            self.__idNode = len(self.G.node)
-        except:
-            raise Exception
 
     def load(self, data: Dict):
         """Generates the topology from a JSON file"""
@@ -124,8 +74,8 @@ class Topology:
         nx.set_node_attributes(self.G, values=valuesIPT, name="IPT")
         nx.set_node_attributes(self.G, values=valuesRAM, name="RAM")
 
-        self.__idNode = len(self.G.nodes)
-        self.__init_uptimes()
+        self._idNode = len(self.G.nodes)
+        self._init_uptimes()
 
     def load_all_node_attr(self, data):
         self.G = nx.Graph()
@@ -142,8 +92,8 @@ class Topology:
         for node in data["entity"]:
             self.nodeAttributes[node["id"]] = node
 
-        self.__idNode = len(self.G.nodes)
-        self.__init_uptimes()
+        self._idNode = len(self.G.nodes)
+        self._init_uptimes()
 
     def load_graphml(self, filename):
         warnings.warn(
@@ -191,48 +141,37 @@ class Topology:
                     result.append(key)
         return result
 
-    def size(self):
-        """
-        Returns:
-            an int with the number of nodes
-        """
-        return len(self.G.nodes)
-
-    def add_node(self, nodes, edges=None):
+    def add_node(self, nodes, edges=None):  # TODO edges unused
         """
         Add a list of nodes in the topology
 
         Args:
             nodes (list): a list of identifiers
-
             edges (list): a list of destination edges
         """
-        self.__idNode = +1
-        self.G.add_node(self.__idNode)
-        self.G.add_edges_from(list(zip(nodes, [self.__idNode] * len(nodes))))
+        self._idNode = +1
+        self.G.add_node(self._idNode)
+        self.G.add_edges_from(list(zip(nodes, [self._idNode] * len(nodes))))
 
-        return self.__idNode
+        return self._idNode
 
-    def remove_node(self, id_node):
-        """
-        Remove a node of the topology
+    def remove_node(self, id_node: int):
+        """Remove a node of the topology
 
         Args:
-            id_node (int): node identifier
+            id_node: Node identifier
         """
-
         self.G.remove_node(id_node)
-        return self.size()
 
     def write(self, path):
         nx.write_gexf(self.G, path)
 
-    def draw_png(self, path_file):
-        import matplotlib.pyplot as plt
 
-        fig, ax = plt.subplots(nrows=1, ncols=1)
-        pos = nx.spring_layout(self.G)
-        nx.draw(self.G, pos)
-        labels = nx.draw_networkx_labels(self.G, pos)
-        fig.savefig(path_file)  # save the figure to file
-        plt.close(fig)  # close the figure
+def draw_png(network: nx.networkx, filepath: str):
+    import matplotlib.pyplot as plt
+    fig, ax = plt.subplots(nrows=1, ncols=1)
+    pos = nx.spring_layout(network)
+    nx.draw(network, pos)
+    labels = nx.draw_networkx_labels(network, pos)
+    fig.savefig(filepath)  # save the figure to file
+    plt.close(fig)  # close the figure

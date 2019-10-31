@@ -99,7 +99,7 @@ def draw_topology(topology, alloc_entity):
     G = copy.copy(topology.G)
 
     lastID = len(G.nodes())
-    labels = dict(list(zip(list(range(topology.size())), list(range(topology.size())))))
+    labels = dict(list(zip(list(range(len(topology.network))), list(range(len(topology.network))))))
 
     nodesM = []
     edgesM = []

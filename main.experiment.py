@@ -32,19 +32,6 @@ def create_application():
         Module("Actuator", is_sink=True),
     ])
 
-    """
-    a = Application(name="SimpleCase")
-
-    # (S) --> (ServiceA) --> (A)
-    a.set_modules(
-        [
-            {"Sensor": {"Type": Application.TYPE_SOURCE}},
-            {"ServiceA": {"RAM": 10, "Type": Application.TYPE_MODULE}},
-            {"Actuator": {"Type": Application.TYPE_SINK}},
-        ]
-    )
-    """
-
     # Messages among MODULES (AppEdge in iFogSim)
     message_a = Message("M.A", src="Sensor", dst="ServiceA", instructions=20 * 10 ^ 6, size=1000)
     message_b = Message("M.B", src="ServiceA", dst="Actuator", instructions=30 * 10 ^ 6, size=500)
@@ -89,7 +76,6 @@ def create_json_topology():
 
 # @profile
 def main(simulated_time):
-
     random.seed(RANDOM_SEED)
     np.random.seed(RANDOM_SEED)
 
