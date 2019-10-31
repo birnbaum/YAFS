@@ -252,8 +252,8 @@ class Simulation:
                 # size_bits = message.bytes * 8
                 try:
                     # transmit = size_bits / (self.topology.get_edge(link)[Topology.LINK_BW] * 1000000.0)  # MBITS!
-                    transmit = size_bits / (self.topology.edges[link][Topology.LINK_BW] * 1000000.0)  # MBITS!
-                    propagation = self.topology.edges[link][Topology.LINK_PR]
+                    transmit = size_bits / (self.topology.G.edges[link][Topology.LINK_BW] * 1000000.0)  # MBITS!
+                    propagation = self.topology.G.edges[link][Topology.LINK_PR]
                     latency_msg_link = transmit + propagation
 
                     # print "-link: %s -- lat: %d" %(link,latency_msg_link)
@@ -320,10 +320,10 @@ class Simulation:
         for key in nodes_att:
             measures["node"][key] = {}
 
-        for edge in self.topology.edges:
+        for edge in self.topology.G.edges:
             measures["link"][edge] = {
-                Topology.LINK_PR: self.topology.edges[edge][self.topology.LINK_PR],
-                Topology.LINK_BW: self.topology.edges[edge][self.topology.LINK_BW],
+                Topology.LINK_PR: self.topology.G.edges[edge][self.topology.LINK_PR],
+                Topology.LINK_BW: self.topology.G.edges[edge][self.topology.LINK_BW],
             }
         return measures
 

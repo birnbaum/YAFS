@@ -10,7 +10,7 @@ import random
 import networkx as nx
 
 from yafs.core import Simulation
-from yafs.application import Application, Message
+from yafs.application import Application, Message, Module
 
 from yafs.population import *
 from yafs.topology import Topology
@@ -27,7 +27,6 @@ RANDOM_SEED = 1
 
 
 def create_application():
-    from yafs.application import Module
     a = Application(name="SimpleApp", modules=[  # (S) --> (ServiceA) --> (A)
         Module("Sensor", is_source=True),
         Module("ServiceA", data={"RAM": 10}),

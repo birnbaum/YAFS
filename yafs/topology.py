@@ -16,8 +16,6 @@ class Topology:
 
     LINK_BW = "BW"  # Link feature: Bandwidth
     LINK_PR = "PR"  # Link feature: Propagation delay
-    # LINK_LATENCY = "LATENCY"  # A edge or a network link has a Bandwidth"
-
     NODE_IPT = "IPT"  # Node feature: Instructions per Simulation Time
 
     def __init__(self, logger=None):  # TODO Remove logger  G: nx.Graph,
@@ -32,10 +30,6 @@ class Topology:
     def _init_uptimes(self):  # TODO What is this used for?
         for key in self.nodeAttributes:
             self.nodeAttributes[key]["uptime"] = (0, None)
-
-    @property
-    def edges(self):
-        return self.G.edges
 
     def load(self, data: Dict):
         """Generates the topology from a JSON file"""

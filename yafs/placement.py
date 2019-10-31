@@ -84,9 +84,9 @@ class ClusterPlacement(Placement):
 
     def initial_allocation(self, sim: "Simulation", app_name: str):  # TODO Why does this know about the simulation?
         # We find the ID-nodo/resource
-        value = {"model": "Cluster"}
-        id_cluster = sim.topology.find_IDs(value)  # there is only ONE Cluster
-        value = {"model": "m-"}
+        value = {"model": "Cluster"}  # TODO These are very implicit assumptions about module naming...
+        id_cluster = sim.topology.find_IDs(value)  # there is only ONE Cluster  # TODO Why?
+        value = {"model": "m-"}  # TODO These are very implicit assumptions about module naming...
         id_mobiles = sim.topology.find_IDs(value)
 
         # Given an application we get its modules implemented
