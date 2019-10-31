@@ -115,7 +115,7 @@ def main(simulated_time):
     data = json.load(open("egg_infrastructure.json"))
     pprint(data["entity"])
     t.load(data)
-    t.write("network.gexf")
+    nx.write_gefx(t.G, "network.gexf")
 
     """
     APPLICATION

@@ -20,9 +20,8 @@ class Topology:
 
     NODE_IPT = "IPT"  # Node feature: Instructions per Simulation Time
 
-    def __init__(self, logger=None):  # TODO Remove logger
-        self._idNode = -1
-        self.G: nx.Graph = None  # TODO ??
+    def __init__(self, logger=None):  # TODO Remove logger  G: nx.Graph,
+        self.G = None # G
 
         # TODO VERSION 2. THIS VALUE SHOULD BE REMOVED
         # INSTEAD USE NX.G. attributes
@@ -38,14 +37,6 @@ class Topology:
     def edges(self):
         return self.G.edges
 
-    def create_topology_from_graph(self, G: nx.Graph):
-        """Generates the topology from a NetworkX graph"""
-        if isinstance(G, nx.Graph):
-            self.G = G
-            self._idNode = len(G.nodes)
-        else:
-            raise TypeError
-
     def load(self, data: Dict):
         """Generates the topology from a JSON file"""
         self.G = nx.Graph()
@@ -58,41 +49,12 @@ class Topology:
         # end remove
 
         # Correct way to use custom and mandatory topology attributes
-
-        valuesIPT = {}
-        valuesRAM = {}
-        for node in data["entity"]:
-            try:
-                valuesIPT[node["id"]] = node["IPT"]
-            except KeyError:
-                valuesIPT[node["id"]] = 0
-            try:
-                valuesRAM[node["id"]] = node["RAM"]
-            except KeyError:
-                valuesRAM[node["id"]] = 0
+        valuesIPT = {node["id"]: (node["IPT"] if "IPT" in node else 0) for node in data["entity"]}
+        valuesRAM = {node["id"]: (node["RAM"] if "RAM" in node else 0) for node in data["entity"]}
 
         nx.set_node_attributes(self.G, values=valuesIPT, name="IPT")
         nx.set_node_attributes(self.G, values=valuesRAM, name="RAM")
 
-        self._idNode = len(self.G.nodes)
-        self._init_uptimes()
-
-    def load_all_node_attr(self, data):
-        self.G = nx.Graph()
-        for edge in data["link"]:
-            self.G.add_edge(edge["s"], edge["d"], BW=edge[self.LINK_BW], PR=edge[self.LINK_PR])
-
-        dc = {str(x): {} for x in list(data["entity"][0].keys())}
-        for ent in data["entity"]:
-            for key in list(ent.keys()):
-                dc[key][ent["id"]] = ent[key]
-        for x in list(data["entity"][0].keys()):
-            nx.set_node_attributes(self.G, values=dc[x], name=str(x))
-
-        for node in data["entity"]:
-            self.nodeAttributes[node["id"]] = node
-
-        self._idNode = len(self.G.nodes)
         self._init_uptimes()
 
     def load_graphml(self, filename):
@@ -101,16 +63,11 @@ class Topology:
             FutureWarning,
             stacklevel=8,
         )
-
         self.G = nx.read_graphml(filename)
-        attEdges = {}
-        for k in self.G.edges():
-            attEdges[k] = {"BW": 1, "PR": 1}
-        nx.set_edge_attributes(self.G, values=attEdges)
-        attNodes = {}
-        for k in self.G.nodes():
-            attNodes[k] = {"IPT": 1}
-        nx.set_node_attributes(self.G, values=attNodes)
+
+        nx.set_edge_attributes(self.G, values={k: {"BW": 1, "PR": 1} for k in self.G.edges()})
+        nx.set_node_attributes(self.G, values={k: {"IPT": 1} for k in self.G.nodes()})
+
         for k in self.G.nodes():
             self.nodeAttributes[k] = self.G.node[k]  # it has "id" att. TODO IMPROVE
 
@@ -122,8 +79,7 @@ class Topology:
         return self.nodeAttributes
 
     def find_IDs(self, value):
-        """
-        Search for nodes with the same attributes that value
+        """Search for nodes with the same attributes that value
 
         Args:
              value (dict). example value = {"model": "m-"}. Only one key is admitted
@@ -142,18 +98,16 @@ class Topology:
         return result
 
     def add_node(self, nodes, edges=None):  # TODO edges unused
-        """
-        Add a list of nodes in the topology
+        """Add a list of nodes in the topology
 
         Args:
             nodes (list): a list of identifiers
             edges (list): a list of destination edges
         """
-        self._idNode = +1
-        self.G.add_node(self._idNode)
-        self.G.add_edges_from(list(zip(nodes, [self._idNode] * len(nodes))))
-
-        return self._idNode
+        id_ = len(self.G) + 1
+        self.G.add_node(id_)
+        self.G.add_edges_from(list(zip(nodes, [id_] * len(nodes))))
+        return id_
 
     def remove_node(self, id_node: int):
         """Remove a node of the topology
@@ -162,9 +116,6 @@ class Topology:
             id_node: Node identifier
         """
         self.G.remove_node(id_node)
-
-    def write(self, path):
-        nx.write_gexf(self.G, path)
 
 
 def draw_png(network: nx.networkx, filepath: str):

@@ -124,7 +124,7 @@ def main(simulated_time, path, pathResults, case, failuresON, it, idcloud):
     t = Topology()
     dataNetwork = json.load(open(path + "networkDefinition.json"))
     t.load(dataNetwork)
-    t.write(path + "network.gexf")
+    nx.write_gefx(t.G, path + "network.gexf")
     # t = loadTopology(path + 'test_GLP.gml')
 
     """

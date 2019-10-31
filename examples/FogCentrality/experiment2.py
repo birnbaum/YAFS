@@ -173,7 +173,7 @@ def main():
             print("Total Nodes: %i" % len(t.G.nodes()))
             print("Total Vertexs: %i" % len(t.G.edges()))
             print("Average shortest path: %s" % nx.average_shortest_path_length(t.G))
-            # t.write("network_ex2.gexf")
+            # nx.write_gefx(t.G, "network_ex2.gexf")
 
             ltopo.append(key_topo)
             lnodes.append(len(t.G.nodes()))
@@ -249,7 +249,7 @@ def main():
                 #    print "\t %i - size: %i -: %s" %(idx,len(c),c)
                 ### WRITING NETWORK
                 nx.set_node_attributes(t.G, values=com)
-                t.write("tmp/network-communities-%s-%i.gexf" % (key_topo, size))
+                nx.write_gefx(t.G, "tmp/network-communities-%s-%i.gexf" % (key_topo, size))
 
                 # exit()
 

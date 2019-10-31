@@ -7,6 +7,8 @@
 """
 import random
 
+import networkx as nx
+
 from yafs.core import Simulation
 from yafs.application import Application, Message
 
@@ -85,7 +87,6 @@ def main(simulated_time):
     t = Topology()
     t_json = create_json_topology()
     t.load(t_json)
-    t.write("network.gexf")
 
     """
     APPLICATION

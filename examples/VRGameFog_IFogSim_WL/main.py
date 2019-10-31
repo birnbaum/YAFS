@@ -138,7 +138,7 @@ def main(simulated_time, depth, police):
     # print t_json
     t.load(t_json)
 
-    # t.write("network_%s.gexf"%depth)
+    # nx.write_gefx(t.G, "network_%s.gexf"%depth)
 
     """
     APPLICATION

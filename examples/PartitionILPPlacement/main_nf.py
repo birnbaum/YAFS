@@ -112,7 +112,7 @@ def main(simulated_time, experimento, ilpPath, it):
     t = Topology()
     dataNetwork = json.load(open(experimento + "networkDefinition.json"))
     t.load(dataNetwork)
-    t.write("network.gexf")
+    nx.write_gefx(t.G, "network.gexf")
 
     """
     APPLICATION

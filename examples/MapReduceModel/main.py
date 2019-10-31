@@ -126,7 +126,7 @@ def main(simulated_time, experimento, file, study, it):
         attNodes[k] = {"IPT": 1}
     nx.set_node_attributes(t.G, values=attNodes)
 
-    # t.write("network.gexf")
+    # nx.write_gefx(t.G, "network.gexf")
 
     """
     APPLICATION

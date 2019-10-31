@@ -91,7 +91,7 @@ def main(simulated_time):
     t = Topology()
     t_json = create_json_topology()
     t.load(t_json)
-    t.write("network.gexf")
+    nx.write_gefx(t.G, "network.gexf")
 
     """
     APPLICATION

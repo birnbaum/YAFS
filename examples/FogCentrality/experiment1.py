@@ -151,7 +151,7 @@ def main():
     t = Topology()
     t_json = create_json_topology()
     t.load(t_json)
-    # t.write("network_ex1.gexf")
+    # nx.write_gefx(t.G, "network_ex1.gexf")
 
     """
     WORKLOAD DEFINITION
