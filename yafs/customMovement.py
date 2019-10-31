@@ -76,10 +76,6 @@ class MovementUpdate:
             if len(edges_to_remove) == 0 and id_node != None:
                 if code in sim.mobile_fog_entities:
                     sim.topology.G.add_node(int(code), level=-1, **sim.mobile_fog_entities[code]["node_attributes"])
-
-                    # TODO REMOVE IN VERSION 2
-                    sim.topology.G.nodes[int(code)] = sim.topology.G.node[int(code)]
-
                 else:
                     sim.topology.G.add_node(int(code), level=-1)
         except nx.NetworkXError:

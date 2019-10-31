@@ -13,9 +13,9 @@ from yafs.core import Simulation
 from yafs.application import Application, Message, Module
 
 from yafs.population import *
-from yafs.topology import Topology
+from yafs.selection import FirstShortestPathSelection
+from yafs.topology import Topology, load_yafs_json
 
-from examples.Tutorial.simpleSelection import MinimunPath
 from examples.Tutorial.simplePlacement import CloudPlacement
 from yafs.stats import Stats
 from yafs.distribution import DeterministicDistribution
@@ -46,48 +46,24 @@ def create_application():
     return a
 
 
-
-def create_json_topology():
-    """
-       TOPOLOGY DEFINITION
-
-       Some attributes of fog entities (nodes) are approximate
-       """
-
-    ## MANDATORY FIELDS
-    topology_json = {}
-    topology_json["entity"] = []
-    topology_json["link"] = []
-
-    cloud_dev = {"id": 0, "model": "cloud", "mytag": "cloud", "IPT": 5000 * 10 ^ 6, "RAM": 40000, "COST": 3, "WATT": 20.0}
-    sensor_dev = {"id": 1, "model": "sensor-device", "IPT": 100 * 10 ^ 6, "RAM": 4000, "COST": 3, "WATT": 40.0}
-    actuator_dev = {"id": 2, "model": "actuator-device", "IPT": 100 * 10 ^ 6, "RAM": 4000, "COST": 3, "WATT": 40.0}
-
-    link1 = {"s": 0, "d": 1, "BW": 1, "PR": 10}
-    link2 = {"s": 0, "d": 2, "BW": 1, "PR": 1}
-
-    topology_json["entity"].append(cloud_dev)
-    topology_json["entity"].append(sensor_dev)
-    topology_json["entity"].append(actuator_dev)
-    topology_json["link"].append(link1)
-    topology_json["link"].append(link2)
-
-    return topology_json
-
-
 # @profile
 def main(simulated_time):
     random.seed(RANDOM_SEED)
     np.random.seed(RANDOM_SEED)
 
-    """
-    TOPOLOGY from a json
-    """
-    t = Topology(create_json_topology())
+    G = load_yafs_json({
+        "entity": [
+            {"id": 0, "model": "cloud", "mytag": "cloud", "IPT": 5000 * 10 ^ 6, "RAM": 40000, "COST": 3, "WATT": 20.0},
+            {"id": 1, "model": "sensor-device", "IPT": 100 * 10 ^ 6, "RAM": 4000, "COST": 3, "WATT": 40.0},
+            {"id": 2, "model": "actuator-device", "IPT": 100 * 10 ^ 6, "RAM": 4000, "COST": 3, "WATT": 40.0},
+        ],
+        "link": [
+            {"s": 0, "d": 1, "BW": 1, "PR": 10},
+            {"s": 0, "d": 2, "BW": 1, "PR": 1}
+        ],
+    })
+    t = Topology(G)
 
-    """
-    APPLICATION
-    """
     app = create_application()
 
     """
@@ -99,36 +75,23 @@ def main(simulated_time):
     """
     POPULATION algorithm
     """
-    # In ifogsim, during the creation of the application, the Sensors are assigned to the topology, in this case no. As mentioned, YAFS differentiates the adaptive sensors and their topological assignment.
+    # In ifogsim, during the creation of the application, the Sensors are assigned to the topology, in this case no.
+    # As mentioned, YAFS differentiates the adaptive sensors and their topological assignment.
     # In their case, the use a statical assignment.
-    pop = StaticPopulation("Statical")
     # For each type of sink modules we set a deployment on some type of devices
     # A control sink consists on:
     #  args:
     #     model (str): identifies the device or devices where the sink is linked
     #     number (int): quantity of sinks linked in each device
     #     module (str): identifies the module from the app who receives the messages
-    pop.set_sink_control({"model": "actuator-device", "number": 1, "module": "Actuator"})
-    # pop.set_sink_control({"model": "actuator-device", "number": 1, "module": app.get_sink_modules()})
-
-    # In addition, a source includes a distribution function:
-    dDistribution = DeterministicDistribution(name="Deterministic", time=100)
-    pop.set_src_control({"model": "sensor-device", "number": 1, "message": app.messages["M.A"], "distribution": dDistribution})
-
-    """--
-    SELECTOR algorithm
-    """
-    # Their "selector" is actually the shortest way, there is not type of orchestration algorithm.
-    # This implementation is already created in selector.class,called: First_ShortestPath
-    selectorPath = MinimunPath()
-
-    """
-    SIMULATION ENGINE
-    """
+    population = StaticPopulation("Statical")
+    population.set_sink_control({"model": "actuator-device", "number": 1, "module": "Actuator"})  # TODO Sink hardcoded
+    population.set_src_control({"model": "sensor-device", "number": 1, "message": app.messages["M.A"],
+                                "distribution": DeterministicDistribution(name="Deterministic", time=100)})
 
     stop_time = simulated_time
     s = Simulation(t, default_results_path="Results")
-    s.deploy_app(app, placement, pop, selectorPath)
+    s.deploy_app(app, placement=placement, population=population, selection=FirstShortestPathSelection())
     s.run(stop_time, show_progress_monitor=False)
 
     # s.draw_allocated_topology() # for debugging

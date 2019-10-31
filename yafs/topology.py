@@ -1,4 +1,5 @@
 import logging
+import warnings
 from typing import Dict
 
 import networkx as nx
@@ -17,15 +18,10 @@ class Topology:
     LINK_PR = "PR"  # Link feature: Propagation delay
     NODE_IPT = "IPT"  # Node feature: Instructions per Simulation Time
 
-    def __init__(self, data: Dict, logger=None):  # TODO Remove logger  G: nx.Graph,
-        self.G = nx.Graph()
-        for entity in data["entity"]:
-            self.G.add_node(entity["id"], **entity)
-        for edge in data["link"]:
-            self.G.add_edge(edge["s"], edge["d"], BW=edge[self.LINK_BW], PR=edge[self.LINK_PR])
-        self._init_uptimes()
-
+    def __init__(self, G: nx.Graph, logger=None):  # TODO Remove logger  G: nx.Graph,
+        self.G = G
         self.logger = logger or logging.getLogger(__name__)
+        # self._init_uptimes()
 
     def _init_uptimes(self):  # TODO What is this used for?
         for key in self.G.nodes:
@@ -60,7 +56,6 @@ class Topology:
         id_ = len(self.G) + 1
         self.G.add_node(id_)
         self.G.add_edges_from(list(zip(nodes, [id_] * len(nodes))))
-        return id_
 
     def remove_node(self, id_node: int):
         """Remove a node of the topology
@@ -69,6 +64,21 @@ class Topology:
             id_node: Node identifier
         """
         self.G.remove_node(id_node)
+
+
+def load_yafs_json(data: Dict) -> nx.Graph:
+    """Generates the topology from a JSON file
+
+    Proprietary YAFS format - will be removed in the future
+    Deprecated: Use any supported graph format: https://networkx.github.io/documentation/networkx-1.10/reference/readwrite.html
+    """
+    warnings.warn("Proprietary YAFS format - will be removed in the future", DeprecationWarning)
+    G = nx.Graph()
+    for entity in data["entity"]:
+        G.add_node(entity["id"], **entity)
+    for edge in data["link"]:
+        G.add_edge(edge["s"], edge["d"], BW=edge[Topology.LINK_BW], PR=edge[Topology.LINK_PR])
+    return G
 
 
 def draw_png(network: nx.networkx, filepath: str):
