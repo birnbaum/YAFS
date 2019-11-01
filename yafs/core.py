@@ -1,15 +1,11 @@
 """This module unifies the event-discrete simulation environment with the rest of modules: placement, topology, selection, population, utils and metrics."""
 
 import copy
-import itertools
 import logging
 
-import networkx as nx
 import simpy
 from tqdm import tqdm
 
-from trackanimation.tracking import DFTrack
-from yafs import utils
 from yafs.application import Application, Message
 from yafs.distribution import *
 from yafs.metrics import Metrics
@@ -27,11 +23,7 @@ class Simulation:
 
     Args:
         topology: Associated topology of the environment.
-        name_register: database file name where are registered the events.
-        link_register  # TODO ???
-        purge_register: Clean the database
         logger: logger  # TODO Get rid and use Python logging module
-        redis  # TODO ???
         default_results_path  # TODO ???
     """
 
@@ -41,16 +33,7 @@ class Simulation:
     SINK_METRIC = "SINK_M"
     LINK_METRIC = "LINK"
 
-    def __init__(
-        self,
-        topology: Topology,
-        name_register: str = "events_log.json",
-        link_register: str = "links_log.json",
-        redis=None,
-        purge_register: bool = True,
-        logger=None,
-        default_results_path=None,
-    ):  # TODO Many arguments unused
+    def __init__(self, topology: Topology, logger=None, default_results_path=None):
         # TODO Refactor this class. Way too many fields, no clear separation of concerns.
 
         self.topology = topology
@@ -68,59 +51,40 @@ class Simulation:
         self.applications = {}
 
         self.until = 0  # End time simulation
-        # self.db = TinyDB(name_register)
         self.metrics = Metrics(default_results_path=default_results_path)
 
         self.unreachabled_links = 0
 
-        "Contains the database where all events are recorded"
-
-        """
-        Clear the database
-        """
-
-        self.entity_metrics = self.__init_metrics()
-        """
-        Current consumed metrics of each element topology: Nodes & Edges
-        """
-
-        self.placement_policy = {}
-        # for app.name the placement algorithm
-
-        self.population_policy = {}
-        # for app.name the population algorithm
+        self.placement_policy = {}  # for app.name the placement algorithm
+        self.population_policy = {}  # for app.name the population algorithm
 
         # for app.nmae
         # self.process_topology = {}
 
-        self.des_process_running = {}
         # Start/stop flag for each pure source
         # key: id.source.process
         # value: Boolean
+        self.des_process_running = {}
 
-        self.des_control_process = {}
         # key: app.name
         # value: des process
+        self.des_control_process = {}
 
-        self.alloc_source = {}
-        """
-        Relationship of pure source with topology entity
+        """Relationship of pure source with topology entity
 
         id.source.process -> value: dict("id","app","module")
 
           .. code-block:: python
 
             alloc_source[34] = {"id":id_node,"app":app_name,"module":source module}
-
         """
+        self.alloc_source = {}
 
-        self.consumer_pipes = {}
         # Queues for each message
         # App+module+idDES -> pipe
+        self.consumer_pipes = {}
 
-        self.alloc_module = {}
-        """
-        Represents the deployment of a module in a DES PROCESS each DES has a one topology.node.id (see alloc_des var.)
+        """Represents the deployment of a module in a DES PROCESS each DES has a one topology.node.id (see alloc_des var.)
 
         It used for (:mod:`Placement`) class interaction.
 
@@ -129,25 +93,23 @@ class Simulation:
         .. code-block:: python
 
             {"EGG_GAME":{"Controller":[1,3,4],"Client":[4]}}
-
         """
+        self.alloc_module = {}
 
-        self.alloc_DES = {}
-        """
-        The relationship between DES process and topology.node.id
+        """Relationship between DES process and topology.node.id
 
         It is necessary to identify the message.source (topology.node)
         1.N. DES process -> 1. topology.node
-
         """
+        self.alloc_DES = {}
 
-        self.selector_path = {}
         # Store for each app.name the selection policy
         # app.name -> Selector
+        self.selector_path = {}
 
-        self.last_busy_time = {}  # must be updated with up/down nodes
         # This variable control the lag of each busy network links. It avoids the generation of a DES-process for each link
         # edge -> last_use_channel (float) = Simulation time
+        self.last_busy_time = {}  # must be updated with up/down nodes
 
     def __send_message(self, app_name: str, message: Message, idDES, type):
         """
@@ -296,20 +258,6 @@ class Simulation:
         """Every DES-process has an unique identifier"""
         self.__idProcess += 1
         return self.__idProcess
-
-    def __init_metrics(self):
-        """Each entity and node metrics are initialized with empty values"""
-        nodes_att = self.topology.G.nodes
-        measures = {"node": {}, "link": {}}
-        for key in nodes_att:
-            measures["node"][key] = {}
-
-        for edge in self.topology.G.edges:
-            measures["link"][edge] = {
-                Topology.LINK_PR: self.topology.G.edges[edge][self.topology.LINK_PR],
-                Topology.LINK_BW: self.topology.G.edges[edge][self.topology.LINK_BW],
-            }
-        return measures
 
     def __add_placement_process(self, placement):
         """
@@ -664,29 +612,11 @@ class Simulation:
                     self.pbar.close()
                 self.logger.info("! Stop simulation at time: %f !" % self.env.now)
 
-    """
-    DEPRECATED
-    """
-
-    def __update_internal_structures_from_DES_remove(self, DES):
-        try:
-            self.alloc_DES.pop(DES, None)
-            for app in self.alloc_module:
-                for module in self.alloc_module[app]:
-                    self.alloc_module[app][module].remove(DES)
-        except:
-            None
-
-    """
-    SECTION FOR PUBLIC METHODS
-    """
-
     def get_DES(self, name):
         return self.des_control_process[name]
 
     def deploy_monitor(self, name, function, distribution, **param):
-        """
-        Add a DES process for user purpose
+        """Add a DES process for user purpose
 
         Args:
             name (string) name of monitor
@@ -710,24 +640,21 @@ class Simulation:
         elif event_type == EVENT_DOWN_ENTITY:
             self.env.process(self.__add_down_node_process(next_event_dist, **args))
 
-    def deploy_source(self, app_name, id_node, msg, distribution):
-        """
-        Add a DES process for deploy pure source modules (sensors)
+    def deploy_source(self, app_name: str, id_node: int, msg, distribution) -> int:
+        """Add a DES process for deploy pure source modules (sensors)
         This function its used by (:mod:`Population`) algorithm
 
         Args:
-            app_name (str): application name
-
-            id_node (int): entity.id of the topology who will create the messages
-
+            app_name: application name
+            id_node: entity.id of the topology who will create the messages
+            msg: TODO
             distribution (function): a temporary distribution function
 
         Kwargs:
-            param - the parameters of the *distribution* function
+            param - the parameters of the *distribution* function  # TODO ???
 
         Returns:
-            id (int) the same input *id*
-
+            Process id
         """
         idDES = self._get_id_process()
         self.des_process_running[idDES] = True
@@ -736,24 +663,22 @@ class Simulation:
         self.alloc_source[idDES] = {"id": id_node, "app": app_name, "module": msg.src, "name": msg.name}
         return idDES
 
-    def __deploy_source_module(self, app_name, module, id_node, msg, distribution):
-        """
-        Add a DES process for deploy  source modules
+    def __deploy_source_module(self, app_name: str, module, id_node: int, msg, distribution) -> int:
+        """Add a DES process for deploy  source modules
         This function its used by (:mod:`Population`) algorithm
 
         Args:
-            app_name (str): application name
-
-            id_node (int): entity.id of the topology who will create the messages
-
+            app_name: application name
+            module: TODO
+            id_node: entity.id of the topology who will create the messages
+            msg: TODO
             distribution (function): a temporary distribution function
 
         Kwargs:
-            param - the parameters of the *distribution* function
+            param - the parameters of the *distribution* function  # TODO ???
 
         Returns:
-            id (int) the same input *id*
-
+            Process id
         """
         idDES = self._get_id_process()
         self.des_process_running[idDES] = True
@@ -761,27 +686,21 @@ class Simulation:
         self.alloc_DES[idDES] = id_node
         return idDES
 
-    # idsrc = sim.deploy_module(app_name, module, id_node, register_consumer_msg)
-    def __deploy_module(self, app_name, module, id_node, register_consumer_msg):
-        """
-        Add a DES process for deploy  modules
+    def __deploy_module(self, app_name: str, module: str, id_node: int, register_consumer_msg: str) -> int:
+        """Add a DES process for deploy  modules
         This function its used by (:mod:`Population`) algorithm
 
         Args:
-            app_name (str): application name
-
-            id_node (int): entity.id of the topology who will create the messages
-
-            module (str): module name
-
-            msg (str): message?
+            app_name: application name
+            id_node: entity.id of the topology who will create the messages
+            module: module name
+            register_consumer_msg: message?
 
         Kwargs:
-            param - the parameters of the *distribution* function
+            param - the parameters of the *distribution* function  # TODO ???
 
         Returns:
-            id (int) the same input *id*
-
+            Process id
         """
         idDES = self._get_id_process()
         self.des_process_running[idDES] = True
@@ -818,8 +737,7 @@ class Simulation:
         self.env.process(self.__add_sink_module(idDES, app_name, module))
 
     def stop_process(self, id: int):
-        """
-        All pure source modules (sensors) are controlled by this boolean.
+        """All pure source modules (sensors) are controlled by this boolean.
         Using this function (:mod:`Population`) algorithm can stop one source
 
         Args:
@@ -828,8 +746,7 @@ class Simulation:
         self.des_process_running[id] = False
 
     def start_process(self, id: int):
-        """
-        All pure source modules (sensors) are controlled by this boolean.
+        """All pure source modules (sensors) are controlled by this boolean.
         Using this function (:mod:`Population`) algorithm can start one source
 
         Args:
@@ -921,7 +838,7 @@ class Simulation:
         return id_DES
 
     def undeploy_module(self, app_name, service_name, idtopo):
-        """ removes all modules deployed in a node
+        """Removes all modules deployed in a node
         modules with the same name = service_name
         from app_name
         deployed in id_topo
@@ -958,10 +875,6 @@ class Simulation:
         # Finally removing node from topology
         self.topology.G.remove_node(id_node_topology)
 
-    def draw_allocated_topology(self):
-        entities = self.get_alloc_entities()
-        utils.draw_topology(self.topology, entities)
-
     def get_DES_from_Service_In_Node(self, node, app_name, service):
         deployed = self.alloc_module[app_name][service]
         for des in deployed:
@@ -979,9 +892,7 @@ class Simulation:
         return fullAssignation
 
     def print_debug_assignaments(self):
-        """
-        This functions prints debug information about the assignment of DES process - Topology ID - Source Module or Modules
-        """
+        """Prints debug information about the assignment of DES process - Topology ID - Source Module or Modules"""
         fullAssignation = {}
 
         for app in self.alloc_module:
@@ -1005,94 +916,23 @@ class Simulation:
             )
         print("-" * 40)
 
-    #
-    # ### MOBILE ADAPTATION SECTION
-    # def update_service_coverage(self):
-    #     if self.street_network is not None:
-    #         points = utils.create_points(self.topology.G)
-    #         point_streets = utils.create_points(self.street_network)
-    #
-    #         tree = scipy.spatial.KDTree(points.values())
-    #         points_within_tolerance = tree.query_ball_point(point_streets.values(), self.tolerance)
-    #
-    #         # key = node network
-    #         # value = id - module SW
-    #
-    #         self.service_coverage = {}
-    #         for idx, pt in enumerate(points_within_tolerance):
-    #             ## MODULE SW
-    #             key2 = point_streets.keys()[idx]
-    #             nG2 = self.street_network.nodes[key2]
-    #             # print "%s is close to " % nG2["model"]
-    #             ## Street coverage
-    #             for p in pt:
-    #                 key = points.keys()[p]
-    #                 # service_coverage[(G.nodes[key]['x'],G.nodes[key]['y'])]=nG2["model"]
-    #                 self.service_coverage[key] = nG2["id"]
-
-    # def setMobilityUserBehaviour(self,dataPopulation):
-    #     self.user_behaviour = dataPopulation #TODO CHECK SYNTAX
-
-    def __add_mobile_agent(self, ides, gme):
-        # The mobile starts
-
-        yield self.env.timeout(gme.start)
-        self.logger.info("(#DES:%i)\t--- Mobile Entity STARTS :\t%s " % (ides, gme._id))
-        while (len(gme.path) - 1 > gme.current_position) and not self.stop and self.des_process_running[ides]:
-            e = (gme.path[gme.current_position], gme.path[gme.current_position + 1])
-            data = self.street_network.get_edge_data(*e)
-            try:
-                next_time = int(utils.toMeters(data[0]["geometry"]) / gme.speed)
-            except KeyError:
-                next_time = 1  # default time by roundabout or other Spatial THINGS
-
-            # take an action?
-            gme.next_time = next_time
-
-            self.logger.info("(#DES:%i)\t--- DO ACTION :\t%s " % (ides, gme._id))
-            gme.do.action(gme)
-
-            # TODO Can the MA wait more time in that node?
-
-            yield self.env.timeout(next_time)
-            gme.current_position += 1
-
-        # Last movement
-        if self.des_process_running[ides] and not self.stop:
-            gme.do.action(gme)
-
-        self.logger.info("(#DES:%i)\t--- Mobile Entity ENDS :\t%s " % (ides, gme._id))
-        # print "Mobile agent: %s ends " % gme.plate
-
-    def add_mobile_agent(self, gme):
-        ides = self._get_id_process()
-        self.des_process_running[ides] = True
-        self.env.process(self.__add_mobile_agent(ides, gme))
-
-        ### ATENCION COONTROLAR VAR: INTERNAS
-        # self.alloc_DES[ides] = id_node
-
-        return ides
-
-    def run(self, until: int, test_initial_deploy: bool = False, show_progress_monitor: bool = True, mobile_behaviour: bool = False):
+    def run(self, until: int, test_initial_deploy: bool = False, show_progress_monitor: bool = True):
         """
         Start the simulation
 
         Args:
             until: Defines a stop time. If None the simulation runs until some internal algorithm changes the var *yafs.core.sim.stop* to True
+            test_initial_deploy  # TODO
+            show_progress_monitor  # TODO
         """
         self.env.process(self.__network_process())
 
-        """
-        Creating app.sources and deploy the sources in the topology
-        """
+        # Creating app.sources and deploy the sources in the topology
         for pop in self.population_policy.values():
             for app_name in pop["apps"]:
                 pop["population_policy"].initial_allocation(self, app_name)
 
-        """
-        Creating initial deploy of services
-        """
+        # Creating initial deploy of services
         for place in self.placement_policy.values():
             for app_name in place["apps"]:
 
@@ -1109,17 +949,8 @@ class Simulation:
             self.__add_stop_monitor("Stop_Control_Monitor", self.__ctrl_progress_monitor, distribution, show_progress_monitor, time_shift=time_shift)
         )
 
-        # if mobile_behaviour:
-        #     """
-        #     Updating control variables of mobile environment
-        #     """
-        #     self.update_service_coverage()
-
         self.print_debug_assignaments()
 
-        """
-        RUN
-        """
         self.until = until
         if not test_initial_deploy:
             self.env.run(until=until)  # This does not stop the simpy.simulation at time. We have to force the stop

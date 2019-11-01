@@ -5,6 +5,7 @@
 """
 import random
 
+from yafs import utils
 from yafs.core import Simulation
 from yafs.application import Application, Message
 
@@ -142,7 +143,7 @@ def main(simulated_time):
 
     s.run(stop_time, show_progress_monitor=False)
 
-    s.draw_allocated_topology()  # for debugging
+    utils.draw_topology(t, s.get_alloc_entities())
 
 
 if __name__ == "__main__":
