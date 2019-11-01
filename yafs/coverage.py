@@ -1,7 +1,9 @@
 # TODO What does this module do? Missing documentation
 
 import math
+from abc import ABC, abstractmethod
 from functools import partial
+from typing import Dict, Collection
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -11,33 +13,50 @@ from matplotlib.patches import Circle
 from yafs.utils import haversine_distance
 
 
-class Coverage(object):
-    def __init__(self):
-        None
+class Coverage(ABC):
 
-    def update_coverage_of_endpoints(self, **kwargs):
-        return None
-
-    def connection(self, point):
-        return None
-
-    @staticmethod
-    def get_polygons_on_map():
-        return None
-
-    def connection_between_mobile_entities(self, fixed_endpoints, mobile_endpoints):
-        # type: (dict, dict) -> dict
-        """
+    @abstractmethod
+    def update_coverage_of_endpoints(self, map, points):
+        """Updates the points, regions and colors in case of endpoints and mobile-endpoints changes
 
         Args:
-            fixed_endpoints: dict , {id_node: (lat,lng)}
-            mobile_endpoints: dict, {code_mobile_entity: (lat,lng)}
+            map: TODO
+            points: TODO
+        """
+
+    @abstractmethod
+    def connection(self, point: Collection[int, int]):
+        """Computes the connection among a user and endpoints
+
+        In this implementation the preference between several endpoints is given by the less distance
+        Other policies can be implemented storing a historic of connections.
+
+        Args:
+            point: User position
 
         Returns:
-            dict {code_mobility_entity : id_node}
-
+            the index on self.points
         """
-        return {}
+
+    @abstractmethod
+    def get_polygons_on_map(self):
+        """Displays network endpoint on the map representation
+
+        Returns:
+            a list of matplotlib Polygons
+        """
+
+    @abstractmethod
+    def connection_between_mobile_entities(self, fixed_endpoints: Dict, mobile_endpoints: Dict) -> Dict:
+        """TODO
+
+        Args:
+            fixed_endpoints: {id_node: (lat,lng)}
+            mobile_endpoints: {code_mobile_entity: (lat,lng)}
+
+        Returns:
+            {code_mobility_entity: id_node}
+        """
 
 
 class CircleCoverage(Coverage):
@@ -49,7 +68,7 @@ class CircleCoverage(Coverage):
         self.points_to_map = [map.to_pixels(p[0], p[1]) for p in self.points]
 
         # Radius in the map projection
-        b = self.__geodesic_point_buffer(points[0][0], points[0][1], self.radius)
+        b = self._geodesic_point_buffer(points[0][0], points[0][1], self.radius)
         bonmap = map.to_pixels(b[0])
         ponmap = map.to_pixels(points[0][0], points[0][1])
         distance = math.sqrt(math.pow((bonmap[0] - ponmap[0]), 2) + math.pow((bonmap[1] - ponmap[1]), 2))
@@ -63,13 +82,6 @@ class CircleCoverage(Coverage):
         self.colors_cells = self.cmap(np.linspace(0.0, 1.0, len(self.points)))[:, :3]
 
     def update_coverage_of_endpoints(self, map, points):
-        """
-        It updates the points, regions and colors in case of endpoints and mobile-endpoints changes
-        Args:
-            map:
-            points:
-
-        """
         self.points = points
         self.points_to_map = [map.to_pixels(p[0], p[1]) for p in self.points]
 
@@ -77,28 +89,7 @@ class CircleCoverage(Coverage):
 
         self.colors_cells = self.cmap(np.linspace(0.0, 1.0, len(self.points)))[:, :3]
 
-    def get_polygons_on_map(self):
-        """
-        This functions display network endpoint on the map representation
-        Returns:
-            a list of matplotlib Polygons
-        """
-        return PatchCollection(self.regions_to_map, facecolors=self.colors_cells, alpha=0.25)
-
-    def connection(self, point):
-        """
-        Compute the connection among a user and endpoints
-
-        In this implementation the preference between several endpoints is given by the less distance
-        Other policies can be implemented storing a historic of connections.
-
-        Args:
-            point: [lng,lat] a user position
-
-        Returns:
-            the index on self.points
-        """
-
+    def connection(self, point: Collection[int, int]):
         most_close = [999999999]  # the minimun value in all var. of array are infinity
         for idx, center in enumerate(self.points):
             dist = haversine_distance(point, center)
@@ -112,20 +103,11 @@ class CircleCoverage(Coverage):
             return None
         return min - 1
 
-    def connection_between_mobile_entities(self, fixed_endpoints, mobile_endpoints, mobile_fog_entities):
-        # type: (dict, dict) -> dict
-        """
+    def get_polygons_on_map(self):
+        return PatchCollection(self.regions_to_map, facecolors=self.colors_cells, alpha=0.25)
 
-        Args:
-            fixed_endpoints: dict , {id_node: (lat,lng)}
-            mobile_endpoints: dict, {code_mobile_entity: (lat,lng)}
-
-        Returns:
-            dict {code_mobility_entity : id_node}
-
-        """
+    def connection_between_mobile_entities(self, fixed_endpoints: Dict, mobile_endpoints: Dict) -> Dict:
         result = {}
-
         for code in mobile_fog_entities:
             # print mobile_fog_entities[code]
             if mobile_fog_entities[code]["connectionWith"] != None:
@@ -136,22 +118,20 @@ class CircleCoverage(Coverage):
 
                 id_node = list(fixed_endpoints)[idx]
                 pnode = fixed_endpoints[id_node]
-                if self.__circle_intersection(point, pnode):
+                if self._circle_intersection(point, pnode):
                     result[code] = [list(fixed_endpoints)[idx]]
         return result
 
-    def __circle_intersection(self, center1, center2):
-        """
-        Based on: https://gist.github.com/xaedes/974535e71009fa8f090e
+    def _circle_intersection(self, center1, center2) -> bool:
+        """Based on: https://gist.github.com/xaedes/974535e71009fa8f090e
 
         Args:
             center1: coordinates of a circle
             center2: coordinates of a circle
 
-        Returns: a boolean, in case of a circle is touching or included in the other circle
-
+        Returns:
+            Boolean, in case of a circle is touching or included in the other circle
         """
-
         # return self.circle_intersection_sympy(circle1,circle2)
         x1, y1 = center1
         x2, y2 = center2
@@ -164,9 +144,8 @@ class CircleCoverage(Coverage):
 
         return True  # no solutions because one circle is contained within the other
 
-    def __geodesic_point_buffer(self, lon, lat, km):
-        """
-        Based on: https://gis.stackexchange.com/questions/289044/creating-buffer-circle-x-kilometers-from-point-using-python
+    def _geodesic_point_buffer(self, lon, lat, km):
+        """Based on: https://gis.stackexchange.com/questions/289044/creating-buffer-circle-x-kilometers-from-point-using-python
 
         Args:
             lon:
@@ -195,7 +174,7 @@ class Voronoi(Coverage):
         self.tree = None
         self.points = points
         self.__vor = scipy.spatial.Voronoi(self.points)
-        self.regions, self.vertices = self.voronoi_finite_polygons_2d(self.__vor)
+        self.regions, self.vertices = self._voronoi_finite_polygons_2d(self.__vor)
 
         self.cells = [map.to_pixels(self.vertices[region]) for region in self.regions]
         cmap = plt.cm.Set3
@@ -204,48 +183,26 @@ class Voronoi(Coverage):
     def update_coverage_of_endpoints(self, map, points):
         self.points = points
         self.__vor = scipy.spatial.Voronoi(self.points)
-        self.regions, self.vertices = self.voronoi_finite_polygons_2d(self.__vor)
+        self.regions, self.vertices = self._voronoi_finite_polygons_2d(self.__vor)
         self.cells = [map.to_pixels(self.vertices[region]) for region in self.regions]
         cmap = plt.cm.Set3
         self.colors_cells = cmap(np.linspace(0.0, 1.0, len(self.points)))[:, :3]
 
+    def connection(self, point: Collection[int, int]):
+        return np.argmin(np.sum((self.points - point) ** 2, axis=1))
+
     def get_polygons_on_map(self):
         return PolyCollection(self.cells, facecolors=self.colors_cells, alpha=0.25, edgecolors="gray")
 
-    def connection(self, point):
-        """
-
-        Args:
-            point: [lng,lat]
-
-        Returns:
-            the index on self.points
-
-        """
-        return np.argmin(np.sum((self.points - point) ** 2, axis=1))
-
-    def connection_between_mobile_entities(self, fixed_endpoints, mobile_endpoints):
-        # type: (dict, dict) -> dict
-        """
-
-        Args:
-            fixed_endpoints: dict , {id_node: (lat,lng)}
-            mobile_endpoints: dict, {code_mobile_entity: (lat,lng)}
-
-        Returns:
-            dict {code_mobility_entity : id_node}
-
-        """
+    def connection_between_mobile_entities(self, fixed_endpoints: Dict, mobile_endpoints: Dict) -> Dict:
         result = {}
-
         for k in mobile_endpoints:
             point = mobile_endpoints[k]
             idx = np.argmin(np.sum((np.array(list(fixed_endpoints.values())) - point) ** 2, axis=1))
             result[k] = list(fixed_endpoints)[idx]
-
         return result
 
-    def voronoi_finite_polygons_2d(self, vor, radius=None):
+    def _voronoi_finite_polygons_2d(self, vor, radius=None):
         """Reconstruct infinite Voronoi regions in a
         2D diagram to finite regions.
         Source:
