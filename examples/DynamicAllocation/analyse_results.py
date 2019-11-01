@@ -22,11 +22,11 @@ path = "examples/DynamicAllocation/"
 s1 = Stats(defaultPath=path + "Results_%s_singleApp1" % (size))
 # s2 = Stats(defaultPath=path+"Results_%s_singleApp2" % (size))
 # Network
-# s.showResults2(size, time_loops=time_loops)
+# s.showResults(size, time_loops=time_loops)
 # app1 based on dinamic Edge
-s1.showResults2(size, time_loops=time_loops)
+s1.print_results(size, time_loops=time_loops)
 # app2 based on static Cloud
-# s2.showResults2(size, time_loops=time_loops)
+# s2.showResults(size, time_loops=time_loops)
 
 
 df = s1.df

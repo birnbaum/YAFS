@@ -46,7 +46,6 @@ class Metrics:
         self.__ff_link.writerow(columns_link)
 
     def insert(self, value):
-
         self.__ff.writerow(
             [
                 value["id"],

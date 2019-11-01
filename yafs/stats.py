@@ -104,13 +104,7 @@ class Stats:
     #             cost += nodes.loc[id_node].time_service * nodeInfo[id_node]["COST"]
     #     return cost,results
 
-    def showLoops(self, time_loops):
-        results = self.average_loop_response(time_loops)
-        for i, loop in enumerate(time_loops):
-            print(("\t\t%i - %s :\t %f" % (i, str(loop), results[i])))
-        return results
-
-    def showResults(self, total_time, topology, time_loops=None):
+    def print_results(self, total_time, topology, time_loops=None):
         print(("\tSimulation Time: %0.2f" % total_time))
 
         if time_loops is not None:
@@ -136,21 +130,7 @@ class Stats:
         print("\tNetwork bytes transmitted:")
         print(("\t\t%.1f" % self.bytes_transmitted()))
 
-    def showResults2(self, total_time, time_loops=None):
-        print(("\tSimulation Time: %0.2f" % total_time))
-
-        if time_loops is not None:
-            print("\tApplication loops delays:")
-            results = self.average_loop_response(time_loops)
-            for i, loop in enumerate(time_loops):
-                print(("\t\t%i - %s :\t %f" % (i, str(loop), results[i])))
-
-        print("\tNetwork bytes transmitted:")
-        print(("\t\t%.1f" % self.bytes_transmitted()))
-
-    """ONLYE THE FIRST ONE : DEBUG"""
-
-    def valueLoop(self, total_time, time_loops=None):
+    def valueLoop(self, total_time, time_loops=None):  # TODO Improve this interface
         if time_loops is not None:
             results = self.average_loop_response(time_loops)
             for i, loop in enumerate(time_loops):
@@ -170,9 +150,7 @@ class Stats:
         return g.reset_index()
 
     def get_df_service_utilization(self, service, time):
-        """
-        Returns the utilization(%) of a specific module
-        """
+        """Returns the utilization(%) of a specific module"""
         g = self.df.groupby(["module", "DES.dst"]).agg({"service": ["mean", "sum", "count"]})
         g.reset_index(inplace=True)
         h = pd.DataFrame()

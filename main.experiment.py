@@ -94,19 +94,18 @@ def main(simulated_time):
     s.run(stop_time, show_progress_monitor=False)
     utils.draw_topology(t, s.get_alloc_entities())
 
-
-if __name__ == "__main__":
-    logging.basicConfig(format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.INFO)
-
-    start_time = time.time()
-    main(simulated_time=1000)
-
-    print(("\n--- %s seconds ---" % (time.time() - start_time)))
-
+    print("\n--- RESULTS ---")
     m = Stats(default_path="Results")  # Same name of the results
     time_loops = [["M.A", "M.B"]]
-    m.showResults2(1000, time_loops=time_loops)
+    m.print_results(1000, topology=t, time_loops=time_loops)
     print("\t- Network saturation -")
     print("\t\tAverage waiting messages : %i" % m.average_messages_not_transmitted())
     print("\t\tPeak of waiting messages : %i" % m.peak_messages_not_transmitted())
     print("\t\tTOTAL messages not transmitted: %i" % m.messages_not_transmitted())
+
+
+if __name__ == "__main__":
+    logging.basicConfig(format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.INFO)
+    start_time = time.time()
+    main(simulated_time=1000)
+    print(("\n--- %s seconds ---" % (time.time() - start_time)))

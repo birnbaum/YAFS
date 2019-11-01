@@ -23,7 +23,7 @@ class Topology:
         self.G = G
         # self._init_uptimes()
 
-    def _init_uptimes(self):  # TODO What is this used for?
+    def _init_uptimes(self):  # TODO What is this used for? -> Something about Watts, should probably not live here
         for key in self.G.nodes:
             self.G.nodes[key]["uptime"] = (0, None)
 

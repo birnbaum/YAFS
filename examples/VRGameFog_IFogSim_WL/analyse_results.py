@@ -21,7 +21,7 @@ for idx1, depth in enumerate([4, 8, 12, 16]):
         s = Stats(defaultPath="files/Results_%s_%s_%s" % (police, size, depth))
 
         # Network
-        s.showResults2(size, time_loops=time_loops)
+        s.print_results(size, time_loops=time_loops)
 
         print("\t Bytes transmitted: ", s.bytes_transmitted())
         print("\t Messages transmitted: ", s.count_messages())
@@ -31,10 +31,6 @@ for idx1, depth in enumerate([4, 8, 12, 16]):
         print("\t\tPeak of waiting messages : %i" % s.peak_messages_not_transmitted())
         print("\t\tTOTAL messages not transmitted: %i" % s.messages_not_transmitted())
 
-        # LOOPS
-        # res = s.showLoops(time_loops)
-        # loopstime[depth][idx2]=res[0]
-        #
         # #Print the execution delay
         # print s.times("time_total_response")
         #
