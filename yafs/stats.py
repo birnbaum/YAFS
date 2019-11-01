@@ -7,8 +7,8 @@ from yafs.metrics import Metrics
 # TODO Missing documentation
 class Stats:
     def __init__(self, default_path: str = "result"):
-        self.df_link = pd.read_csv(default_path + "_link.csv")
         self.df = pd.read_csv(default_path + ".csv")
+        self.df_link = pd.read_csv(default_path + "_link.csv")
 
     def bytes_transmitted(self):
         return self.df_link["size"].sum()
@@ -87,22 +87,22 @@ class Stats:
 
         return results
 
-    # def get_cost_cloud(self, topology):
-    #     cost = 0.0
-    #     nodeInfo = topology.G.nodes
-    #     results = {}
-    #     # Tiempo de actividad / runeo
-    #     if "time_response" not in self.df.columns:  # cached
-    #         self.__compute_times_df()
-    #
-    #     nodes = self.df.groupby("TOPO.dst").agg({"time_service": "sum"})
-    #
-    #     for id_node in nodes.index:
-    #         if nodeInfo[id_node]["type"] == Entity.ENTITY_CLOUD:
-    #             results[id_node] = {"model": nodeInfo[id_node]["model"], "type": nodeInfo[id_node]["type"],
-    #                                 "watt": nodes.loc[id_node].time_service * nodeInfo[id_node]["WATT"]}
-    #             cost += nodes.loc[id_node].time_service * nodeInfo[id_node]["COST"]
-    #     return cost,results
+    def get_cost_cloud(self, topology):
+        cost = 0.0
+        nodeInfo = topology.G.nodes
+        results = {}
+        # Tiempo de actividad / runeo
+        if "time_response" not in self.df.columns:  # cached
+            self._compute_times_df()
+
+        nodes = self.df.groupby("TOPO.dst").agg({"time_service": "sum"})
+
+        for id_node in nodes.index:
+            if nodeInfo[id_node]["type"] == Entity.ENTITY_CLOUD:
+                results[id_node] = {"model": nodeInfo[id_node]["model"], "type": nodeInfo[id_node]["type"],
+                                    "watt": nodes.loc[id_node].time_service * nodeInfo[id_node]["WATT"]}
+                cost += nodes.loc[id_node].time_service * nodeInfo[id_node]["COST"]
+        return cost,results
 
     def print_results(self, total_time, topology, time_loops=None):
         print(("\tSimulation Time: %0.2f" % total_time))
@@ -113,22 +113,27 @@ class Stats:
             for i, loop in enumerate(time_loops):
                 print(("\t\t%i - %s :\t %f" % (i, str(loop), results[i])))
 
-        print("\tEnergy Consumed (WATTS by UpTime):")
-        values = self.get_watt(total_time, topology, Metrics.WATT_UPTIME)
-        for node in values:
-            print(("\t\t%i - %s :\t %.2f" % (node, values[node]["model"], values[node]["watt"])))
+        #print("\tEnergy Consumed (WATTS by UpTime):")
+        #values = self.get_watt(total_time, topology, Metrics.WATT_UPTIME)
+        #for node in values:
+        #    print(("\t\t%i - %s :\t %.2f" % (node, values[node]["model"], values[node]["watt"])))
 
-        print("\tEnergy Consumed by Service (WATTS by Service Time):")
-        values = self.get_watt(total_time, topology, Metrics.WATT_SERVICE)
-        for node in values:
-            print(("\t\t%i - %s :\t %.2f" % (node, values[node]["model"], values[node]["watt"])))
+        #print("\tEnergy Consumed by Service (WATTS by Service Time):")
+        #values = self.get_watt(total_time, topology, Metrics.WATT_SERVICE)
+        #for node in values:
+        #    print(("\t\t%i - %s :\t %.2f" % (node, values[node]["model"], values[node]["watt"])))
 
-        print("\tCost of execution in cloud:")
-        total, values = self.get_cost_cloud(topology)
-        print(("\t\t%.8f" % total))
+        #print("\tCost of execution in cloud:")
+        #total, values = self.get_cost_cloud(topology)
+        #print(("\t\t%.8f" % total))
 
         print("\tNetwork bytes transmitted:")
         print(("\t\t%.1f" % self.bytes_transmitted()))
+
+        print("\t- Network saturation -")
+        print("\t\tAverage waiting messages : %i" % self.average_messages_not_transmitted())
+        print("\t\tPeak of waiting messages : %i" % self.peak_messages_not_transmitted())
+        print("\t\tTOTAL messages not transmitted: %i" % self.messages_not_transmitted())
 
     def valueLoop(self, total_time, time_loops=None):  # TODO Improve this interface
         if time_loops is not None:
