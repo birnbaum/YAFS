@@ -6,11 +6,13 @@ from typing import Tuple
 import networkx as nx
 
 
+logger = logging.getLogger(__name__)
+
+
 class Selection(ABC):
     """Provides the route among topology entities for that a message reach the destiny module, it can also be seen as an orchestration algorithm."""
 
-    def __init__(self, logger=None):  # TODO Remove logger
-        self.logger = logger or logging.getLogger(__name__)
+    def __init__(self):
         self.transmit = 0.0
         self.lat_acc = 0.0
         self.propagation = 0.0
@@ -27,7 +29,7 @@ class Selection(ABC):
             - Path among nodes
             - Identifier of the module
         """
-        self.logger.debug("Selection")
+        logger.debug("Selection")
         """ Define Selection """
         path = []
         ids = []

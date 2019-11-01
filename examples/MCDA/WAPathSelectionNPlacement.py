@@ -1,3 +1,5 @@
+import logging
+
 import networkx as nx
 import os
 import pandas as pd
@@ -9,10 +11,11 @@ import numpy as np
 from sklearn import preprocessing
 
 NodeDES = namedtuple("NodeDES", ["node", "des", "path"])
+logger = logging.getLogger(__name__)
 
 
 class WARoutingAndDeploying(Selection):
-    def __init__(self, path, pathResults, idcloud, logger=None):
+    def __init__(self, path, pathResults, idcloud):
         super(WARoutingAndDeploying, self).__init__()
         self.cache = {}
         self.invalid_cache_value = -1
@@ -34,8 +37,7 @@ class WARoutingAndDeploying(Selection):
         except OSError:
             None
 
-        self.logger = logger or logging.getLogger(__name__)
-        self.logger.info(" MCDA - Routing, Placement and Selection initialitzed ")
+        logger.info(" MCDA - Routing, Placement and Selection initialitzed ")
 
         self.min_path = {}
 
@@ -68,12 +70,12 @@ class WARoutingAndDeploying(Selection):
                     nodes.append(self.get_the_path(sim.topology.G, node_src, node_dst))
 
                 except (nx.NetworkXNoPath, nx.NodeNotFound) as e:
-                    self.logger.warning("No path between two nodes: %s - %s " % (node_src, node_dst))
+                    logger.warning("No path between two nodes: %s - %s " % (node_src, node_dst))
 
             return nodes
 
         except (nx.NetworkXNoPath, nx.NodeNotFound) as e:
-            self.logger.warning("No path between from nodes: %s " % (node_src))
+            logger.warning("No path between from nodes: %s " % (node_src))
             # print "Simulation ends?"
             return []
 
@@ -151,7 +153,7 @@ class WARoutingAndDeploying(Selection):
     #         return minPath, bestDES
     #
     #     except (nx.NetworkXNoPath, nx.NodeNotFound) as e:
-    #         self.logger.warning("There is no path between two nodes: %s - %s " % (node_src, node_dst))
+    #         logger.warning("There is no path between two nodes: %s - %s " % (node_src, node_dst))
     #         # print "Simulation ends?"
     #         return [], None
 
@@ -305,7 +307,7 @@ class WARoutingAndDeploying(Selection):
 
         df.to_csv(self.dname + "/data_%i.csv" % self.idEvaluation, index=False, index_label=False)
 
-        self.logger.info("\t Best node: %i " % best_node)
+        logger.info("\t Best node: %i " % best_node)
 
         return best_node
 

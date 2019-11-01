@@ -96,24 +96,17 @@ def main(simulated_time):
 
 
 if __name__ == "__main__":
-    import logging.config
-    import os
-
-    # logging.config.fileConfig(os.getcwd() + "/logging.ini")
+    logging.basicConfig(format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.INFO)
 
     start_time = time.time()
     main(simulated_time=1000)
 
     print(("\n--- %s seconds ---" % (time.time() - start_time)))
 
-    ### Finally, you can analyse the results:
-    # print("-"*20)
-    # print("Results:")
-    # print("-" * 20)
     m = Stats(default_path="Results")  # Same name of the results
     time_loops = [["M.A", "M.B"]]
     m.showResults2(1000, time_loops=time_loops)
-    # print("\t- Network saturation -")
-    # print("\t\tAverage waiting messages : %i" % m.average_messages_not_transmitted())
-    # print("\t\tPeak of waiting messages : %i" % m.peak_messages_not_transmitted())
-    # print("\t\tTOTAL messages not transmitted: %i" % m.messages_not_transmitted())
+    print("\t- Network saturation -")
+    print("\t\tAverage waiting messages : %i" % m.average_messages_not_transmitted())
+    print("\t\tPeak of waiting messages : %i" % m.peak_messages_not_transmitted())
+    print("\t\tTOTAL messages not transmitted: %i" % m.messages_not_transmitted())

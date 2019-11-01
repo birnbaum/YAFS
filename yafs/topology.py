@@ -5,9 +5,10 @@ from typing import Dict
 import networkx as nx
 
 
+logger = logging.getLogger(__name__)
+
+
 # TODO Is this entire class necessary? Wouldn't it be smarter to just use a nx.networkx instance?
-
-
 class Topology:
     """Unifies the functions to deal with **Complex Networks** as a network topology within of the simulator.
 
@@ -18,9 +19,8 @@ class Topology:
     LINK_PR = "PR"  # Link feature: Propagation delay
     NODE_IPT = "IPT"  # Node feature: Instructions per Simulation Time
 
-    def __init__(self, G: nx.Graph, logger=None):  # TODO Remove logger  G: nx.Graph,
+    def __init__(self, G: nx.Graph):
         self.G = G
-        self.logger = logger or logging.getLogger(__name__)
         # self._init_uptimes()
 
     def _init_uptimes(self):  # TODO What is this used for?

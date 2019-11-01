@@ -11,9 +11,11 @@ from trackanimation.animation import AnimationTrack
 from yafs.core import Simulation
 
 
+logger = logging.getLogger(__name__)
+
+
 class MovementUpdate:
-    def __init__(self, pathResults, doExecutionVideo, logger=None):
-        self.logger = logger or logging.getLogger(__name__)
+    def __init__(self, pathResults, doExecutionVideo):
         self.current_step = 0
         self.path_results = pathResults
 
@@ -111,7 +113,7 @@ class MovementUpdate:
         Returns:
             None
         """
-        self.logger.info("Movement number (#%i) at time: %i" % (self.current_step, sim.env.now))
+        logger.info("Movement number (#%i) at time: %i" % (self.current_step, sim.env.now))
         start_time = time.time()
 
         ##
@@ -134,7 +136,7 @@ class MovementUpdate:
                 mobile_endpoints.append(np.array([lng, lat]))
                 code_mobile_endpoints.append(code_mobile)
             else:
-                self.logger.critical(" Mobile entity: %s without a position !" % code_mobile)
+                logger.critical(" Mobile entity: %s without a position !" % code_mobile)
 
         mobile_endpoints = np.array(mobile_endpoints)
 
@@ -227,6 +229,6 @@ class MovementUpdate:
             # sim.topology.draw_png(self.path_results + "network_%i" % self.current_step)
             self.animation.make_snap(self.current_step, self.path_results + "snap_%05d" % self.current_step, G=sim.topology.G, draw_connection_line=False)
 
-        self.logger.info("\texecution time of movement (#%i): %s" % (self.current_step, (time.time() - start_time)))
+        logger.info("\texecution time of movement (#%i): %s" % (self.current_step, (time.time() - start_time)))
         # we prepare the next execution of this function
         self.current_step += 1

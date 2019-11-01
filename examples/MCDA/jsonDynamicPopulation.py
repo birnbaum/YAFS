@@ -4,20 +4,20 @@ import random
 import logging
 
 
+logger = logging.getLogger(__name__)
+
+
 class DynamicPopulation(Population):
     """
     We launch one user by invocation
     """
 
-    def __init__(self, data, iteration, logger=None, **kwargs):
+    def __init__(self, data, iteration, **kwargs):
         super(DynamicPopulation, self).__init__(**kwargs)
         self.data = data
         self.it = iteration
         self.userOrderInputByInvocation = []
-
-        self.logger = logger or logging.getLogger(__name__)
-
-        self.logger.info(" Initializating dynamic population: %s" % self.name)
+        logger.info(" Initializating dynamic population: %s" % self.name)
 
     """
     In userOrderInputByInvocation, we create the user apparition sequence
@@ -40,7 +40,7 @@ class DynamicPopulation(Population):
             idtopo = item["id_resource"]
             lambd = item["lambda"]
 
-            self.logger.info("Launching user %i (app: %s), in node: %i, at time: %i " % (item["id_resource"], app_name, idtopo, sim.env.now))
+            logger.info("Launching user %i (app: %s), in node: %i, at time: %i " % (item["id_resource"], app_name, idtopo, sim.env.now))
 
             app = sim.apps[app_name]
             msg = app.get_message[item["message"]]

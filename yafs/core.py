@@ -17,13 +17,14 @@ from yafs.topology import Topology
 EVENT_UP_ENTITY = "node_up"
 EVENT_DOWN_ENTITY = "node_down"
 
+logger = logging.getLogger(__name__)
+
 
 class Simulation:
     """Contains the cloud event-discrete simulation environment and controls the structure variables.
 
     Args:
         topology: Associated topology of the environment.
-        logger: logger  # TODO Get rid and use Python logging module
         default_results_path  # TODO ???
     """
 
@@ -33,11 +34,10 @@ class Simulation:
     SINK_METRIC = "SINK_M"
     LINK_METRIC = "LINK"
 
-    def __init__(self, topology: Topology, logger=None, default_results_path=None):
+    def __init__(self, topology: Topology, default_results_path=None):
         # TODO Refactor this class. Way too many fields, no clear separation of concerns.
 
         self.topology = topology
-        self.logger = logger or logging.getLogger(__name__)
 
         self.env = simpy.Environment()  # discrete-event simulator (aka DES)
         self.network_ctrl_pipe = simpy.Store(self.env)
@@ -132,15 +132,12 @@ class Simulation:
             )
 
             if DES_dst == [None] or DES_dst == [[]]:
-                self.logger.warning("(#DES:%i)\t--- Unreacheable DST:\t%s: PATH:%s " % (idDES, message.name, paths))
-                if self.logger.isEnabledFor("Debug"):
-                    self.logger.debug("From __send_message function: ")
-                    # self.print_debug_assignaments()
-                    # print "NODES (%i): %s"%(len(self.topology.G.nodes()),self.topology.G.nodes())
-                    self.logger.debug("NODES (%i)" % len(self.topology.G.nodes()))
+                logger.warning("(#DES:%i)\t--- Unreacheable DST:\t%s: PATH:%s " % (idDES, message.name, paths))
+                logger.debug("From __send_message function: ")
+                logger.debug("NODES (%i)" % len(self.topology.G.nodes()))
 
             else:
-                self.logger.debug("(#DES:%i)\t--- SENDING Message:\t%s: PATH:%s  DES:%s" % (idDES, message.name, paths, DES_dst))
+                logger.debug("(#DES:%i)\t--- SENDING Message:\t%s: PATH:%s  DES:%s" % (idDES, message.name, paths, DES_dst))
 
                 # May be, the selector of path decides broadcasting multiples paths
                 for idx, path in enumerate(paths):
@@ -151,7 +148,7 @@ class Simulation:
 
                     self.network_ctrl_pipe.put(msg)
         except KeyError:
-            self.logger.warning("(#DES:%i)\t--- Unreacheable DST:\t%s " % (idDES, message.name))
+            logger.warning("(#DES:%i)\t--- Unreacheable DST:\t%s " % (idDES, message.name))
 
     def __network_process(self):
         """Internal DES-process who manages the latency of messages sent in the network.
@@ -232,7 +229,7 @@ class Simulation:
                     self.env.process(self.__wait_message(message, latency_msg_link, shift_time))
                 except:  # TODO Too broad exception clause
                     # This fact is produced when a node or edge the topology is changed or disappeared
-                    self.logger.warning("The initial path assigned is unreachabled. Link: (%i,%i). Routing a new one. %i" % (link[0], link[1], self.env.now))
+                    logger.warning("The initial path assigned is unreachabled. Link: (%i,%i). Routing a new one. %i" % (link[0], link[1], self.env.now))
 
                     paths, DES_dst = self.selector_path[message.app_name].get_path_from_failure(
                         self, message, link, self.alloc_DES, self.alloc_module, self.last_busy_time, self.env.now, from_des=message.idDES
@@ -240,11 +237,11 @@ class Simulation:
 
                     if DES_dst == [] and paths == []:
                         # Message communication ending: The message have arrived to the destination node but it is unavailable.
-                        self.logger.debug("\t No path given. Message is lost")
+                        logger.debug("\t No path given. Message is lost")
                     else:
                         message.path = copy.copy(paths[0])
                         message.idDES = DES_dst[0]
-                        self.logger.debug("(\t New path given. Message is enrouting again.")
+                        logger.debug("(\t New path given. Message is enrouting again.")
                         self.network_ctrl_pipe.put(message)
 
     def __wait_message(self, msg, latency, shift_time):
@@ -267,12 +264,12 @@ class Simulation:
         self.des_process_running[myId] = True
         self.des_control_process[placement.name] = myId
 
-        self.logger.debug("Added_Process - Placement Algorithm\t#DES:%i" % myId)
+        logger.debug("Added_Process - Placement Algorithm\t#DES:%i" % myId)
         while not self.stop and self.des_process_running[myId]:
             yield self.env.timeout(placement.get_next_activation())
             placement.run(self)
-            self.logger.debug("(DES:%i) %7.4f Run - Placement Policy: %s " % (myId, self.env.now, self.stop))  # Rewrite
-        self.logger.debug("STOP_Process - Placement Algorithm\t#DES:%i" % myId)
+            logger.debug("(DES:%i) %7.4f Run - Placement Policy: %s " % (myId, self.env.now, self.stop))  # Rewrite
+        logger.debug("STOP_Process - Placement Algorithm\t#DES:%i" % myId)
 
     def __add_population_process(self, population):
         """
@@ -282,12 +279,12 @@ class Simulation:
         self.des_process_running[myId] = True
         self.des_control_process[population.name] = myId
 
-        self.logger.debug("Added_Process - Population Algorithm\t#DES:%i" % myId)
+        logger.debug("Added_Process - Population Algorithm\t#DES:%i" % myId)
         while not self.stop and self.des_process_running[myId]:
             yield self.env.timeout(population.get_next_activation())
-            self.logger.debug("(DES:%i) %7.4f Run - Population Policy: %s " % (myId, self.env.now, self.stop))  # REWRITE
+            logger.debug("(DES:%i) %7.4f Run - Population Policy: %s " % (myId, self.env.now, self.stop))  # REWRITE
             population.run(self)
-        self.logger.debug("STOP_Process - Population Algorithm\t#DES:%i" % myId)
+        logger.debug("STOP_Process - Population Algorithm\t#DES:%i" % myId)
 
     def __getIDMessage(self):
         self.__idMessage += 1
@@ -297,12 +294,12 @@ class Simulation:
         """
         A DES-process who controls the invocation of several Pure Source Modules
         """
-        self.logger.debug("Added_Process - Module Pure Source\t#DES:%i" % idDES)
+        logger.debug("Added_Process - Module Pure Source\t#DES:%i" % idDES)
         while not self.stop and self.des_process_running[idDES]:
             nextTime = next(distribution)
             yield self.env.timeout(nextTime)
             if self.des_process_running[idDES]:
-                self.logger.debug("(App:%s#DES:%i)\tModule - Generating Message: %s \t(T:%d)" % (name_app, idDES, message.name, self.env.now))
+                logger.debug("(App:%s#DES:%i)\tModule - Generating Message: %s \t(T:%d)" % (name_app, idDES, message.name, self.env.now))
 
                 msg = copy.copy(message)
                 msg.timestamp = self.env.now
@@ -310,7 +307,7 @@ class Simulation:
 
                 self.__send_message(name_app, msg, idDES, self.SOURCE_METRIC)
 
-        self.logger.debug("STOP_Process - Module Pure Source\t#DES:%i" % idDES)
+        logger.debug("STOP_Process - Module Pure Source\t#DES:%i" % idDES)
 
     def __update_node_metrics(self, app, module, message, des, type):
         try:
@@ -406,12 +403,12 @@ class Simulation:
             return time_service
         except KeyError:
             # The node can be removed
-            self.logger.critical("Make sure that this node has been removed or it has all mandatory attributes - Node: DES:%i" % des)
+            logger.critical("Make sure that this node has been removed or it has all mandatory attributes - Node: DES:%i" % des)
             return 0
 
-        # self.logger.debug("TS[%s] - DES: %i - %d"%(module,des,time_service))
+        # logger.debug("TS[%s] - DES: %i - %d"%(module,des,time_service))
         # except:
-        #     self.logger.warning("This module has been removed previously to the arrival time of this message. DES: %i"%des)
+        #     logger.warning("This module has been removed previously to the arrival time of this message. DES: %i"%des)
         #     return 0
 
     """
@@ -420,12 +417,12 @@ class Simulation:
 
     def __add_up_node_process(self, next_event, **param):
         myId = self._get_id_process()
-        self.logger.debug("Added_Process - UP entity Creation\t#DES:%i" % myId)
+        logger.debug("Added_Process - UP entity Creation\t#DES:%i" % myId)
         while not self.stop:
             # TODO Define function to ADD a new NODE in topology
             yield self.env.timeout(next_event(**param))
-            self.logger.debug("(DES:%i) %7.4f Node " % (myId, self.env.now))
-        self.logger.debug("STOP_Process - UP entity Creation\t#DES%i" % myId)
+            logger.debug("(DES:%i) %7.4f Node " % (myId, self.env.now))
+        logger.debug("STOP_Process - UP entity Creation\t#DES%i" % myId)
 
     """
     MEJORAR - ASOCIAR UN PROCESO QUE LOS CONTROLES.
@@ -434,33 +431,33 @@ class Simulation:
     def __add_down_node_process(self, next_event, **param):
         myId = self._get_id_process()
         self.des_process_running[myId] = True
-        self.logger.debug("Added_Process - Down entity Creation\t#DES:%i" % myId)
+        logger.debug("Added_Process - Down entity Creation\t#DES:%i" % myId)
         while not self.stop and self.des_process_running[myId]:
             yield self.env.timeout(next_event(**param))
-            self.logger.debug("(DES:%i) %7.4f Node " % (myId, self.env.now))
+            logger.debug("(DES:%i) %7.4f Node " % (myId, self.env.now))
 
-        self.logger.debug("STOP_Process - Down entity Creation\t#DES%i" % myId)
+        logger.debug("STOP_Process - Down entity Creation\t#DES%i" % myId)
 
     def __add_source_module(self, idDES, app_name, module, message, distribution, **param):
         """
         It generates a DES process associated to a compute module for the generation of messages
         """
-        self.logger.debug("Added_Process - Module Source: %s\t#DES:%i" % (module, idDES))
+        logger.debug("Added_Process - Module Source: %s\t#DES:%i" % (module, idDES))
         while (not self.stop) and self.des_process_running[idDES]:
             yield self.env.timeout(next(distribution))
             if self.des_process_running[idDES]:
-                self.logger.debug("(App:%s#DES:%i#%s)\tModule - Generating Message:\t%s" % (app_name, idDES, module, message.name))
+                logger.debug("(App:%s#DES:%i#%s)\tModule - Generating Message:\t%s" % (app_name, idDES, module, message.name))
                 msg = copy.copy(message)
                 msg.timestamp = self.env.now
                 self.__send_message(app_name, msg, idDES, self.SOURCE_METRIC)
 
-        self.logger.debug("STOP_Process - Module Source: %s\t#DES:%i" % (module, idDES))
+        logger.debug("STOP_Process - Module Source: %s\t#DES:%i" % (module, idDES))
 
     def __add_consumer_module(self, ides, app_name, module, register_consumer_msg):
         """
         It generates a DES process associated to a compute module
         """
-        self.logger.debug("Added_Process - Module Consumer: %s\t#DES:%i" % (module, ides))
+        logger.debug("Added_Process - Module Consumer: %s\t#DES:%i" % (module, ides))
         while not self.stop and self.des_process_running[ides]:
             if self.des_process_running[ides]:
                 msg = yield self.consumer_pipes["%s%s%i" % (app_name, module, ides)].get()
@@ -498,7 +495,7 @@ class Simulation:
                         # The module only computes this type of message one time.
                         # It records once
                         if not doBefore:
-                            self.logger.debug("(App:%s#DES:%i#%s)\tModule - Recording the message:\t%s" % (app_name, ides, module, msg.name))
+                            logger.debug("(App:%s#DES:%i#%s)\tModule - Recording the message:\t%s" % (app_name, ides, module, msg.name))
                             type = self.NODE_METRIC
 
                             service_time = self.__update_node_metrics(app_name, module, msg, ides, type)
@@ -513,13 +510,13 @@ class Simulation:
                             """
                             Sink behaviour (nothing to send)
                             """
-                            self.logger.debug("(App:%s#DES:%i#%s)\tModule - Sink Message:\t%s" % (app_name, ides, module, msg.name))
+                            logger.debug("(App:%s#DES:%i#%s)\tModule - Sink Message:\t%s" % (app_name, ides, module, msg.name))
                             continue
                         else:
                             if register["dist"](**register["param"]):  ### THRESHOLD DISTRIBUTION to Accept the message from source
                                 if not register["module_dest"]:
                                     # it is not a broadcasting message
-                                    self.logger.debug(
+                                    logger.debug(
                                         "(App:%s#DES:%i#%s)\tModule - Transmit Message:\t%s" % (app_name, ides, module, register["message_out"].name)
                                     )
 
@@ -533,7 +530,7 @@ class Simulation:
 
                                 else:
                                     # it is a broadcasting message
-                                    self.logger.debug(
+                                    logger.debug(
                                         "(App:%s#DES:%i#%s)\tModule - Broadcasting Message:\t%s" % (app_name, ides, module, register["message_out"].name)
                                     )
 
@@ -547,53 +544,53 @@ class Simulation:
                                             self.__send_message(app_name, msg_out, ides, self.FORWARD_METRIC)
 
                             else:
-                                self.logger.debug("(App:%s#DES:%i#%s)\tModule - Stopped Message:\t%s" % (app_name, ides, module, register["message_out"].name))
+                                logger.debug("(App:%s#DES:%i#%s)\tModule - Stopped Message:\t%s" % (app_name, ides, module, register["message_out"].name))
 
-        self.logger.debug("STOP_Process - Module Consumer: %s\t#DES:%i" % (module, ides))
+        logger.debug("STOP_Process - Module Consumer: %s\t#DES:%i" % (module, ides))
 
     def __add_sink_module(self, ides, app_name, module):
         """
         It generates a DES process associated to a SINK module
         """
-        self.logger.debug("Added_Process - Module Pure Sink: %s\t#DES:%i" % (module, ides))
+        logger.debug("Added_Process - Module Pure Sink: %s\t#DES:%i" % (module, ides))
         while not self.stop and self.des_process_running[ides]:
             msg = yield self.consumer_pipes["%s%s%i" % (app_name, module, ides)].get()
             """
             Processing the message
             """
-            self.logger.debug("(App:%s#DES:%i#%s)\tModule Pure - Sink Message:\t%s" % (app_name, ides, module, msg.name))
+            logger.debug("(App:%s#DES:%i#%s)\tModule Pure - Sink Message:\t%s" % (app_name, ides, module, msg.name))
             type = self.SINK_METRIC
             service_time = self.__update_node_metrics(app_name, module, msg, ides, type)
             yield self.env.timeout(service_time)  # service time is 0
 
-        self.logger.debug("STOP_Process - Module Pure Sink: %s\t#DES:%i" % (module, ides))
+        logger.debug("STOP_Process - Module Pure Sink: %s\t#DES:%i" % (module, ides))
 
     def __add_stop_monitor(self, name, function, distribution, show_progress_monitor, **param):
         """
         Add a DES process for Stop/Progress bar monitor
         """
         myId = self._get_id_process()
-        self.logger.debug("Added_Process - Internal Monitor: %s\t#DES:%i" % (name, myId))
+        logger.debug("Added_Process - Internal Monitor: %s\t#DES:%i" % (name, myId))
         if show_progress_monitor:
             self.pbar = tqdm(total=self.until)
         while not self.stop:
             yield self.env.timeout(next(distribution))
             function(show_progress_monitor, **param)
-        self.logger.debug("STOP_Process - Internal Monitor: %s\t#DES:%i" % (name, myId))
+        logger.debug("STOP_Process - Internal Monitor: %s\t#DES:%i" % (name, myId))
 
     def __add_monitor(self, name, function, distribution, **param):
         """
         Add a DES process for user purpose
         """
         myId = self._get_id_process()
-        self.logger.debug("Added_Process - Internal Monitor: %s\t#DES:%i" % (name, myId))
+        logger.debug("Added_Process - Internal Monitor: %s\t#DES:%i" % (name, myId))
         while not self.stop:
             yield self.env.timeout(next(distribution))
             function(**param)
-        self.logger.debug("STOP_Process - Internal Monitor: %s\t#DES:%i" % (name, myId))
+        logger.debug("STOP_Process - Internal Monitor: %s\t#DES:%i" % (name, myId))
 
     def __add_consumer_service_pipe(self, app_name, module, idDES):
-        self.logger.debug("Creating PIPE: %s%s%i " % (app_name, module, idDES))
+        logger.debug("Creating PIPE: %s%s%i " % (app_name, module, idDES))
 
         self.consumer_pipes["%s%s%i" % (app_name, module, idDES)] = simpy.Store(self.env)
 
@@ -610,7 +607,7 @@ class Simulation:
                 self.stop = True
                 if show_progress_monitor:
                     self.pbar.close()
-                self.logger.info("! Stop simulation at time: %f !" % self.env.now)
+                logger.info("! Stop simulation at time: %f !" % self.env.now)
 
     def get_DES(self, name):
         return self.des_control_process[name]

@@ -8,10 +8,11 @@ import operator
 import numpy as np
 
 NodeDES = namedtuple("NodeDES", ["node", "des", "path"])
+logger = logging.getLogger(__name__)
 
 
 class MCDARoutingAndDeploying(Selection):
-    def __init__(self, path, pathResults, idcloud, logger=None):
+    def __init__(self, path, pathResults, idcloud):
         super(MCDARoutingAndDeploying, self).__init__()
         self.cache = {}
         self.invalid_cache_value = -1
@@ -32,8 +33,8 @@ class MCDARoutingAndDeploying(Selection):
         except OSError:
             None
 
-        self.logger = logger or logging.getLogger(__name__)
-        self.logger.info("  MCDA - ELECTRE - Routing, Placement and Selection initialitzed ")
+        logger = logger or logging.getLogger(__name__)
+        logger.info("  MCDA - ELECTRE - Routing, Placement and Selection initialitzed ")
 
         self.min_path = {}
 
@@ -66,12 +67,12 @@ class MCDARoutingAndDeploying(Selection):
                     nodes.append(self.get_the_path(sim.topology.G, node_src, node_dst))
 
                 except (nx.NetworkXNoPath, nx.NodeNotFound) as e:
-                    self.logger.warning("No path between two nodes: %s - %s " % (node_src, node_dst))
+                    logger.warning("No path between two nodes: %s - %s " % (node_src, node_dst))
 
             return nodes
 
         except (nx.NetworkXNoPath, nx.NodeNotFound) as e:
-            self.logger.warning("No path between from nodes: %s " % (node_src))
+            logger.warning("No path between from nodes: %s " % (node_src))
             # print "Simulation ends?"
             return []
 
@@ -149,7 +150,7 @@ class MCDARoutingAndDeploying(Selection):
     #         return minPath, bestDES
     #
     #     except (nx.NetworkXNoPath, nx.NodeNotFound) as e:
-    #         self.logger.warning("There is no path between two nodes: %s - %s " % (node_src, node_dst))
+    #         logger.warning("There is no path between two nodes: %s - %s " % (node_src, node_dst))
     #         # print "Simulation ends?"
     #         return [], None
 
@@ -219,7 +220,7 @@ class MCDARoutingAndDeploying(Selection):
         nwithservices = list(np.unique(list(sim.alloc_DES.values())))
         nwithservices.remove(self.idcloud)
         # print "NODOS REMOVIDOS %s" %nwithservices
-        self.logger.info("Ignored nodes %s" % nwithservices)
+        logger.info("Ignored nodes %s" % nwithservices)
         # df.drop(df.loc[df['node'].isin(nwithservices)].index, inplace=True)
         # nodes = df.node
 
@@ -331,7 +332,7 @@ class MCDARoutingAndDeploying(Selection):
 
         df.to_csv(self.dname + "/data_%i.csv" % self.idEvaluation, index=False, index_label=False)
 
-        self.logger.info("Running R script")
+        logger.info("Running R script")
         output = self.runELECTRER(
             pathRScript=self.path,
             pathWD=self.dname,
@@ -343,10 +344,10 @@ class MCDARoutingAndDeploying(Selection):
             minmaxcriteria=criteriaMinMax,
         )
 
-        self.logger.info("Ending R script")
+        logger.info("Ending R script")
 
         if not "RESULT_OK" in output:
-            self.logger.critical("\t R PROCESS not ends - Evaluation: %i", self.idEvaluation)
+            logger.critical("\t R PROCESS not ends - Evaluation: %i", self.idEvaluation)
         text = "Final.Ranking.Matrix.alternative"
         process = output[output.index(text) + len(text) :].split()
 
@@ -358,7 +359,7 @@ class MCDARoutingAndDeploying(Selection):
             return self.idcloud
         if ranking[i] >= 200:
             return self.idcloud
-        self.logger.info("\t Best node: %i " % ranking[i])
+        logger.info("\t Best node: %i " % ranking[i])
         return ranking[i]
 
     def doDeploy(self, sim, app_name, module, id_resource):

@@ -3,6 +3,9 @@ from abc import abstractmethod, ABC
 from typing import Callable
 
 
+logger = logging.getLogger(__name__)
+
+
 class Placement(ABC):
     """A placement (or allocation) algorithm controls where to locate the service modules and their replicas in the different nodes of the topology, according to load criteria or other objectives.
 
@@ -18,8 +21,7 @@ class Placement(ABC):
         param (dict): the parameters of the *activation_dist*  TODO ???
     """
 
-    def __init__(self, name: str, activation_dist: Callable = None, logger=None):  # TODO Remove logger
-        self.logger = logger or logging.getLogger(__name__)
+    def __init__(self, name: str, activation_dist: Callable = None):  # TODO Remove logger
         self.name = name  # TODO What do we need this for
         self.activation_dist = activation_dist
         self.scaleServices = []  # TODO Rename/Remove this
@@ -40,7 +42,7 @@ class Placement(ABC):
 
     def run(self, simulation: "Simulation"):  # TODO Does this have to be implemented?  # TODO Why does this know about the simulation?
         """This method will be invoked during the simulation to change the assignment of the modules to the topology."""
-        self.logger.debug("Activiting - RUN - Placement")
+        logger.debug("Activiting - RUN - Placement")
 
 
 class JSONPlacement(Placement):  # TODO The placement should not care how it was instantiated

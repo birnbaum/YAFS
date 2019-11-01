@@ -2,6 +2,9 @@ import logging
 from abc import ABC
 
 
+logger = logging.getLogger(__name__)
+
+
 class Population(ABC):
     """Controls how the message generation of the sensor modules is associated in the nodes of the topology.
 
@@ -20,8 +23,7 @@ class Population(ABC):
         param (dict): the parameters of the *activation_dist*  # TODO ???
     """
 
-    def __init__(self, name: str, activation_dist=None, logger=None):
-        self.logger = logger or logging.getLogger(__name__)
+    def __init__(self, name: str, activation_dist=None):
         self.name = name
         self.activation_dist = activation_dist
 
@@ -58,7 +60,7 @@ class Population(ABC):
         Args:
             sim (:mod: yafs.core.Sim)
         """
-        self.logger.debug("Activiting - RUN - Population")
+        logger.debug("Activiting - RUN - Population")
         """ User definition of the Population evolution """
 
 
