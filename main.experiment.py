@@ -7,8 +7,6 @@
 """
 import random
 
-import networkx as nx
-
 from yafs import utils
 from yafs.core import Simulation
 from yafs.application import Application, Message, Module

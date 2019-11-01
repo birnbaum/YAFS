@@ -22,7 +22,7 @@ class Placement(ABC):
         self.logger = logger or logging.getLogger(__name__)
         self.name = name  # TODO What do we need this for
         self.activation_dist = activation_dist
-        self.scaleServices = []
+        self.scaleServices = []  # TODO Rename/Remove this
 
     def scaleService(self, scale):  # TODO Refactor, this is not pythonic
         self.scaleServices = scale
@@ -66,10 +66,7 @@ class CloudPlacement(Placement):
     """
 
     def initial_allocation(self, simulation: "Simulation", app_name: str):  # TODO Why does the placement know about the simulation?
-        # We find the ID-nodo/resource
-        value = {"mytag": "cloud"}  # or whatever tag
-
-        id_cluster = simulation.topology.find_IDs(value)
+        id_cluster = simulation.topology.find_IDs({"mytag": "cloud"})  # TODO These are very implicit assumptions about module naming...
         app = simulation.applications[app_name]
         services = app.services
 
@@ -119,22 +116,15 @@ class EdgePlacement(Placement):
 
     def initial_allocation(self, simulation, app_name):
         # We find the ID-nodo/resource
-        value = {"model": "Cluster"}
-        id_cluster = simulation.topology.find_IDs(value)  # there is only ONE Cluster
-        value = {"model": "d-"}
-        id_proxies = simulation.topology.find_IDs(value)
-
-        value = {"model": "m-"}
-        id_mobiles = simulation.topology.find_IDs(value)
+        id_cluster = simulation.topology.find_IDs({"model": "Cluster"})  # there is only ONE Cluster  # TODO These are very implicit assumptions about module naming...
+        id_proxies = simulation.topology.find_IDs({"model": "d-"})  # TODO These are very implicit assumptions about module naming...
+        id_mobiles = simulation.topology.find_IDs({"model": "m-"})  # TODO These are very implicit assumptions about module naming...
 
         # Given an application we get its modules implemented
         app = simulation.apps[app_name]
         services = app.services
 
         for module in list(services.keys()):
-
-            print(module)
-
             if "Coordinator" == module:
                 # Deploy as many modules as elements in the array
                 idDES = simulation.deploy_module(app_name, module, services[module], id_cluster)  # TODO Unused variable
