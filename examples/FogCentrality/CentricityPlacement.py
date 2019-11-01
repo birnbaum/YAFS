@@ -9,6 +9,6 @@ class NoPlacementOfModules(Placement):
 
     """
 
-    def initial_allocation(self, sim, app_name):
+    def initial_allocation(self, simulation, app_name):
         # The are not modules to be allocated
         None

@@ -20,7 +20,7 @@ class Placement(ABC):
 
     def __init__(self, name: str, activation_dist: Callable = None, logger=None):  # TODO Remove logger
         self.logger = logger or logging.getLogger(__name__)
-        self.name = name
+        self.name = name  # TODO What do we need this for
         self.activation_dist = activation_dist
         self.scaleServices = []
 
@@ -35,10 +35,10 @@ class Placement(ABC):
         return next(self.activation_dist)  # TODO Data type?
 
     @abstractmethod
-    def initial_allocation(self, sim: "Simulation", app_name: str):  # TODO Why does this know about the simulation?
+    def initial_allocation(self, simulation: "Simulation", app_name: str):  # TODO Why does this know about the simulation?
         """Given an ecosystem, it starts the allocation of modules in the topology."""
 
-    def run(self, sim: "Simulation"):  # TODO Does this have to be implemented?  # TODO Why does this know about the simulation?
+    def run(self, simulation: "Simulation"):  # TODO Does this have to be implemented?  # TODO Why does this know about the simulation?
         """This method will be invoked during the simulation to change the assignment of the modules to the topology."""
         self.logger.debug("Activiting - RUN - Placement")
 
@@ -48,32 +48,35 @@ class JSONPlacement(Placement):  # TODO The placement should not care how it was
         super(JSONPlacement, self).__init__(**kwargs)
         self.data = json
 
-    def initial_allocation(self, sim, app_name):
+    def initial_allocation(self, simulation, app_name):
         for item in self.data["initialAllocation"]:
             if app_name == item["app"]:
-                # app_name = item["app"]
                 module = item["module_name"]
                 idtopo = item["id_resource"]
-                app = sim.apps[app_name]
+
+                app = simulation.apps[app_name]
                 services = app.services
-                idDES = sim.deploy_module(app_name, module, services[module], [idtopo])  # TODO unused variable
+                idDES = simulation.deploy_module(app_name, module, services[module], [idtopo])  # TODO unused variable
 
 
-class JSONPlacementOnCloud(Placement):  # TODO The placement should not care how it was instantiated
-    def __init__(self, json, idCloud, **kwargs):
-        super(JSONPlacementOnCloud, self).__init__(**kwargs)
-        self.data = json
-        self.idCloud = idCloud
+class CloudPlacement(Placement):
+    """Locates the services of the application in the cheapest cloud regardless of where the sources or sinks are located.  # TODO Docstring wrong?
 
-    def initial_allocation(self, sim, app_name):
-        for item in self.data["initialAllocation"]:
-            if app_name == item["app"]:
-                app_name = item["app"]
-                module = item["module_name"]
+    It only runs once, in the initialization.
+    """
 
-                app = sim.apps[app_name]
-                services = app.services
-                idDES = sim.deploy_module(app_name, module, services[module], [self.idCloud])  # TODO unused variable
+    def initial_allocation(self, simulation: "Simulation", app_name: str):  # TODO Why does the placement know about the simulation?
+        # We find the ID-nodo/resource
+        value = {"mytag": "cloud"}  # or whatever tag
+
+        id_cluster = simulation.topology.find_IDs(value)
+        app = simulation.applications[app_name]
+        services = app.services
+
+        for module in services:
+            if module in self.scaleServices:
+                for rep in range(0, self.scaleServices[module]):
+                    idDES = simulation.deploy_module(app_name, module, services[module], id_cluster)
 
 
 class ClusterPlacement(Placement):
@@ -82,15 +85,13 @@ class ClusterPlacement(Placement):
     Only runs once during initialization.
     """
 
-    def initial_allocation(self, sim: "Simulation", app_name: str):  # TODO Why does this know about the simulation?
+    def initial_allocation(self, simulation: "Simulation", app_name: str):  # TODO Why does this know about the simulation?
         # We find the ID-nodo/resource
-        value = {"model": "Cluster"}  # TODO These are very implicit assumptions about module naming...
-        id_cluster = sim.topology.find_IDs(value)  # there is only ONE Cluster  # TODO Why?
-        value = {"model": "m-"}  # TODO These are very implicit assumptions about module naming...
-        id_mobiles = sim.topology.find_IDs(value)
+        id_cluster = simulation.topology.find_IDs({"model": "Cluster"})  # there is only ONE Cluster  # TODO These are very implicit assumptions about module naming...
+        id_mobiles = simulation.topology.find_IDs({"model": "m-"})  # TODO These are very implicit assumptions about module naming...
 
         # Given an application we get its modules implemented
-        app = sim.apps[app_name]
+        app = simulation.apps[app_name]
         services = app.services
 
         for module in list(services.keys()):
@@ -99,15 +100,15 @@ class ClusterPlacement(Placement):
                     # print self.scaleServices["Coordinator"]
                     for rep in range(0, self.scaleServices["Coordinator"]):
                         # Deploy as many modules as elements in the array
-                        idDES = sim.deploy_module(app_name, module, services[module], id_cluster)  # TODO unused variable
+                        idDES = simulation.deploy_module(app_name, module, services[module], id_cluster)  # TODO unused variable
 
             elif "Calculator" == module:
                 if "Calculator" in list(self.scaleServices.keys()):
                     for rep in range(0, self.scaleServices["Calculator"]):
-                        idDES = sim.deploy_module(app_name, module, services[module], id_cluster)  # TODO unused variable
+                        idDES = simulation.deploy_module(app_name, module, services[module], id_cluster)  # TODO unused variable
 
             elif "Client" == module:
-                idDES = sim.deploy_module(app_name, module, services[module], id_mobiles)  # TODO unused variable
+                idDES = simulation.deploy_module(app_name, module, services[module], id_mobiles)  # TODO unused variable
 
 
 class EdgePlacement(Placement):
@@ -116,18 +117,18 @@ class EdgePlacement(Placement):
     Only runs once during initialization.
     """
 
-    def initial_allocation(self, sim, app_name):
+    def initial_allocation(self, simulation, app_name):
         # We find the ID-nodo/resource
         value = {"model": "Cluster"}
-        id_cluster = sim.topology.find_IDs(value)  # there is only ONE Cluster
+        id_cluster = simulation.topology.find_IDs(value)  # there is only ONE Cluster
         value = {"model": "d-"}
-        id_proxies = sim.topology.find_IDs(value)
+        id_proxies = simulation.topology.find_IDs(value)
 
         value = {"model": "m-"}
-        id_mobiles = sim.topology.find_IDs(value)
+        id_mobiles = simulation.topology.find_IDs(value)
 
         # Given an application we get its modules implemented
-        app = sim.apps[app_name]
+        app = simulation.apps[app_name]
         services = app.services
 
         for module in list(services.keys()):
@@ -136,19 +137,8 @@ class EdgePlacement(Placement):
 
             if "Coordinator" == module:
                 # Deploy as many modules as elements in the array
-                idDES = sim.deploy_module(app_name, module, services[module], id_cluster)  # TODO Unused variable
+                idDES = simulation.deploy_module(app_name, module, services[module], id_cluster)  # TODO Unused variable
             elif "Calculator" == module:
-                idDES = sim.deploy_module(app_name, module, services[module], id_proxies)  # TODO Unused variable
+                idDES = simulation.deploy_module(app_name, module, services[module], id_proxies)  # TODO Unused variable
             elif "Client" == module:
-                idDES = sim.deploy_module(app_name, module, services[module], id_mobiles)  # TODO Unused variable
-
-
-class NoPlacementOfModules(Placement):
-    """Locates the services of the application in the cheapest cluster regardless of where the sources or sinks are located.  # TODO Docstring wrong?
-
-    Only runs once during initialization.
-    """
-
-    def initial_allocation(self, sim, app_name):
-        # The are not modules to be allocated
-        None
+                idDES = simulation.deploy_module(app_name, module, services[module], id_mobiles)  # TODO Unused variable

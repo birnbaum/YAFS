@@ -11,12 +11,12 @@ import networkx as nx
 
 from yafs.core import Simulation
 from yafs.application import Application, Message, Module
+from yafs.placement import CloudPlacement
 
 from yafs.population import *
 from yafs.selection import FirstShortestPathSelection
 from yafs.topology import Topology, load_yafs_json
 
-from examples.Tutorial.simplePlacement import CloudPlacement
 from yafs.stats import Stats
 from yafs.distribution import DeterministicDistribution
 from yafs.utils import fractional_selectivity
