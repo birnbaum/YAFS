@@ -163,10 +163,10 @@ def main(path, path_results, number_simulation_steps, tracks, topology, case, it
     """
     MOBILE - parametrization
     """
-    s.load_user_tracks(tracks)
-    s.set_coverage_class(CircleCoverage, radius=5)  # radius in KM
+    s.load_user_tracks(tracks)  # TODO "user_tracks" has been removed from Simulation
+    s.set_coverage_class(CircleCoverage, radius=5)  # radius in KM  #TODO This was removed from the core
     # s.set_coverage_class(Voronoi)
-    s.set_mobile_fog_entities(mobile_fog_entities)
+    s.set_mobile_fog_entities(mobile_fog_entities)  # TODO has been removed from Simulation
 
     # Expensive task
     # It generates a short video (mp4) with the movement of users in the coverage (without network update)
@@ -203,7 +203,7 @@ def main(path, path_results, number_simulation_steps, tracks, topology, case, it
     evol = MovementUpdate(path_results, doExecutionVideo)
     s.deploy_monitor("Traces_localization_update", evol, dStart, **{"sim": s, "routing": selectorPath, "case": case, "stop_time": stop_time, "it": it})
 
-    s.set_movement_control(evol)
+    s.set_movement_control(evol)  # TODO has been removed from the core
 
     """
     RUNNING

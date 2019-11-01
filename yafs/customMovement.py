@@ -123,7 +123,7 @@ class MovementUpdate:
         ######
         # UPDATING LOCATION of MOBILE ENTITIES
         #
-        track_code_last_position = self.get_last_points(sim.user_tracks.df, self.current_step)
+        track_code_last_position = self.get_last_points(sim.user_tracks.df, self.current_step)  # TODO "user_tracks" has been removed from Simulation
 
         # getting the position of mobile endpoint entities
         mobile_endpoints = []
@@ -141,16 +141,16 @@ class MovementUpdate:
         ##########
         # UPDATING CONNECTIONS of MOBILE ENTITIES with NETWORK ENDPOINTS
         #
-        self.name_endpoints = copy.copy(sim.name_endpoints)
+        self.name_endpoints = copy.copy(sim.name_endpoints)  # TODO "name_endpoints" has been removed from Simulation
 
         # We join network endpoints and mobile endpoints
-        last = len(self.name_endpoints)
+        last = len(self.name_endpoints)  # TODO "name_endpoints" has been removed from Simulation
         for ix, code_mobile in enumerate(sim.mobile_fog_entities.keys()):
-            self.name_endpoints[last + ix] = code_mobile
+            self.name_endpoints[last + ix] = code_mobile  # TODO "name_endpoints" has been removed from Simulation
         if len(mobile_endpoints) == 0:
-            all_endpoints = sim.endpoints
+            all_endpoints = sim.endpoints  # TODO "endpoints" has been removed from Simulation
         else:
-            all_endpoints = np.concatenate((sim.endpoints, mobile_endpoints), axis=0)
+            all_endpoints = np.concatenate((sim.endpoints, mobile_endpoints), axis=0)  # TODO "endpoints" has been removed from Simulation
         sim.coverage.update_coverage_of_endpoints(sim.map, all_endpoints)
 
         # We update connections between mobile_entities with the network
@@ -163,12 +163,12 @@ class MovementUpdate:
             if code not in list(sim.mobile_fog_entities.keys()):
                 point_index = sim.coverage.connection(new_point)
                 if point_index != None:
-                    all_current_connection[code] = self.name_endpoints[point_index]
+                    all_current_connection[code] = self.name_endpoints[point_index]  # TODO "name_endpoints" has been removed from Simulation
 
         ##########
         # UPDATING CONNECTIONS of MOBILE ENDPOINTS  with NETWORK ENDPOINTS
         #
-        fixed_location_endpoints = dict(list(zip(list(sim.name_endpoints.values()), sim.endpoints)))
+        fixed_location_endpoints = dict(list(zip(list(sim.name_endpoints.values()), sim.endpoints)))  # TODO "endpoints" and "name_endpoints" have been removed from Simulation
         mobile_location_endpoints = dict(list(zip(code_mobile_endpoints, mobile_endpoints)))
 
         print("STEP ", self.current_step)

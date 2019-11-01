@@ -19,47 +19,28 @@
 # limitations under the License.
 
 
-# Python modules
+import copy
 import io
+import os
 import subprocess
-import warnings
-import networkx as nx
-from matplotlib.collections import PatchCollection
-
-try:
-    # Python 3
-    from itertools import zip_longest
-except ImportError:
-    # Python 2
-    from itertools import zip_longest as zip_longest
-
-# Third party modules
-import matplotlib
+from collections import defaultdict
+from itertools import zip_longest
 
 # matplotlib.use('Agg')
 import matplotlib.pyplot as plt  # Attention: include the .use('agg') before importing pyplot: DISPLAY issues
-import mplleaflet
+import networkx as nx
 import numpy as np
 from PIL import Image
-from tqdm import tqdm
-import matplotlib as mpl
-import copy
-import smopy
-import matplotlib.patches as patches
-import os
-
-# Own modules
-from trackanimation.tracking import DFTrack
-from trackanimation.utils import TrackException
 from matplotlib.offsetbox import OffsetImage, AnnotationBbox
+from tqdm import tqdm
 
-from collections import defaultdict
+from trackanimation.tracking import DFTrack
+from yafs.core import Simulation
 
 
 class AnimationTrack:
-    def __init__(self, sim, dpi=100, bg_map=True, aspect="equal", map_transparency=0.5):
-        # type: (Sim, int, boolean, String, float) -> AnimationTrack
-
+    # TODO Why does this know about Simulation??
+    def __init__(self, sim: Simulation, dpi: int = 100, bg_map: bool = True, aspect: str = "equal", map_transparency: float = 0.5):
         ## Combining endpoints with mobile
         self.track_code_last_position = {}
         self.connection = defaultdict(int)
@@ -72,7 +53,7 @@ class AnimationTrack:
         for spine in list(self.axarr.spines.values()):
             spine.set_edgecolor("white")
 
-        df = sim.user_tracks.get_tracks()
+        df = sim.user_tracks.get_tracks()  # TODO "user_tracks" has been removed from Simulation
         df.df["Axes"] = 0
         self.track_df = DFTrack()
         self.track_df = self.track_df.concat(df)
@@ -84,7 +65,7 @@ class AnimationTrack:
 
         self.track_df.df = self.track_df.df.reset_index(drop=True)
         self.sim = sim
-        self.name_mobile = copy.copy(self.sim.name_endpoints)
+        self.name_mobile = copy.copy(self.sim.name_endpoints)  # TODO "name_endpoints" has been removed from Simulation
         last = len(self.name_mobile)
         for ix, code_mobile in enumerate(self.sim.mobile_fog_entities.keys()):
             self.name_mobile[last + ix] = code_mobile
@@ -108,9 +89,9 @@ class AnimationTrack:
         point_mobiles = np.array(point_mobiles)
 
         if len(point_mobiles) == 0:
-            self.pointsVOR = self.sim.endpoints
+            self.pointsVOR = self.sim.endpoints  # TODO "endpoints" has been removed from Simulation
         else:
-            self.pointsVOR = np.concatenate((self.sim.endpoints, point_mobiles), axis=0)
+            self.pointsVOR = np.concatenate((self.sim.endpoints, point_mobiles), axis=0)  # TODO "endpoints" has been removed from Simulation
 
         self.sim.coverage.update_coverage_of_endpoints(self.sim.map, self.pointsVOR)
         self.axarr.clear()
@@ -142,7 +123,7 @@ class AnimationTrack:
         #     self.axarr.add_artist(ab)
 
         # Endpoints of the network
-        self.ppix = [self.sim.map.to_pixels(vp[0], vp[1]) for vp in self.sim.endpoints]
+        self.ppix = [self.sim.map.to_pixels(vp[0], vp[1]) for vp in self.sim.endpoints]  # TODO "endpoints" has been removed from Simulation
         for point in self.ppix:
             ab = AnnotationBbox(self.endpoint_icon, (point[0], point[1]), frameon=False)
             self.axarr.add_artist(ab)
@@ -296,7 +277,7 @@ class AnimationTrack:
                     pos = [self.point_network_map(x, size) for x in pos]
                     pos = dict(list(zip(G.nodes(), pos)))
 
-                    nx.draw(G, pos, with_labels=False, node_size=100, nodelist=list(self.sim.name_endpoints.values()), node_color="#1260A0", node_shape="o")
+                    nx.draw(G, pos, with_labels=False, node_size=100, nodelist=list(self.sim.name_endpoints.values()), node_color="#1260A0", node_shape="o")  # TODO "name_endpoints" has been removed from Simulation
                     # rest_nodes = [e for e in G.nodes() if e not in self.sim.name_endpoints.values()]
                     nodes_level_mobile = self.get_nodes_by_level(G, -1)
                     nobes_upper_level = self.get_nodes_by_upper_level(G, 1)
@@ -337,7 +318,7 @@ class AnimationTrack:
             pos = [self.point_network_map(x, size) for x in pos]
             pos = dict(list(zip(G.nodes(), pos)))
 
-            nx.draw(G, pos, with_labels=False, node_size=100, nodelist=list(self.sim.name_endpoints.values()), node_color="#1260A0", node_shape="o")
+            nx.draw(G, pos, with_labels=False, node_size=100, nodelist=list(self.sim.name_endpoints.values()), node_color="#1260A0", node_shape="o")  # TODO "name_endpoints" has been removed from Simulation
             # rest_nodes = [e for e in G.nodes() if e not in self.sim.name_endpoints.values()]
             nodes_level_mobile = self.get_nodes_by_level(G, -1)
             nobes_upper_level = self.get_nodes_by_upper_level(G, 1)

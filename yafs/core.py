@@ -1,12 +1,14 @@
 """This module unifies the event-discrete simulation environment with the rest of modules: placement, topology, selection, population, utils and metrics."""
 
 import copy
+import itertools
 import logging
 
 import networkx as nx
 import simpy
 from tqdm import tqdm
 
+from trackanimation.tracking import DFTrack
 from yafs import utils
 from yafs.application import Application, Message
 from yafs.distribution import *
@@ -147,20 +149,6 @@ class Simulation:
         # This variable control the lag of each busy network links. It avoids the generation of a DES-process for each link
         # edge -> last_use_channel (float) = Simulation time
 
-        """
-        MOBILE ADAPTATIONS
-        """
-        self.service_coverage = {}
-        self.tolerance = 0.0001
-        self.user_tracks = None
-
-        # v2
-        self.endpoints = []
-        self.user_tracks = None
-        self.map = None
-        self.coverage = None
-        self.control_movement_class = None
-
     def __send_message(self, app_name: str, message: Message, idDES, type):
         """
         Any exchange of messages between modules is done with this function and updates the metrics when the message achieves the destination module
@@ -183,15 +171,11 @@ class Simulation:
 
             if DES_dst == [None] or DES_dst == [[]]:
                 self.logger.warning("(#DES:%i)\t--- Unreacheable DST:\t%s: PATH:%s " % (idDES, message.name, paths))
-
                 if self.logger.isEnabledFor("Debug"):
                     self.logger.debug("From __send_message function: ")
                     # self.print_debug_assignaments()
                     # print "NODES (%i): %s"%(len(self.topology.G.nodes()),self.topology.G.nodes())
                     self.logger.debug("NODES (%i)" % len(self.topology.G.nodes()))
-
-                    if self.control_movement_class is not None:
-                        self.logger.debug("STEP : ", self.control_movement_class.current_step)
 
             else:
                 self.logger.debug("(#DES:%i)\t--- SENDING Message:\t%s: PATH:%s  DES:%s" % (idDES, message.name, paths, DES_dst))
@@ -833,23 +817,23 @@ class Simulation:
         self.alloc_module[app_name][module].append(idDES)
         self.env.process(self.__add_sink_module(idDES, app_name, module))
 
-    def stop_process(self, id):
+    def stop_process(self, id: int):
         """
         All pure source modules (sensors) are controlled by this boolean.
         Using this function (:mod:`Population`) algorithm can stop one source
 
         Args:
-            id.source (int): the identifier of the DES process.
+            id.source: the identifier of the DES process.
         """
         self.des_process_running[id] = False
 
-    def start_process(self, id):
+    def start_process(self, id: int):
         """
         All pure source modules (sensors) are controlled by this boolean.
         Using this function (:mod:`Population`) algorithm can start one source
 
         Args:
-            id.source (int): the identifier of the DES process.
+            id.source: the identifier of the DES process.
         """
         self.des_process_running[id] = True
 
@@ -859,15 +843,14 @@ class Simulation:
         self.alloc_module[app.name] = {}
 
         # Add Placement controls to the App
-        if not placement.name in list(self.placement_policy.keys()):  # First Time
+        if placement.name not in list(self.placement_policy.keys()):  # First Time
             self.placement_policy[placement.name] = {"placement_policy": placement, "apps": []}
             if placement.activation_dist is not None:
                 self.env.process(self.__add_placement_process(placement))
         self.placement_policy[placement.name]["apps"].append(app.name)
 
         # Add Population control to the App
-
-        if not population.name in list(self.population_policy.keys()):  # First Time
+        if population.name not in list(self.population_policy.keys()):  # First Time
             self.population_policy[population.name] = {"population_policy": population, "apps": []}
             if population.activation_dist is not None:
                 self.env.process(self.__add_population_process(population))
@@ -1090,81 +1073,6 @@ class Simulation:
         # self.alloc_DES[ides] = id_node
 
         return ides
-
-    def load_user_tracks(self, tracks):
-        self.user_tracks = tracks
-
-        # self.user_tracks = AnimationTrack(df_points=tracks, dpi=300, bg_map=False, map_transparency=0.5)
-
-        # for i, (point, nextpoint) in enumerate(fig.compute_points()):
-        #     print i, point, nextpoint
-        #     if i == 2: break
-        # exit()
-
-    def generate_animation(self, pathFile):
-        from trackanimation.animation import AnimationTrack
-
-        if len(self.endpoints) == 0:
-            self.__update_connection_points()
-        if self.map == None:
-            self.__load_map()
-
-        # map_endpoints = [self.map.to_pixels(i[0], i[1]) for i in self.endpoints]
-        # map_endpoints = np.array(map_endpoints)
-        self.map.img.save(pathFile + "_map_background.png")
-
-        animation = AnimationTrack(self, dpi=100, bg_map=True, aspect="equal")
-        animation.make_video(output_file=pathFile, framerate=10, linewidth=1.0, G=self.topology.G)
-
-    # def generate_snapshot(self, pathFile,event):
-    #     if len(self.endpoints) == 0: self.__update_connection_points()
-    #     if self.map == None: self.__load_map()
-    #
-    #     #map_endpoints = [self.map.to_pixels(i[0], i[1]) for i in self.endpoints]
-    #     #map_endpoints = np.array(map_endpoints)
-    #
-    #     animation = AnimationTrack(self, dpi=100, bg_map=True, aspect='equal')
-    #     animation.make_video(output_file=pathFile, framerate=10, linewidth=1.0)
-
-    def __load_map(self):
-        import smopy
-
-        trk_bounds = self.user_tracks.get_bounds()
-        min_lat = trk_bounds.min_latitude
-        max_lat = trk_bounds.max_latitude
-        min_lng = trk_bounds.min_longitude
-        max_lng = trk_bounds.max_longitude
-
-        self.map = smopy.Map((min_lat, min_lng, max_lat, max_lng), z=12)
-
-    def __update_connection_points(self):
-        level = nx.get_node_attributes(self.topology.G, "level")
-        lat = nx.get_node_attributes(self.topology.G, "lat")
-        lng = nx.get_node_attributes(self.topology.G, "lng")
-
-        self.endpoints = []
-        self.name_endpoints = {}
-        pos = 0
-        for n in level:
-            if level[n] == 0:
-                self.endpoints.append([lat[n], lng[n]])
-                self.name_endpoints[pos] = n
-                pos += 1
-        self.endpoints = np.array(self.endpoints)
-
-    def set_coverage_class(self, class_name, **kwargs):
-        if len(self.endpoints) == 0:
-            self.__update_connection_points()
-        if self.map == None:
-            self.__load_map()
-
-        self.coverage = class_name(self.map, self.endpoints, **kwargs)
-
-    def set_mobile_fog_entities(self, mobile_fog_entities):
-        self.mobile_fog_entities = mobile_fog_entities
-
-    def set_movement_control(self, evol):
-        self.control_movement_class = evol
 
     def run(self, until: int, test_initial_deploy: bool = False, show_progress_monitor: bool = True, mobile_behaviour: bool = False):
         """
