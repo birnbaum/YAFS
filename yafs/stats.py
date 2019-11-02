@@ -7,8 +7,8 @@ from yafs.metrics import Metrics
 # TODO Missing documentation
 class Stats:
     def __init__(self, default_path: str = "result"):
-        self.df = pd.read_csv(default_path + ".csv")
-        self.df_link = pd.read_csv(default_path + "_link.csv")
+        self.df = _load_csv(default_path + ".csv")
+        self.df_link = _load_csv(default_path + "_link.csv")
 
     def bytes_transmitted(self):
         return self.df_link["size"].sum()
@@ -59,7 +59,6 @@ class Stats:
 
     def get_watt(self, totaltime, topology, by=Metrics.WATT_SERVICE):
         results = {}
-        nodeInfo = topology.G.nodes
         if by == Metrics.WATT_SERVICE:
             # Tiempo de actividad / runeo
             if "time_response" not in self.df.columns:  # cached
@@ -68,20 +67,20 @@ class Stats:
             nodes = self.df.groupby("TOPO.dst").agg({"time_service": "sum"})
             for id_node in nodes.index:
                 results[id_node] = {
-                    "model": nodeInfo[id_node]["model"],
-                    "type": nodeInfo[id_node]["type"],
-                    "watt": nodes.loc[id_node].time_service * nodeInfo[id_node]["WATT"],
+                    "model": topology.G.nodes[id_node]["model"],
+                    "type": topology.G.nodes[id_node]["type"],
+                    "watt": nodes.loc[id_node].time_service * topology.G.nodes[id_node]["WATT"],
                 }
         else:
-            for node_key in nodeInfo:
-                if not nodeInfo[node_key]["uptime"][1]:
+            for node_key in topology.G.nodes:
+                if not topology.G.nodes[node_key]["uptime"][1]:
                     end = totaltime
-                start = nodeInfo[node_key]["uptime"][0]
-                uptime = end - start
+                start = topology.G.nodes[node_key]["uptime"][0]
+                uptime = end - start  # TODO end may be undefined
                 results[node_key] = {
-                    "model": nodeInfo[node_key]["model"],
-                    "type": nodeInfo[node_key]["type"],
-                    "watt": uptime * nodeInfo[node_key]["WATT"],
+                    "model": topology.G.nodes[node_key]["model"],
+                    "type": topology.G.nodes[node_key]["type"],
+                    "watt": uptime * topology.G.nodes[node_key]["WATT"],
                     "uptime": uptime,
                 }
 
@@ -165,3 +164,11 @@ class Stats:
         h["module"] = g[g.module == service].module
         h["utilization"] = g[g.module == service]["service"]["sum"] * 100 / time
         return h
+
+
+def _load_csv(path: str) -> pd.DataFrame:
+    df = pd.read_csv(path)
+    if df.empty:
+        raise ValueError(f"Cannot analyze results: \"{path}\" is empty")
+    else:
+        return df
