@@ -88,7 +88,7 @@ def __add_mobile_agent(self, ides, gme):
 
     yield self.env.timeout(gme.start)
     self.logger.info("(#DES:%i)\t--- Mobile Entity STARTS :\t%s " % (ides, gme._id))
-    while (len(gme.path) - 1 > gme.current_position) and not self.stop and self.des_process_running[ides]:
+    while (len(gme.path) - 1 > gme.current_position) and self.des_process_running[ides]:
         e = (gme.path[gme.current_position], gme.path[gme.current_position + 1])
         data = self.street_network.get_edge_data(*e)
         try:
@@ -108,7 +108,7 @@ def __add_mobile_agent(self, ides, gme):
         gme.current_position += 1
 
     # Last movement
-    if self.des_process_running[ides] and not self.stop:
+    if self.des_process_running[ides]:
         gme.do.action(gme)
 
     self.logger.info("(#DES:%i)\t--- Mobile Entity ENDS :\t%s " % (ides, gme._id))

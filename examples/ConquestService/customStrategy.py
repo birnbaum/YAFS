@@ -17,27 +17,6 @@ class CustomStrategy:
         services = app.services
         idDES = sim.deploy_module(app_name, service, services[service], [idtopo])
 
-    ### FUNCTION MOVED TO core.py
-
-    # def remove_module(self, sim, service_name, idtopo):
-    #
-    #     sim.print_debug_assignaments()
-    #
-    #     app_name = service_name[0:service_name.index("_")]
-    #     # Stopping related processes deployed in the module and clearing main structure: alloc_DES
-    #     all_des = []
-    #     for k, v in sim.alloc_DES.items():
-    #         if v == idtopo:
-    #             all_des.append(k)
-    #
-    #     # Clearing other related structures
-    #     for des in sim.alloc_module[app_name][service_name]:
-    #         if des in all_des:
-    #               print "REMOVE PROCESS ", des
-    #               sim.alloc_module[app_name][service_name].remove(des)
-    #               sim.stop_process(des)
-    #               del sim.alloc_DES[des]
-
     def is_already_deployed(self, sim, service_name, idtopo):
         app_name = service_name[0 : service_name.index("_")]
 

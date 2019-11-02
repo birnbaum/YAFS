@@ -48,8 +48,6 @@ class Simulation:
         self.__idMessage = 0  # Unique identifier for each message
         self.network_pump = 0  # Shared resource that controls the exchange of messages in the topology
 
-        self.stop = False  # Any algorithm can stop internally the simulation putting these value to True. By default is False.
-
         self.applications = {}
 
         self.metrics = Metrics(default_results_path=default_results_path)
@@ -177,7 +175,7 @@ class Simulation:
         """
         self.last_busy_time = {}  # dict(zip(edges, [0.0] * len(edges)))
 
-        while not self.stop:
+        while True:
             message = yield self.network_ctrl_pipe.get()
 
             # If same SRC and PATH or the message has achieved the penultimate node to reach the dst
@@ -284,7 +282,7 @@ class Simulation:
         self.des_control_process[placement.name] = myId
 
         logger.debug("Added_Process - Placement Algorithm\t#DES:%i" % myId)
-        while not self.stop and self.des_process_running[myId]:
+        while True and self.des_process_running[myId]:
             yield self.env.timeout(placement.get_next_activation())
             placement.run(self)
             logger.debug("(DES:%i) %7.4f Run - Placement Policy: %s " % (myId, self.env.now, self.stop))  # Rewrite
@@ -299,7 +297,7 @@ class Simulation:
         self.des_control_process[population.name] = myId
 
         logger.debug("Added_Process - Population Algorithm\t#DES:%i" % myId)
-        while not self.stop and self.des_process_running[myId]:
+        while True and self.des_process_running[myId]:
             yield self.env.timeout(population.get_next_activation())
             logger.debug("(DES:%i) %7.4f Run - Population Policy: %s " % (myId, self.env.now, self.stop))  # REWRITE
             population.run(self)
@@ -314,7 +312,7 @@ class Simulation:
         A DES-process who controls the invocation of several Pure Source Modules
         """
         logger.debug("Added_Process - Module Pure Source\t#DES:%i" % idDES)
-        while not self.stop and self.des_process_running[idDES]:
+        while True and self.des_process_running[idDES]:
             nextTime = next(distribution)
             yield self.env.timeout(nextTime)
             if self.des_process_running[idDES]:
@@ -437,7 +435,7 @@ class Simulation:
     def __add_up_node_process(self, next_event, **param):
         myId = self._get_id_process()
         logger.debug("Added_Process - UP entity Creation\t#DES:%i" % myId)
-        while not self.stop:
+        while True:
             # TODO Define function to ADD a new NODE in topology
             yield self.env.timeout(next_event(**param))
             logger.debug("(DES:%i) %7.4f Node " % (myId, self.env.now))
@@ -451,7 +449,7 @@ class Simulation:
         myId = self._get_id_process()
         self.des_process_running[myId] = True
         logger.debug("Added_Process - Down entity Creation\t#DES:%i" % myId)
-        while not self.stop and self.des_process_running[myId]:
+        while self.des_process_running[myId]:
             yield self.env.timeout(next_event(**param))
             logger.debug("(DES:%i) %7.4f Node " % (myId, self.env.now))
 
@@ -462,7 +460,7 @@ class Simulation:
         It generates a DES process associated to a compute module for the generation of messages
         """
         logger.debug("Added_Process - Module Source: %s\t#DES:%i" % (module, idDES))
-        while (not self.stop) and self.des_process_running[idDES]:
+        while self.des_process_running[idDES]:
             yield self.env.timeout(next(distribution))
             if self.des_process_running[idDES]:
                 logger.debug("(App:%s#DES:%i#%s)\tModule - Generating Message:\t%s" % (app_name, idDES, module, message.name))
@@ -477,7 +475,7 @@ class Simulation:
         It generates a DES process associated to a compute module
         """
         logger.debug("Added_Process - Module Consumer: %s\t#DES:%i" % (module, ides))
-        while not self.stop and self.des_process_running[ides]:
+        while self.des_process_running[ides]:
             if self.des_process_running[ides]:
                 msg = yield self.consumer_pipes["%s%s%i" % (app_name, module, ides)].get()
                 # One pipe for each module name
@@ -572,7 +570,7 @@ class Simulation:
         It generates a DES process associated to a SINK module
         """
         logger.debug("Added_Process - Module Pure Sink: %s\t#DES:%i" % (module, ides))
-        while not self.stop and self.des_process_running[ides]:
+        while True and self.des_process_running[ides]:
             msg = yield self.consumer_pipes["%s%s%i" % (app_name, module, ides)].get()
             """
             Processing the message
@@ -590,7 +588,7 @@ class Simulation:
         """
         myId = self._get_id_process()
         logger.debug("Added_Process - Internal Monitor: %s\t#DES:%i" % (name, myId))
-        while not self.stop:
+        while True:
             yield self.env.timeout(next(distribution))
             function(**param)
         logger.debug("STOP_Process - Internal Monitor: %s\t#DES:%i" % (name, myId))
@@ -905,7 +903,7 @@ class Simulation:
         """Runs the simulation
 
         Args:
-            until: Defines a stop time. If None the simulation runs until some internal algorithm changes the var *yafs.core.sim.stop* to True
+            until: Defines a stop time
             test_initial_deploy  # TODO
             progress_bar  # TODO
         """
@@ -919,16 +917,13 @@ class Simulation:
         # Creating initial deploy of services
         for place in self.placement_policy.values():
             for app_name in place["apps"]:
-
                 print("APP_NAME ", app_name)
                 place["placement_policy"].initial_allocation(self, app_name)  # internally consideres the apps in charge
-
-        # TODO How to remove self.stop?
 
         self.print_debug_assignaments()
 
         if not test_initial_deploy:
             for i in tqdm(range(1, until), total=until, disable=(not progress_bar)):
-                self.env.run(until=i)  # This does not stop the simpy.simulation at time. We have to force the stop
+                self.env.run(until=i)
 
         self.metrics.close()

@@ -60,13 +60,11 @@ class BroadPath(Selection):
         except nx.NetworkXNoPath as e:
             self.logger.warning("There is no path between two nodes: %s - %s " % (node_src, node_dst))
             print("Simulation ends?. Time:", sim.env.now)
-            # sim.stop = True ## You can stop all DES process
             return [], None
 
         except nx.NodeNotFound as e:
             self.logger.warning("Node not found: %s - %s " % (node_src, node_dst))
             print("Simulation ends?. Time:", sim.env.now)
-            # sim.stop = True ## You can stop all DES process
             return [], None
 
     def get_path(self, sim, app_name, message, topology_src, alloc_DES, alloc_module, traffic, from_des):
