@@ -68,16 +68,14 @@ class OneRandomPathSelection(Selection):
 
     def get_path(self, sim, app_name, message, topology_src, alloc_DES, alloc_module, traffic, from_des):
         paths = []
-        dst_idDES = []
         src_node = topology_src
-        DES = alloc_module[message.app_name][message.dst]
-        for idDES in DES:
-            dst_node = alloc_module[idDES]
+        process_ids = alloc_module[message.app_name][message.dst]
+        for process_id in process_ids:
+            dst_node = alloc_module[process_id]
             pathX = list(nx.all_simple_paths(sim.topology.G, source=src_node, target=dst_node))
             one = random.randint(0, len(pathX) - 1)
             paths.append(pathX[one])
-            dst_idDES.append(idDES)
-        return paths, dst_idDES
+        return paths, process_ids
 
 
 class FirstShortestPathSelection(Selection):  # MinimunPath??

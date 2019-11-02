@@ -34,15 +34,15 @@ class CloudPlacement(Placement):
                 if "Coordinator" in list(self.scaleServices.keys()):
                     # print self.scaleServices["Coordinator"]
                     for rep in range(0, self.scaleServices["Coordinator"]):
-                        idDES = simulation.deploy_module(app_name, module, services[module], id_cluster)  # Deploy as many modules as elements in the array
+                        process_id = simulation.deploy_module(app_name, module, services[module], id_cluster)  # Deploy as many modules as elements in the array
 
             elif "Calculator" == module:
                 if "Calculator" in list(self.scaleServices.keys()):
                     for rep in range(0, self.scaleServices["Calculator"]):
-                        idDES = simulation.deploy_module(app_name, module, services[module], id_cluster)
+                        process_id = simulation.deploy_module(app_name, module, services[module], id_cluster)
 
             elif "Client" == module:
-                idDES = simulation.deploy_module(app_name, module, services[module], id_mobiles)
+                process_id = simulation.deploy_module(app_name, module, services[module], id_mobiles)
 
     # end function
 
@@ -74,10 +74,10 @@ class FogPlacement(Placement):
             if "Coordinator" == module:
                 if "Coordinator" in list(self.scaleServices.keys()):
                     for rep in range(0, self.scaleServices["Coordinator"]):
-                        idDES = simulation.deploy_module(app_name, module, services[module], id_cluster)  # Deploy as many modules as elements in the array
+                        process_id = simulation.deploy_module(app_name, module, services[module], id_cluster)  # Deploy as many modules as elements in the array
             elif "Calculator" == module:
                 if "Calculator" in list(self.scaleServices.keys()):
                     for rep in range(0, self.scaleServices["Calculator"]):
-                        idDES = simulation.deploy_module(app_name, module, services[module], id_proxies)
+                        process_id = simulation.deploy_module(app_name, module, services[module], id_proxies)
             elif "Client" == module:
-                idDES = simulation.deploy_module(app_name, module, services[module], id_mobiles)
+                process_id = simulation.deploy_module(app_name, module, services[module], id_mobiles)

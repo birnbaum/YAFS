@@ -30,4 +30,4 @@ class JSONPlacementOnlyCloud(Placement):
                 app = sim.apps[app_name]
                 services = app.services
                 # print services[module]
-                idDES = sim.deploy_module(app_name, module, services[module], [idtopo])
+                process_id = sim.deploy_module(app_name, module, services[module], [idtopo])

@@ -151,7 +151,7 @@ def get_random_node(G):
 # =============================================================================
 # INTERNAL FUNCTION OF YAFS-CORE
 # =============================================================================
-def __add_mobile_agent(idDES, gme, G):
+def __add_mobile_agent(process_id, gme, G):
     yield env.timeout(gme.start)
     while len(gme.path) - 1 > gme.current_position:
         e = (gme.path[gme.current_position], gme.path[gme.current_position + 1])

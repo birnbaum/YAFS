@@ -58,7 +58,7 @@ class JSONPlacement(Placement):  # TODO The placement should not care how it was
 
                 app = simulation.apps[app_name]
                 services = app.services
-                idDES = simulation.deploy_module(app_name, module, services[module], [idtopo])  # TODO unused variable
+                process_id = simulation.deploy_module(app_name, module, services[module], [idtopo])  # TODO unused variable
 
 
 class CloudPlacement(Placement):
@@ -75,7 +75,7 @@ class CloudPlacement(Placement):
         for module in services:
             if module in self.scaleServices:
                 for rep in range(0, self.scaleServices[module]):
-                    idDES = simulation.deploy_module(app_name, module, services[module], id_cluster)
+                    process_id = simulation.deploy_module(app_name, module, services[module], id_cluster)
 
 
 class ClusterPlacement(Placement):
@@ -99,15 +99,15 @@ class ClusterPlacement(Placement):
                     # print self.scaleServices["Coordinator"]
                     for rep in range(0, self.scaleServices["Coordinator"]):
                         # Deploy as many modules as elements in the array
-                        idDES = simulation.deploy_module(app_name, module, services[module], id_cluster)  # TODO unused variable
+                        process_id = simulation.deploy_module(app_name, module, services[module], id_cluster)  # TODO unused variable
 
             elif "Calculator" == module:
                 if "Calculator" in list(self.scaleServices.keys()):
                     for rep in range(0, self.scaleServices["Calculator"]):
-                        idDES = simulation.deploy_module(app_name, module, services[module], id_cluster)  # TODO unused variable
+                        process_id = simulation.deploy_module(app_name, module, services[module], id_cluster)  # TODO unused variable
 
             elif "Client" == module:
-                idDES = simulation.deploy_module(app_name, module, services[module], id_mobiles)  # TODO unused variable
+                process_id = simulation.deploy_module(app_name, module, services[module], id_mobiles)  # TODO unused variable
 
 
 class EdgePlacement(Placement):
@@ -129,8 +129,8 @@ class EdgePlacement(Placement):
         for module in list(services.keys()):
             if "Coordinator" == module:
                 # Deploy as many modules as elements in the array
-                idDES = simulation.deploy_module(app_name, module, services[module], id_cluster)  # TODO Unused variable
+                process_id = simulation.deploy_module(app_name, module, services[module], id_cluster)  # TODO Unused variable
             elif "Calculator" == module:
-                idDES = simulation.deploy_module(app_name, module, services[module], id_proxies)  # TODO Unused variable
+                process_id = simulation.deploy_module(app_name, module, services[module], id_proxies)  # TODO Unused variable
             elif "Client" == module:
-                idDES = simulation.deploy_module(app_name, module, services[module], id_mobiles)  # TODO Unused variable
+                process_id = simulation.deploy_module(app_name, module, services[module], id_mobiles)  # TODO Unused variable

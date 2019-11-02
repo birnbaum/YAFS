@@ -42,10 +42,11 @@ class Simulation:
         self.topology = topology
 
         self.env = simpy.Environment()  # discrete-event simulator (aka DES)
+        self.env.process(self._network_process())
         self.network_ctrl_pipe = simpy.Store(self.env)
 
-        self.__idProcess = -1  # Unique identifier for each process in the DES
-        self.__idMessage = 0  # Unique identifier for each message
+        self._process_id = -1  # Unique identifier for each process in the DES  # TODO Why -1 ??
+        self._message_id = 0  # Unique identifier for each message
         self.network_pump = 0  # Shared resource that controls the exchange of messages in the topology
 
         self.applications = {}
@@ -80,7 +81,7 @@ class Simulation:
         self.alloc_source = {}
 
         # Queues for each message
-        # App+module+idDES -> pipe
+        # App+module+process_id -> pipe
         self.consumer_pipes = {}
 
         """Represents the deployment of a module in a DES PROCESS each DES has a one topology.node.id (see alloc_des var.)
@@ -109,9 +110,17 @@ class Simulation:
         # This variable control the lag of each busy network links. It avoids the generation of a DES-process for each link
         # edge -> last_use_channel (float) = Simulation time
         self.last_busy_time = {}  # must be updated with up/down nodes
+        
+    def _next_process_id(self) -> int:
+        self._process_id += 1
+        return self._process_id
+
+    def _next_message_id(self):
+        self._message_id += 1
+        return self._message_id
 
     def deploy_node_failure_generator(self, nodes: List[int], distribution: Distribution, logfile: Optional[str] = None) -> None:
-        logger.debug(f"Adding Process: Node Failure Generator <nodes={nodes}, distribution={distribution}>")
+        logger.debug(f"Adding Process: Node Failure Generator (DES:{self._next_process_id()}) <nodes={nodes}, distribution={distribution}>")
         self.env.process(self._node_failure_generator(nodes, distribution, logfile))
 
     def _node_failure_generator(self, nodes: List[int], distribution: Distribution, logfile: Optional[str] = None):
@@ -128,7 +137,7 @@ class Simulation:
                 logger.debug("\tStopping DES process: %s\n\n" % process)
                 self.stop_process(process)
 
-    def __send_message(self, app_name: str, message: Message, idDES, type):
+    def __send_message(self, app_name: str, message: Message, process_id, type):
         """
         Any exchange of messages between modules is done with this function and updates the metrics when the message achieves the destination module
 
@@ -136,7 +145,7 @@ class Simulation:
             app_name (string)º
             message: (:mod:`Message`)
 
-            idDES TODO ???
+            process_id TODO ???
             type TODO ???
 
         Kwargs:
@@ -144,30 +153,30 @@ class Simulation:
         """
         # TODO IMPROVE asignation of topo = alloc_DES(IdDES) , It has to move to the get_path process
         try:
-            paths, DES_dst = self.selector_path[app_name].get_path(
-                self, app_name, message, self.alloc_DES[idDES], self.alloc_DES, self.alloc_module, self.last_busy_time, from_des=idDES
+            paths, dst_process_id = self.selector_path[app_name].get_path(
+                self, app_name, message, self.alloc_DES[process_id], self.alloc_DES, self.alloc_module, self.last_busy_time, from_des=process_id
             )
 
-            if DES_dst == [None] or DES_dst == [[]]:
-                logger.warning("(#DES:%i)\t--- Unreacheable DST:\t%s: PATH:%s " % (idDES, message.name, paths))
+            if dst_process_id == [None] or dst_process_id == [[]]:
+                logger.warning("(#DES:%i)\t--- Unreacheable DST:\t%s: PATH:%s " % (process_id, message.name, paths))
                 logger.debug("From __send_message function: ")
                 logger.debug("NODES (%i)" % len(self.topology.G.nodes()))
 
             else:
-                logger.debug("(#DES:%i)\t--- SENDING Message:\t%s: PATH:%s  DES:%s" % (idDES, message.name, paths, DES_dst))
+                logger.debug("(#DES:%i)\t--- SENDING Message:\t%s: PATH:%s  DES:%s" % (process_id, message.name, paths, dst_process_id))
 
                 # May be, the selector of path decides broadcasting multiples paths
                 for idx, path in enumerate(paths):
                     msg = copy.copy(message)
                     msg.path = copy.copy(path)
                     msg.app_name = app_name
-                    msg.idDES = DES_dst[idx]
+                    msg.process_id = dst_process_id[idx]
 
                     self.network_ctrl_pipe.put(msg)
         except KeyError:
-            logger.warning("(#DES:%i)\t--- Unreacheable DST:\t%s " % (idDES, message.name))
+            logger.warning("(#DES:%i)\t--- Unreacheable DST:\t%s " % (process_id, message.name))
 
-    def __network_process(self):
+    def _network_process(self):
         """Internal DES-process who manages the latency of messages sent in the network.
 
         Performs the simulation of packages within the path between src and dst entities decided by the selection algorithm.
@@ -180,7 +189,7 @@ class Simulation:
 
             # If same SRC and PATH or the message has achieved the penultimate node to reach the dst
             if not message.path or message.path[-1] == message.dst_int or len(message.path) == 1:
-                pipe_id = "%s%s%i" % (message.app_name, message.dst, message.idDES)  # app_name + module_name (dst) + idDES
+                pipe_id = "%s%s%i" % (message.app_name, message.dst, message.process_id)  # app_name + module_name (dst) + process_id
                 # Timestamp reception message in the module
                 message.timestamp_rec = self.env.now
                 # The message is sent to the module.pipe
@@ -197,69 +206,59 @@ class Simulation:
                 link = (src_int, message.dst_int)
 
                 # Links in the topology are bidirectional: (a,b) == (b,a)
-                try:
-                    last_used = self.last_busy_time[link]
-                except KeyError:
-                    last_used = 0.0
-                    # self.last_busy_time[link] = last_used
+                last_used = self.last_busy_time.get(link, 0)
 
-                    # link = (message.dst_int, src_int)
-                    # last_used = self.last_busy_time[link]
-                """
-                Computing message latency
-                """
-                size_bits = message.size
-                # size_bits = message.bytes * 8
-                try:
-                    # transmit = size_bits / (self.topology.get_edge(link)[Topology.LINK_BW] * 1000000.0)  # MBITS!
-                    transmit = size_bits / (self.topology.G.edges[link][Topology.LINK_BW] * 1000000.0)  # MBITS!
-                    propagation = self.topology.G.edges[link][Topology.LINK_PR]
-                    latency_msg_link = transmit + propagation
+                # Computing message latency
+                transmit = message.size / (self.topology.G.edges[link][Topology.LINK_BW] * 1000000.0)  # MBITS!
+                propagation = self.topology.G.edges[link][Topology.LINK_PR]
+                latency_msg_link = transmit + propagation
+                logger.debug(f"Link: {link}; Latency: {latency_msg_link}")
 
-                    # print "-link: %s -- lat: %d" %(link,latency_msg_link)
+                # update link metrics
+                self.metrics.insert_link(
+                    {
+                        "id": message.id,
+                        "type": self.LINK_METRIC,
+                        "src": link[0],
+                        "dst": link[1],
+                        "app": message.app_name,
+                        "latency": latency_msg_link,
+                        "message": message.name,
+                        "ctime": self.env.now,
+                        "size": message.size,
+                        "buffer": self.network_pump,
+                        # "path":message.path
+                    }
+                )
 
-                    # update link metrics
-                    self.metrics.insert_link(
-                        {
-                            "id": message.id,
-                            "type": self.LINK_METRIC,
-                            "src": link[0],
-                            "dst": link[1],
-                            "app": message.app_name,
-                            "latency": latency_msg_link,
-                            "message": message.name,
-                            "ctime": self.env.now,
-                            "size": message.size,
-                            "buffer": self.network_pump,
-                        }
-                    )  # "path":message.path})
+                # We compute the future latency considering the current utilization of the link
+                if last_used < self.env.now:
+                    shift_time = 0.0
+                    last_used = latency_msg_link + self.env.now  # future arrival time
+                else:
+                    shift_time = last_used - self.env.now
+                    last_used = self.env.now + shift_time + latency_msg_link
 
-                    # We compute the future latency considering the current utilization of the link
-                    if last_used < self.env.now:
-                        shift_time = 0.0
-                        last_used = latency_msg_link + self.env.now  # future arrival time
-                    else:
-                        shift_time = last_used - self.env.now
-                        last_used = self.env.now + shift_time + latency_msg_link
+                self.last_busy_time[link] = last_used
+                self.env.process(self.__wait_message(message, latency_msg_link, shift_time))
 
-                    self.last_busy_time[link] = last_used
-                    self.env.process(self.__wait_message(message, latency_msg_link, shift_time))
-                except:  # TODO Too broad exception clause
-                    # This fact is produced when a node or edge the topology is changed or disappeared
-                    logger.warning("The initial path assigned is unreachabled. Link: (%i,%i). Routing a new one. %i" % (link[0], link[1], self.env.now))
-
-                    paths, DES_dst = self.selector_path[message.app_name].get_path_from_failure(
-                        self, message, link, self.alloc_DES, self.alloc_module, self.last_busy_time, self.env.now, from_des=message.idDES
-                    )
-
-                    if DES_dst == [] and paths == []:
-                        # Message communication ending: The message have arrived to the destination node but it is unavailable.
-                        logger.debug("\t No path given. Message is lost")
-                    else:
-                        message.path = copy.copy(paths[0])
-                        message.idDES = DES_dst[0]
-                        logger.debug("(\t New path given. Message is enrouting again.")
-                        self.network_ctrl_pipe.put(message)
+                # TODO Temporarily commented out, needs refactoring
+                # except:  # TODO Too broad exception clause
+                #     # This fact is produced when a node or edge the topology is changed or disappeared
+                #     logger.warning("The initial path assigned is unreachabled. Link: (%i,%i). Routing a new one. %i" % (link[0], link[1], self.env.now))
+                #
+                #     paths, DES_dst = self.selector_path[message.app_name].get_path_from_failure(
+                #         self, message, link, self.alloc_DES, self.alloc_module, self.last_busy_time, self.env.now, from_des=message.process_id
+                #     )
+                #
+                #     if DES_dst == [] and paths == []:
+                #         # Message communication ending: The message have arrived to the destination node but it is unavailable.
+                #         logger.debug("\t No path given. Message is lost")
+                #     else:
+                #         message.path = copy.copy(paths[0])
+                #         message.process_id = DES_dst[0]
+                #         logger.debug("(\t New path given. Message is enrouting again.")
+                #         self.network_ctrl_pipe.put(message)
 
     def __wait_message(self, msg, latency, shift_time):
         """Simulates the transfer behavior of a message on a link"""
@@ -268,63 +267,54 @@ class Simulation:
         self.network_pump -= 1
         self.network_ctrl_pipe.put(msg)
 
-    def _get_id_process(self):
-        """Every DES-process has an unique identifier"""
-        self.__idProcess += 1
-        return self.__idProcess
-
-    def __add_placement_process(self, placement):
+    def _placement_process(self, placement):
         """
         A DES-process who controls the invocation of Placement.run
         """
-        myId = self._get_id_process()
-        self.des_process_running[myId] = True
-        self.des_control_process[placement.name] = myId
+        process_id = self._next_process_id()
+        self.des_process_running[process_id] = True
+        self.des_control_process[placement.name] = process_id
 
-        logger.debug("Added_Process - Placement Algorithm\t#DES:%i" % myId)
-        while True and self.des_process_running[myId]:
+        logger.debug("Added_Process - Placement Algorithm\t#DES:%i" % process_id)
+        while True and self.des_process_running[process_id]:
             yield self.env.timeout(placement.get_next_activation())
             placement.run(self)
-            logger.debug("(DES:%i) %7.4f Run - Placement Policy: %s " % (myId, self.env.now, self.stop))  # Rewrite
-        logger.debug("STOP_Process - Placement Algorithm\t#DES:%i" % myId)
+            logger.debug("(DES:%i) %7.4f Run - Placement Policy" % (process_id, self.env.now))  # Rewrite
+        logger.debug("STOP_Process - Placement Algorithm\t#DES:%i" % process_id)
 
-    def __add_population_process(self, population):
+    def _population_process(self, population):
         """
         A DES-process who controls the invocation of Population.run
         """
-        myId = self._get_id_process()
-        self.des_process_running[myId] = True
-        self.des_control_process[population.name] = myId
+        process_id = self._next_process_id()
+        self.des_process_running[process_id] = True
+        self.des_control_process[population.name] = process_id
 
-        logger.debug("Added_Process - Population Algorithm\t#DES:%i" % myId)
-        while True and self.des_process_running[myId]:
+        logger.debug("Added_Process - Population Algorithm\t#DES:%i" % process_id)
+        while True and self.des_process_running[process_id]:
             yield self.env.timeout(population.get_next_activation())
-            logger.debug("(DES:%i) %7.4f Run - Population Policy: %s " % (myId, self.env.now, self.stop))  # REWRITE
+            logger.debug("(DES:%i) %7.4f Run - Population Policy" % (process_id, self.env.now))  # REWRITE
             population.run(self)
-        logger.debug("STOP_Process - Population Algorithm\t#DES:%i" % myId)
+        logger.debug("STOP_Process - Population Algorithm\t#DES:%i" % process_id)
 
-    def __getIDMessage(self):
-        self.__idMessage += 1
-        return self.__idMessage
-
-    def __add_source_population(self, idDES, name_app, message, distribution):
+    def __add_source_population(self, process_id, name_app, message, distribution):
         """
         A DES-process who controls the invocation of several Pure Source Modules
         """
-        logger.debug("Added_Process - Module Pure Source\t#DES:%i" % idDES)
-        while True and self.des_process_running[idDES]:
+        logger.debug("Added_Process - Module Pure Source\t#DES:%i" % process_id)
+        while True and self.des_process_running[process_id]:
             nextTime = next(distribution)
             yield self.env.timeout(nextTime)
-            if self.des_process_running[idDES]:
-                logger.debug("(App:%s#DES:%i)\tModule - Generating Message: %s \t(T:%d)" % (name_app, idDES, message.name, self.env.now))
+            if self.des_process_running[process_id]:
+                logger.debug("(App:%s#DES:%i)\tModule - Generating Message: %s \t(T:%d)" % (name_app, process_id, message.name, self.env.now))
 
                 msg = copy.copy(message)
                 msg.timestamp = self.env.now
-                msg.id = self.__getIDMessage()
+                msg.id = self._next_message_id()
 
-                self.__send_message(name_app, msg, idDES, self.SOURCE_METRIC)
+                self.__send_message(name_app, msg, process_id, self.SOURCE_METRIC)
 
-        logger.debug("STOP_Process - Module Pure Source\t#DES:%i" % idDES)
+        logger.debug("STOP_Process - Module Pure Source\t#DES:%i" % process_id)
 
     def __update_node_metrics(self, app, module, message, des, type):
         try:
@@ -366,7 +356,7 @@ class Simulation:
             #        print "Message.path ",message.path #enrouting path
             #        print "Message src ",message.src #module source who send the request
             #        print "Message dst ",message.dst #module dst (the entity that RtR)
-            #        print "Message idDEs ",message.idDES #DES intermediate process that process the request
+            #        print "Message idDEs ",message.process_id #DES intermediate process that process the request
             #        print "TOPO.src ", message.path[0] #entity that RtR
             #        print "TOPO.dst ", int(self.alloc_DES[des]) #DES process that RtR
             #        print "time service ",time_service
@@ -433,42 +423,42 @@ class Simulation:
     """
 
     def __add_up_node_process(self, next_event, **param):
-        myId = self._get_id_process()
-        logger.debug("Added_Process - UP entity Creation\t#DES:%i" % myId)
+        process_id = self._next_process_id()
+        logger.debug("Added_Process - UP entity Creation\t#DES:%i" % process_id)
         while True:
             # TODO Define function to ADD a new NODE in topology
             yield self.env.timeout(next_event(**param))
-            logger.debug("(DES:%i) %7.4f Node " % (myId, self.env.now))
-        logger.debug("STOP_Process - UP entity Creation\t#DES%i" % myId)
+            logger.debug("(DES:%i) %7.4f Node " % (process_id, self.env.now))
+        logger.debug("STOP_Process - UP entity Creation\t#DES%i" % process_id)
 
     """
     MEJORAR - ASOCIAR UN PROCESO QUE LOS CONTROLES.
     """
 
     def __add_down_node_process(self, next_event, **param):
-        myId = self._get_id_process()
-        self.des_process_running[myId] = True
-        logger.debug("Added_Process - Down entity Creation\t#DES:%i" % myId)
-        while self.des_process_running[myId]:
+        process_id = self._next_process_id()
+        self.des_process_running[process_id] = True
+        logger.debug("Added_Process - Down entity Creation\t#DES:%i" % process_id)
+        while self.des_process_running[process_id]:
             yield self.env.timeout(next_event(**param))
-            logger.debug("(DES:%i) %7.4f Node " % (myId, self.env.now))
+            logger.debug("(DES:%i) %7.4f Node " % (process_id, self.env.now))
 
-        logger.debug("STOP_Process - Down entity Creation\t#DES%i" % myId)
+        logger.debug("STOP_Process - Down entity Creation\t#DES%i" % process_id)
 
-    def __add_source_module(self, idDES, app_name, module, message, distribution, **param):
+    def __add_source_module(self, process_id, app_name, module, message, distribution, **param):
         """
         It generates a DES process associated to a compute module for the generation of messages
         """
-        logger.debug("Added_Process - Module Source: %s\t#DES:%i" % (module, idDES))
-        while self.des_process_running[idDES]:
+        logger.debug("Added_Process - Module Source: %s\t#DES:%i" % (module, process_id))
+        while self.des_process_running[process_id]:
             yield self.env.timeout(next(distribution))
-            if self.des_process_running[idDES]:
-                logger.debug("(App:%s#DES:%i#%s)\tModule - Generating Message:\t%s" % (app_name, idDES, module, message.name))
+            if self.des_process_running[process_id]:
+                logger.debug("(App:%s#DES:%i#%s)\tModule - Generating Message:\t%s" % (app_name, process_id, module, message.name))
                 msg = copy.copy(message)
                 msg.timestamp = self.env.now
-                self.__send_message(app_name, msg, idDES, self.SOURCE_METRIC)
+                self.__send_message(app_name, msg, process_id, self.SOURCE_METRIC)
 
-        logger.debug("STOP_Process - Module Source: %s\t#DES:%i" % (module, idDES))
+        logger.debug("STOP_Process - Module Source: %s\t#DES:%i" % (module, process_id))
 
     def __add_consumer_module(self, ides, app_name, module, register_consumer_msg):
         """
@@ -586,17 +576,17 @@ class Simulation:
         """
         Add a DES process for user purpose
         """
-        myId = self._get_id_process()
-        logger.debug("Added_Process - Internal Monitor: %s\t#DES:%i" % (name, myId))
+        process_id = self._next_process_id()
+        logger.debug("Added_Process - Internal Monitor: %s\t#DES:%i" % (name, process_id))
         while True:
             yield self.env.timeout(next(distribution))
             function(**param)
-        logger.debug("STOP_Process - Internal Monitor: %s\t#DES:%i" % (name, myId))
+        logger.debug("STOP_Process - Internal Monitor: %s\t#DES:%i" % (name, process_id))
 
-    def __add_consumer_service_pipe(self, app_name, module, idDES):
-        logger.debug("Creating PIPE: %s%s%i " % (app_name, module, idDES))
+    def __add_consumer_service_pipe(self, app_name, module, process_id):
+        logger.debug("Creating PIPE: %s%s%i " % (app_name, module, process_id))
 
-        self.consumer_pipes["%s%s%i" % (app_name, module, idDES)] = simpy.Store(self.env)
+        self.consumer_pipes["%s%s%i" % (app_name, module, process_id)] = simpy.Store(self.env)
 
     def get_DES(self, name):
         return self.des_control_process[name]
@@ -639,12 +629,12 @@ class Simulation:
         Returns:
             Process id
         """
-        idDES = self._get_id_process()
-        self.des_process_running[idDES] = True
-        self.env.process(self.__add_source_population(idDES, app_name, msg, distribution))
-        self.alloc_DES[idDES] = id_node
-        self.alloc_source[idDES] = {"id": id_node, "app": app_name, "module": msg.src, "name": msg.name}
-        return idDES
+        process_id = self._next_process_id()
+        self.des_process_running[process_id] = True
+        self.env.process(self.__add_source_population(process_id, app_name, msg, distribution))
+        self.alloc_DES[process_id] = id_node
+        self.alloc_source[process_id] = {"id": id_node, "app": app_name, "module": msg.src, "name": msg.name}
+        return process_id
 
     def __deploy_source_module(self, app_name: str, module, id_node: int, msg, distribution) -> int:
         """Add a DES process for deploy  source modules
@@ -663,11 +653,11 @@ class Simulation:
         Returns:
             Process id
         """
-        idDES = self._get_id_process()
-        self.des_process_running[idDES] = True
-        self.env.process(self.__add_source_module(idDES, app_name, module, msg, distribution))
-        self.alloc_DES[idDES] = id_node
-        return idDES
+        process_id = self._next_process_id()
+        self.des_process_running[process_id] = True
+        self.env.process(self.__add_source_module(process_id, app_name, module, msg, distribution))
+        self.alloc_DES[process_id] = id_node
+        return process_id
 
     def __deploy_module(self, app_name: str, module: str, id_node: int, register_consumer_msg: str) -> int:
         """Add a DES process for deploy  modules
@@ -685,18 +675,18 @@ class Simulation:
         Returns:
             Process id
         """
-        idDES = self._get_id_process()
-        self.des_process_running[idDES] = True
-        self.env.process(self.__add_consumer_module(idDES, app_name, module, register_consumer_msg))
+        process_id = self._next_process_id()
+        self.des_process_running[process_id] = True
+        self.env.process(self.__add_consumer_module(process_id, app_name, module, register_consumer_msg))
         # To generate the QUEUE of a SERVICE module
-        self.__add_consumer_service_pipe(app_name, module, idDES)
+        self.__add_consumer_service_pipe(app_name, module, process_id)
 
-        self.alloc_DES[idDES] = id_node
+        self.alloc_DES[process_id] = id_node
         if module not in self.alloc_module[app_name]:
             self.alloc_module[app_name][module] = []
-        self.alloc_module[app_name][module].append(idDES)
+        self.alloc_module[app_name][module].append(process_id)
 
-        return idDES
+        return process_id
 
     def deploy_sink(self, app_name: str, node: int, module: str):
         """Add a DES process to deploy pure SINK modules (actuators).
@@ -708,16 +698,16 @@ class Simulation:
             node: entity.id of the topology who will create the messages
             module: module
         """
-        idDES = self._get_id_process()
-        self.des_process_running[idDES] = True
-        self.alloc_DES[idDES] = node
-        self.__add_consumer_service_pipe(app_name, module, idDES)
+        process_id = self._next_process_id()
+        self.des_process_running[process_id] = True
+        self.alloc_DES[process_id] = node
+        self.__add_consumer_service_pipe(app_name, module, process_id)
         # Update the relathionships among module-entity
         if app_name in self.alloc_module:
             if module not in self.alloc_module[app_name]:
                 self.alloc_module[app_name][module] = []
-        self.alloc_module[app_name][module].append(idDES)
-        self.env.process(self.__add_sink_module(idDES, app_name, module))
+        self.alloc_module[app_name][module].append(process_id)
+        self.env.process(self.__add_sink_module(process_id, app_name, module))
 
     def stop_process(self, id: int):  # TODO Use SimPy functionality for this
         """All pure source modules (sensors) are controlled by this boolean.
@@ -746,14 +736,14 @@ class Simulation:
         if placement.name not in list(self.placement_policy.keys()):  # First Time
             self.placement_policy[placement.name] = {"placement_policy": placement, "apps": []}
             if placement.activation_dist is not None:
-                self.env.process(self.__add_placement_process(placement))
+                self.env.process(self._placement_process(placement))
         self.placement_policy[placement.name]["apps"].append(app.name)
 
         # Add Population control to the App
         if population.name not in list(self.population_policy.keys()):  # First Time
             self.population_policy[population.name] = {"population_policy": population, "apps": []}
             if population.activation_dist is not None:
-                self.env.process(self.__add_population_process(population))
+                self.env.process(self._population_process(population))
         self.population_policy[population.name]["apps"].append(app.name)
 
         # Add Selection control to the App
@@ -776,8 +766,8 @@ class Simulation:
         for app in self.alloc_module:
             for module in self.alloc_module[app]:
                 # print "Module (MOD): %s(%s) - deployed at entities.id: %s" % (module,app,self.alloc_module[app][module])
-                for idDES in self.alloc_module[app][module]:
-                    alloc_entities[self.alloc_DES[idDES]].append(app + "#" + module)
+                for process_id in self.alloc_module[app][module]:
+                    alloc_entities[self.alloc_DES[process_id]].append(app + "#" + module)
 
         return alloc_entities
 
@@ -907,8 +897,6 @@ class Simulation:
             test_initial_deploy  # TODO
             progress_bar  # TODO
         """
-        self.env.process(self.__network_process())
-
         # Creating app.sources and deploy the sources in the topology
         for pop in self.population_policy.values():
             for app_name in pop["apps"]:

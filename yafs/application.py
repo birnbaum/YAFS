@@ -41,12 +41,12 @@ class Message:
         self.app_name = None  # TODO Remove this, Message should have no knowledge about application
         self.timestamp_rec = 0  # TODO ??
 
-        self.idDES = None  # TODO ??
+        self.process_id = None  # TODO ??
         self.last_idDes = []  # TODO ??
         self.id = -1  # TODO ??
 
     def __str__(self):
-        return f"Message {self.name} ({self.id}). From (src): {self.src}  to (dst): {self.dst}."
+        return f"Message {self.name} ({self.id}). From \"{self.src}\"  to \"{self.dst}\"."
 
 
 class Application:
