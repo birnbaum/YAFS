@@ -3,6 +3,7 @@
 import copy
 import logging
 from collections import Callable
+from typing import Optional, List
 
 import simpy
 from tqdm import tqdm
@@ -110,6 +111,24 @@ class Simulation:
         # This variable control the lag of each busy network links. It avoids the generation of a DES-process for each link
         # edge -> last_use_channel (float) = Simulation time
         self.last_busy_time = {}  # must be updated with up/down nodes
+
+    def deploy_node_failure_generator(self, nodes: List[int], distribution: Distribution, logfile: Optional[str] = None) -> None:
+        logger.debug(f"Adding Process: Node Failure Generator <nodes={nodes}, distribution={distribution}>")
+        self.env.process(self._node_failure_generator(nodes, distribution, logfile))
+
+    def _node_failure_generator(self, nodes: List[int], distribution: Distribution, logfile: Optional[str] = None):
+        """Controls the elimination of nodes"""
+        for node in nodes:
+            yield self.env.timeout(next(distribution))
+            processes = [k for k, v in self.alloc_DES.items() if v == node]  # A node can host multiples DES processes
+            if logfile:
+                with open(logfile, "a") as stream:
+                    stream.write("%i,%s,%d\n" % (node, len(processes), self.env.now))
+            logger.debug("\n\nRemoving node: %i, Total nodes: %i" % (node, len(self.topology.G)))
+            self.remove_node(node)
+            for process in processes:
+                logger.debug("\tStopping DES process: %s\n\n" % process)
+                self.stop_process(process)
 
     def __send_message(self, app_name: str, message: Message, idDES, type):
         """
@@ -702,7 +721,7 @@ class Simulation:
         self.alloc_module[app_name][module].append(idDES)
         self.env.process(self.__add_sink_module(idDES, app_name, module))
 
-    def stop_process(self, id: int):
+    def stop_process(self, id: int):  # TODO Use SimPy functionality for this
         """All pure source modules (sensors) are controlled by this boolean.
         Using this function (:mod:`Population`) algorithm can stop one source
 
@@ -711,7 +730,7 @@ class Simulation:
         """
         self.des_process_running[id] = False
 
-    def start_process(self, id: int):
+    def start_process(self, id: int):  # TODO Use SimPy functionality for this
         """All pure source modules (sensors) are controlled by this boolean.
         Using this function (:mod:`Population`) algorithm can start one source
 

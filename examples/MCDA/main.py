@@ -55,68 +55,6 @@ def create_applications_from_json(data):
     return applications
 
 
-###
-# Thanks to this function, the user can control about the elemination of the nodes according with the modules deployed (see also DynamicFailuresOnNodes example)
-###
-"""
-It returns the software modules (a list of identifiers of DES process) deployed on this node
-"""
-
-
-def getProcessFromThatNode(sim, node_to_remove):
-    if node_to_remove in list(sim.alloc_DES.values()):
-        DES = []
-        # This node can have multiples DES processes on itself
-        for k, v in list(sim.alloc_DES.items()):
-            if v == node_to_remove:
-                DES.append(k)
-        return DES, True
-    else:
-        return [], False
-
-
-"""
-It controls the elimination of a node
-"""
-
-
-def failureControl(sim, filelog, ids):
-    global idxFControl  # WARNING! This global variable has to be reset in each simulation test
-
-    nodes = list(sim.topology.G.nodes())
-    if len(nodes) > 1:
-        try:
-            node_to_remove = ids[idxFControl]
-            idxFControl += 1
-
-            keys_DES, someModuleDeployed = getProcessFromThatNode(sim, node_to_remove)
-
-            # print "\n\nRemoving node: %i, Total nodes: %i" % (node_to_remove, len(nodes))
-            # print "\tStopping some DES processes: %s\n\n"%keys_DES
-            filelog.write("%i,%s,%d\n" % (node_to_remove, someModuleDeployed, sim.env.now))
-
-            ##Print some information:
-            # for des in keys_DES:
-            #     if des in sim.alloc_source.keys():
-            #         print "Removing a Gtw/User entity\t"*4
-
-            sim.remove_node(node_to_remove)
-            for key in keys_DES:
-                sim.stop_process(key)
-        except IndexError:
-            None
-
-    else:
-        sim.stop = True  ## We stop the simulation
-
-
-# def loadTopology(pathGML):
-#     t = Topology()
-#     t.G = parser_ashiip.parse_ashiip(pathGML)
-#
-#     return t
-
-
 def main(simulated_time, path, pathResults, case, failuresON, it, idcloud):
     """
     TOPOLOGY from a json
@@ -161,23 +99,6 @@ def main(simulated_time, path, pathResults, case, failuresON, it, idcloud):
 
     stop_time = simulated_time
     s = Simulation(t, default_results_path=pathResults + "Results_%s_%i_%i" % (case, stop_time, it))
-
-    # """
-    # Failure process
-    # """
-    # if failuresON:
-    #     time_shift = 10000
-    #     distribution = deterministicDistributionStartPoint(name="Deterministic", time=time_shift, start=100)
-    #     failurefilelog = open(path + "Failure_%s_%i.csv" % (case, stop_time), "w")
-    #     failurefilelog.write("node, module, time\n")
-    #
-    #     # idCloud = t.find_IDs({"type": "CLOUD"})[0] #[0] -> In this study there is only one CLOUD DEVICE
-    #     # centrality = np.load(pathExperimento+"centrality.npy")
-    #     # s.deploy_monitor("Failure Generation", failureControl, distribution,sim=s,filelog=failurefilelog,ids=centrality)
-    #
-    #     randomValues = np.load(path + "random.npy")
-    #     s.deploy_monitor("Failure Generation", failureControl, distribution, sim=s, filelog=failurefilelog,
-    #                      ids=randomValues)
 
     # For each deployment the user - population have to contain only its specific sources
 
@@ -259,7 +180,6 @@ def main(simulated_time, path, pathResults, case, failuresON, it, idcloud):
     f.close()
 
 
-idxFControl = 0
 logging.config.fileConfig(os.getcwd() + "/logging.ini")
 if __name__ == "__main__":
 
@@ -278,10 +198,7 @@ if __name__ == "__main__":
     timeSimulation = 10000
     datestamp = time.strftime("%Y%m%d")
     dname = pathExperimento + "results_" + datestamp + "/"
-    try:
-        os.makedirs(dname)
-    except OSError:
-        None
+    os.makedirs(dname, exist_ok=True)
 
     # Multiple simulations
     for i in range(nSimulations):
@@ -291,7 +208,6 @@ if __name__ == "__main__":
         np.random.seed(i)
 
         logging.info("Running MCDA - ELECTRE - %s" % pathExperimento)
-        idxFControl = 0  # reset counter of failure nodes
 
         # Note: Some simulation parameters have to be defined inside of the main function
         # - Distribution lambdas
@@ -303,11 +219,9 @@ if __name__ == "__main__":
         np.random.seed(i)
 
         logging.info("Running WA - %s" % pathExperimento)
-        idxFControl = 0  # reset counter of failure nodes
         main(simulated_time=timeSimulation, path=pathExperimento, pathResults=dname, case="WA", failuresON=False, it=i, idcloud=153)
 
         print(("\n--- %s seconds ---" % (time.time() - start_time)))
-        start_time = time.time()
 
     print("Simulation Done")
 

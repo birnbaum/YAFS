@@ -7,8 +7,8 @@ import json
 import argparse
 from yafs.core import Simulation
 from yafs.application import Application, Message
-from yafs import Topology
-from yafs import JSONPlacement
+from yafs.topology import Topology
+from yafs.placement import JSONPlacement
 from yafs.distribution import *
 import numpy as np
 
@@ -55,57 +55,6 @@ def create_applications_from_json(data):
 
     # a.add_service_module("Client", m_egg, m_sensor, fractional_selectivity, threshold=0.9)
     return applications
-
-
-###
-# Thanks to this function, the user can control about the elemination of the nodes according with the modules deployed (see also DynamicFailuresOnNodes example)
-###
-"""
-It returns the software modules (a list of identifiers of DES process) deployed on this node
-"""
-
-
-def getProcessFromThatNode(sim, node_to_remove):
-    if node_to_remove in list(sim.alloc_DES.values()):
-        DES = []
-        # This node can have multiples DES processes on itself
-        for k, v in list(sim.alloc_DES.items()):
-            if v == node_to_remove:
-                DES.append(k)
-        return DES, True
-    else:
-        return [], False
-
-
-"""
-It controls the elimination of a node
-"""
-idxFControl = 0
-
-
-def failureControl(sim, filelog, ids):
-    global idxFControl
-    nodes = list(sim.topology.G.nodes())
-    if len(nodes) > 1:
-        node_to_remove = ids[idxFControl]
-        idxFControl += 1
-
-        keys_DES, someModuleDeployed = getProcessFromThatNode(sim, node_to_remove)
-
-        print("\n\nRemoving node: %i, Total nodes: %i" % (node_to_remove, len(nodes)))
-        print("\tStopping some DES processes: %s\n\n" % keys_DES)
-        filelog.write("%i,%s,%d\n" % (node_to_remove, someModuleDeployed, sim.env.now))
-
-        ##Print some information:
-        for des in keys_DES:
-            if des in list(sim.alloc_source.keys()):
-                print("Removing a Gtw/User entity\t" * 4)
-
-        sim.remove_node(node_to_remove)
-        for key in keys_DES:
-            sim.stop_process(key)
-    else:
-        sim.stop = True  ## We stop the simulation
 
 
 def main(simulated_time, experimento, file, study, it):
@@ -184,19 +133,6 @@ def main(simulated_time, experimento, file, study, it):
 
     stop_time = simulated_time
     s = Simulation(t, default_results_path=experimento + "Results_%i_%s_%s_%i" % (it, file, study, stop_time))
-
-    """
-    Failure process
-    """
-    # time_shift = 10000
-    # distribution = deterministicDistributionStartPoint(name="Deterministic", time=time_shift,start=10000)
-    # failurefilelog = open(experimento+"Failure_%s_%i.csv" % (ilpPath,stop_time),"w")
-    # failurefilelog.write("node, module, time\n")
-    # idCloud = t.find_IDs({"type": "CLOUD"})[0] #[0] -> In this study there is only one CLOUD DEVICE
-    # centrality = np.load(pathExperimento+"centrality.npy")
-    # randomValues = np.load(pathExperimento+"random.npy")
-    # # s.deploy_monitor("Failure Generation", failureControl, distribution,sim=s,filelog=failurefilelog,ids=centrality)
-    # s.deploy_monitor("Failure Generation", failureControl, distribution,sim=s,filelog=failurefilelog,ids=randomValues)
 
     # For each deployment the user - population have to contain only its specific sources
     for aName in list(apps.keys()):

@@ -5,22 +5,22 @@ This module is a generic class to introduce whatever kind of distribution in the
 # TODO Improve documentation
 
 import random
-import warnings
-from abc import ABC
+from abc import ABC, abstractmethod
 
 import numpy as np
 
 
-class Distribution(ABC):  # TODO This interface defines nothing??
-    """
-    Abstract class
-    """
+class Distribution(ABC):  # TODO This interface defines nothing??´
 
     def __init__(self, name):
         self.name = name
 
+    def __iter__(self):
+        return self
+
+    @abstractmethod
     def __next__(self):
-        None
+        pass
 
 
 class DeterministicDistribution(Distribution):
