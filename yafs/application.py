@@ -94,8 +94,7 @@ class Application:
         self.messages[msg.name] = msg
 
     def add_service_source(self, module_name: str, distribution: Callable = None, message: Message = None, module_dst: List = None, p: List = None):
-        """
-        Link to each non-pure module a management for creating messages
+        """Link to each non-pure module a management for creating messages
 
         Args:
             module_name: Module name
@@ -124,8 +123,7 @@ class Application:
         # TODO Is message_out of type Message or str?
         # TODO Fix mutable default arguments
         # MODULES/SERVICES: Definition of Generators and Consumers (AppEdges and TupleMappings in iFogSim)
-        """
-        Link to each non-pure module a management of transfering of messages
+        """Link to each non-pure module a management of transfering of messages
 
         Args:
             module_name: module name

@@ -2,6 +2,7 @@
 
 import copy
 import logging
+from collections import Callable
 
 import simpy
 from tqdm import tqdm
@@ -50,7 +51,6 @@ class Simulation:
 
         self.applications = {}
 
-        self.until = 0  # End time simulation
         self.metrics = Metrics(default_results_path=default_results_path)
 
         self.unreachabled_links = 0
@@ -565,19 +565,6 @@ class Simulation:
 
         logger.debug("STOP_Process - Module Pure Sink: %s\t#DES:%i" % (module, ides))
 
-    def __add_stop_monitor(self, name, function, distribution, show_progress_monitor, **param):
-        """
-        Add a DES process for Stop/Progress bar monitor
-        """
-        myId = self._get_id_process()
-        logger.debug("Added_Process - Internal Monitor: %s\t#DES:%i" % (name, myId))
-        if show_progress_monitor:
-            self.pbar = tqdm(total=self.until)
-        while not self.stop:
-            yield self.env.timeout(next(distribution))
-            function(show_progress_monitor, **param)
-        logger.debug("STOP_Process - Internal Monitor: %s\t#DES:%i" % (name, myId))
-
     def __add_monitor(self, name, function, distribution, **param):
         """
         Add a DES process for user purpose
@@ -594,37 +581,19 @@ class Simulation:
 
         self.consumer_pipes["%s%s%i" % (app_name, module, idDES)] = simpy.Store(self.env)
 
-    def __ctrl_progress_monitor(self, show_progress_monitor, time_shift):
-        """
-        The *simpy.run.until* function doesnot stop the execution until all pipes are empty.
-        We force the stop our DES process using *self.stop* boolean
-
-        """
-        if self.until:
-            if show_progress_monitor:
-                self.pbar.update(time_shift)
-            if self.env.now >= self.until:
-                self.stop = True
-                if show_progress_monitor:
-                    self.pbar.close()
-                logger.info("! Stop simulation at time: %f !" % self.env.now)
-
     def get_DES(self, name):
         return self.des_control_process[name]
 
-    def deploy_monitor(self, name, function, distribution, **param):
+    def deploy_monitor(self, name: str, function: Callable, distribution: Callable, **param):
         """Add a DES process for user purpose
 
         Args:
-            name (string) name of monitor
-
-            function (function): function that will be invoked within the simulator with the user's code
-
-            distribution (function): a temporary distribution function
+            name: name of monitor
+            function: function that will be invoked within the simulator with the user's code
+            distribution: a temporary distribution function
 
         Kwargs:
             param (dict): the parameters of the *distribution* function
-
         """
         self.env.process(self.__add_monitor(name, function, distribution, **param))
 
@@ -913,14 +882,13 @@ class Simulation:
             )
         print("-" * 40)
 
-    def run(self, until: int, test_initial_deploy: bool = False, show_progress_monitor: bool = True):
-        """
-        Start the simulation
+    def run(self, until: int, test_initial_deploy: bool = False, progress_bar: bool = True):
+        """Runs the simulation
 
         Args:
             until: Defines a stop time. If None the simulation runs until some internal algorithm changes the var *yafs.core.sim.stop* to True
             test_initial_deploy  # TODO
-            show_progress_monitor  # TODO
+            progress_bar  # TODO
         """
         self.env.process(self.__network_process())
 
@@ -936,20 +904,12 @@ class Simulation:
                 print("APP_NAME ", app_name)
                 place["placement_policy"].initial_allocation(self, app_name)  # internally consideres the apps in charge
 
-        """
-        A internal DES process will stop the simulation,
-        *Simpy.run.until* wait to all pipers are empty. So, hundreds of messages should be service... We force with the stop
-        """
-        time_shift = 200
-        distribution = DeterministicDistribution(name="SIM_Deterministic", time=time_shift)
-        self.env.process(
-            self.__add_stop_monitor("Stop_Control_Monitor", self.__ctrl_progress_monitor, distribution, show_progress_monitor, time_shift=time_shift)
-        )
+        # TODO How to remove self.stop?
 
         self.print_debug_assignaments()
 
-        self.until = until
         if not test_initial_deploy:
-            self.env.run(until=until)  # This does not stop the simpy.simulation at time. We have to force the stop
+            for i in tqdm(range(1, until), total=until, disable=(not progress_bar)):
+                self.env.run(until=i)  # This does not stop the simpy.simulation at time. We have to force the stop
 
         self.metrics.close()

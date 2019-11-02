@@ -99,10 +99,13 @@ class Stats:
 
         for id_node in nodes.index:
             if nodeInfo[id_node]["type"] == Entity.ENTITY_CLOUD:
-                results[id_node] = {"model": nodeInfo[id_node]["model"], "type": nodeInfo[id_node]["type"],
-                                    "watt": nodes.loc[id_node].time_service * nodeInfo[id_node]["WATT"]}
+                results[id_node] = {
+                    "model": nodeInfo[id_node]["model"],
+                    "type": nodeInfo[id_node]["type"],
+                    "watt": nodes.loc[id_node].time_service * nodeInfo[id_node]["WATT"],
+                }
                 cost += nodes.loc[id_node].time_service * nodeInfo[id_node]["COST"]
-        return cost,results
+        return cost, results
 
     def print_results(self, total_time, topology, time_loops=None):
         print(("\tSimulation Time: %0.2f" % total_time))
@@ -113,19 +116,19 @@ class Stats:
             for i, loop in enumerate(time_loops):
                 print(("\t\t%i - %s :\t %f" % (i, str(loop), results[i])))
 
-        #print("\tEnergy Consumed (WATTS by UpTime):")
-        #values = self.get_watt(total_time, topology, Metrics.WATT_UPTIME)
-        #for node in values:
+        # print("\tEnergy Consumed (WATTS by UpTime):")
+        # values = self.get_watt(total_time, topology, Metrics.WATT_UPTIME)
+        # for node in values:
         #    print(("\t\t%i - %s :\t %.2f" % (node, values[node]["model"], values[node]["watt"])))
 
-        #print("\tEnergy Consumed by Service (WATTS by Service Time):")
-        #values = self.get_watt(total_time, topology, Metrics.WATT_SERVICE)
-        #for node in values:
+        # print("\tEnergy Consumed by Service (WATTS by Service Time):")
+        # values = self.get_watt(total_time, topology, Metrics.WATT_SERVICE)
+        # for node in values:
         #    print(("\t\t%i - %s :\t %.2f" % (node, values[node]["model"], values[node]["watt"])))
 
-        #print("\tCost of execution in cloud:")
-        #total, values = self.get_cost_cloud(topology)
-        #print(("\t\t%.8f" % total))
+        # print("\tCost of execution in cloud:")
+        # total, values = self.get_cost_cloud(topology)
+        # print(("\t\t%.8f" % total))
 
         print("\tNetwork bytes transmitted:")
         print(("\t\t%.1f" % self.bytes_transmitted()))

@@ -283,7 +283,7 @@ def main():
             s.deploy_app(app, placement, pops[idx], selectorPath)
 
         s.run(
-            stop_time, test_initial_deploy=False, show_progress_monitor=False
+            stop_time, test_initial_deploy=False, progress_bar=False
         )  # In the internal code of iFogSim, that simulator runs by default until 10.000 units of time: In their case,it is until 10s
 
 

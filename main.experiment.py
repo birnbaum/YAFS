@@ -88,10 +88,9 @@ def main(simulated_time):
     population.set_src_control({"model": "sensor-device", "number": 1, "message": app.messages["M.A"],
                                 "distribution": DeterministicDistribution(name="Deterministic", time=100)})
 
-    stop_time = simulated_time
     s = Simulation(t, default_results_path="Results")
     s.deploy_app(app, placement=placement, population=population, selection=FirstShortestPathSelection())
-    s.run(stop_time, show_progress_monitor=False)
+    s.run(until=simulated_time)
     utils.draw_topology(t, s.get_alloc_entities())
 
     print("\n--- RESULTS ---")

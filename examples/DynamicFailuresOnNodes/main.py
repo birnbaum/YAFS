@@ -116,7 +116,7 @@ def main(simulated_time):
     s = Simulation(t, default_results_path="Results_%s_exp" % (simulated_time))
     s.deploy_app(app1, placement, pop, selectorPath)
 
-    s.run(simulated_time, test_initial_deploy=False, show_progress_monitor=False)
+    s.run(simulated_time, test_initial_deploy=False, progress_bar=False)
     # s.draw_allocated_topology() # for debugging
     print("Total nodes available in the  toopology %i" % len(s.topology.G.nodes()))
     print("Total edges available in the  toopology %i" % len(s.topology.G.edges()))

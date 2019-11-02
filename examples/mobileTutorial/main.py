@@ -209,7 +209,7 @@ def main(path, path_results, number_simulation_steps, tracks, topology, case, it
     RUNNING
     """
     logging.info(" Performing simulation: %s %i " % (case, it))
-    s.run(stop_time, test_initial_deploy=False, show_progress_monitor=False, mobile_behaviour=True)
+    s.run(stop_time, test_initial_deploy=False, progress_bar=False, mobile_behaviour=True)
 
     """
     Storing results from customized strategies

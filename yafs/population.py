@@ -1,6 +1,7 @@
 import logging
 from abc import ABC
 
+from yafs.distribution import Distribution
 
 logger = logging.getLogger(__name__)
 
@@ -17,24 +18,20 @@ class Population(ABC):
 
     Args:
         name: associated name
-        activation_dist (function): a distribution function to active the *run* function in execution time  # TODO What's the data type?
+        activation_dist: a distribution function to active the *run* function in execution time
 
     Kwargs:
         param (dict): the parameters of the *activation_dist*  # TODO ???
     """
 
-    def __init__(self, name: str, activation_dist=None):
+    def __init__(self, name: str, activation_dist: Distribution = None):
         self.name = name
         self.activation_dist = activation_dist
-
-        # self.id_process = -1
         self.src_control = []  # TODO Private or document
         self.sink_control = []  # TODO Private or document
 
     def set_sink_control(self, values):
-        """
-        localization of sink modules
-        """
+        """Localization of sink modules"""
         self.sink_control.append(values)
 
     def get_next_activation(self):

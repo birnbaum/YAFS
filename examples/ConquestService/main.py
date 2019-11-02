@@ -171,7 +171,7 @@ def main(simulated_time, path, pathResults, case, it):
     RUNNING
     """
     logging.info(" Performing simulation: %s %i " % (case, it))
-    s.run(stop_time, test_initial_deploy=False, show_progress_monitor=False)  # TEST to TRUE
+    s.run(stop_time, test_initial_deploy=False, progress_bar=False)  # TEST to TRUE
 
     """
     Storing results from other strategies

@@ -171,7 +171,7 @@ def main(simulated_time, experimento, ilpPath):
 
         s.deploy_app(apps[aName], placement, pop_app, selectorPath)
 
-    s.run(stop_time, test_initial_deploy=False, show_progress_monitor=False)  # TEST to TRUE
+    s.run(stop_time, test_initial_deploy=False, progress_bar=False)  # TEST to TRUE
 
 
 if __name__ == "__main__":

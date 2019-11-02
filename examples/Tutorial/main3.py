@@ -151,7 +151,7 @@ def main(simulated_time):
     s = Simulation(t, default_results_path="Results_multiple")
     s.deploy_app(app, placement, pop, selectorPath)
 
-    s.run(stop_time, show_progress_monitor=False)
+    s.run(stop_time, progress_bar=False)
 
     # s.draw_allocated_topology() # This implementation does not work when there is some node not linked
 

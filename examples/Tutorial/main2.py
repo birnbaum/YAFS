@@ -141,7 +141,7 @@ def main(simulated_time):
     s = Simulation(t, default_results_path="Results_multiple")
     s.deploy_app(app, placement, pop, selectorPath)
 
-    s.run(stop_time, show_progress_monitor=False)
+    s.run(stop_time, progress_bar=False)
 
     utils.draw_topology(t, s.get_alloc_entities())
 
