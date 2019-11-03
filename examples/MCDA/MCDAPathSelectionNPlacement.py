@@ -1,11 +1,15 @@
-import networkx as nx
-import os
-import pandas as pd
-from subprocess import Popen, PIPE
-from collections import namedtuple
-from yafs.selection import Selection
+import logging
 import operator
+import os
+from collections import namedtuple
+from subprocess import Popen, PIPE
+
+import networkx as nx
 import numpy as np
+import pandas as pd
+
+from yafs.selection import Selection
+from yafs.topology import Topology
 
 NodeDES = namedtuple("NodeDES", ["node", "des", "path"])
 logger = logging.getLogger(__name__)
@@ -33,7 +37,6 @@ class MCDARoutingAndDeploying(Selection):
         except OSError:
             None
 
-        logger = logger or logging.getLogger(__name__)
         logger.info("  MCDA - ELECTRE - Routing, Placement and Selection initialitzed ")
 
         self.min_path = {}
@@ -403,7 +406,7 @@ class MCDARoutingAndDeploying(Selection):
 
         # The action depends on the type of service  and the place from it is called.
         if (node_src, service) not in list(self.controlServices.keys()):
-            logging.info("Take an action on service: %s from node: %i" % (service, node_src))
+            logger.info("Take an action on service: %s from node: %i" % (service, node_src))
 
             # Looking for a candidate devices to host the service
             # These candidate devices are our "objectives" in MCDA model
@@ -420,24 +423,24 @@ class MCDARoutingAndDeploying(Selection):
             # OPTION B: all nodes
             mergednodes = sim.topology.G.nodes
 
-            # logging.info("\t Candidate list: "+str(mergednodes))
+            # logger.info("\t Candidate list: "+str(mergednodes))
 
             best_node = self.ELECTRE_evaluation(sim, node_src, mergednodes, message, app_name, service)
             self.idEvaluation += 1
 
             des = sim.get_DES_from_Service_In_Node(best_node, app_name, service)
 
-            logging.info("RESULTS: bestNODE: %i, DES: %s" % (best_node, des))
+            logger.info("RESULTS: bestNODE: %i, DES: %s" % (best_node, des))
 
             if des == []:
-                logging.info("NEW DEPLOYMENT IS REQUIRED in node: %i ", best_node)
+                logger.info("NEW DEPLOYMENT IS REQUIRED in node: %i ", best_node)
                 des = self.doDeploy(sim, app_name, service, best_node)
 
                 # sim.print_debug_assignaments()
             else:
                 des = [des]
                 # print "HERE Node: %i, APP: %s , SERVICE: %s" %(best_node,app_name,service)
-                logging.info("From node choice: DES: %s " % (des))
+                logger.info("From node choice: DES: %s " % (des))
 
             # TODO gestionar best_node action
 

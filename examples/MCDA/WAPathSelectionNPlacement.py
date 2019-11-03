@@ -10,6 +10,8 @@ import operator
 import numpy as np
 from sklearn import preprocessing
 
+from yafs.topology import Topology
+
 NodeDES = namedtuple("NodeDES", ["node", "des", "path"])
 logger = logging.getLogger(__name__)
 

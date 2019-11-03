@@ -1,23 +1,15 @@
-"""
-
-    Created on Thu Jan 30 15:03:21 2018
-
-    @author: isaac
-
-"""
 import random
 
-from yafs.core import Simulation
-from yafs.application import Application, Message
-from yafs.topology import Topology
-from yafs.selection import FirstShortestPath
-
-from yafs.distribution import DeterministicDistribution
-
-from examples.FogCentrality.CentricityPlacement import NoPlacementOfModules
-from examples.FogCentrality.CentricityPopulation import Statical
 import networkx as nx
 import numpy as np
+
+from yafs.application import Application, Message
+from yafs.core import Simulation
+from yafs.distribution import DeterministicDistribution
+from yafs.placement import NoPlacementOfModules
+from yafs.population import Statical2
+from yafs.selection import FirstShortestPath
+from yafs.topology import Topology
 
 RANDOM_SEED = 1
 
@@ -178,7 +170,7 @@ def main():
     pops = []
     for idx in range(0, len(sensor_workload_types)):
         apps.append(create_application(idx))
-        pops.append(Statical("Statical-%i" % idx))
+        pops.append(Statical2("Statical-%i" % idx))
 
     """
     PLACEMENT algorithm
@@ -208,7 +200,7 @@ def main():
         """
         pops = []
         for idx in range(0, len(sensor_workload_types)):
-            pops.append(Statical("Statical-%i" % idx))
+            pops.append(Statical2("Statical-%i" % idx))
         # print "-"*20
         # print "Function: %s" %f
         # print "-"*20

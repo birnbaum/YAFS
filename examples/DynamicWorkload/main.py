@@ -9,26 +9,24 @@
 
 """
 
-from yafs.core import Simulation
-from yafs.application import Application, Message
-from yafs import Topology
-from yafs.distribution import *
-
-from .Evolutive_population import Population_Move
-from .selection_multipleDeploys import CloudPath_RR
-
-import itertools
-import time
-import operator
 import copy
+import operator
+import time
+
 import networkx as nx
 import numpy as np
+
+from yafs.application import Application, Message
+from yafs.core import Simulation
+from yafs.distribution import *
+from yafs.population import PopulationMove
+from yafs.selection import CloudPathRR
+from yafs.topology import Topology
 
 RANDOM_SEED = 1
 
 
 def create_application(name):
-    # APLICATION
     a = Application(name=name)
 
     a.set_modules([{"Generator": {"Type": Application.TYPE_SOURCE}}, {"Actuator": {"Type": Application.TYPE_SINK}}])
@@ -106,7 +104,7 @@ def main(simulated_time):
 
     # you can use whatever funciton to change the topology
     dStart = DeterministicDistributionStartPoint(500, 400, name="Deterministic")
-    pop = Population_Move(name="mttf-nodes", srcs=number_generators, node_dst=main_fog_device, activation_dist=dStart)
+    pop = PopulationMove(name="mttf-nodes", srcs=number_generators, node_dst=main_fog_device, activation_dist=dStart)
     pop.set_sink_control({"id": main_fog_device, "number": number_generators, "module": app1.sink_modules})
 
     dDistribution = DeterministicDistribution(name="Deterministic", time=100)
@@ -117,7 +115,7 @@ def main(simulated_time):
     """--
     SELECTOR algorithm
     """
-    selectorPath = CloudPath_RR()
+    selectorPath = CloudPathRR()
 
     """
     SIMULATION ENGINE

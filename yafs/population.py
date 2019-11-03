@@ -2,7 +2,9 @@ import logging
 import random
 from abc import ABC
 
-from yafs.distribution import Distribution
+import networkx as nx
+
+from yafs.distribution import Distribution, ExponentialDistribution
 
 logger = logging.getLogger(__name__)
 
@@ -133,14 +135,12 @@ class Statical(Population):
         super(Statical, self).__init__(**kwargs)
 
     def initial_allocation(self, sim, app_name):
-        # ASSIGNAMENT of SOURCE - GENERATORS - ACTUATORS
-        id_nodes = list(sim.topology.G.nodes())
         for ctrl in self.src_control:
             msg = ctrl["message"]
             dst = ctrl["distribution"]
             param = ctrl["param"]
             for item in range(self.number_generators):
-                id = random.choice(id_nodes)
+                id = random.choice(list(sim.topology.G.nodes()))
                 for number in range(ctrl["number"]):
                     idsrc = sim.deploy_source(app_name, id_node=id, msg=msg, distribution=dst, param=param)
 
@@ -150,6 +150,31 @@ class Statical(Population):
             best_device = ctrl["id"]
             for number in range(ctrl["number"]):
                 sim.deploy_sink(app_name, node=best_device, module=module)
+
+
+# TODO Whats the difference to StaticPopulation?
+class Statical2(Population):
+    """
+    This implementation of a population algorithm statically assigns the generation of a source in a node of the topology. It is only invoked in the initialization.
+
+    Extends: :mod: Population
+    """
+
+    def initial_allocation(self, sim, app_name):
+        # Assignment of SINK and SOURCE pure modules
+
+        for ctrl in self.src_control:
+            if "id" in list(ctrl.keys()):
+                msg = ctrl["message"]
+                dst = ctrl["distribution"]
+                for idx in ctrl["id"]:
+                    idsrc = sim.deploy_source(app_name, id_node=idx, msg=msg, distribution=dst)
+
+        for ctrl in self.sink_control:
+            if "id" in list(ctrl.keys()):
+                module = ctrl["module"]
+                for idx in ctrl["id"]:
+                    sim.deploy_sink(app_name, node=idx, module=module)
 
 
 class PopAndFailures(Population):
@@ -228,3 +253,172 @@ class PopAndFailures(Population):
             sim.remove_node(node_to_remove)
 
             self.limit -= 1
+
+
+class PopulationMove(Population):
+    def __init__(self, srcs, node_dst, **kwargs):
+        self.number_generators = srcs
+        self.node_dst = node_dst
+        self.pos = None
+        self.activation = 0
+        super(PopulationMove, self).__init__(**kwargs)
+
+    def initial_allocation(self, sim, app_name):
+        # ASSIGNAMENT of SOURCE - GENERATORS - ACTUATORS
+        id_nodes = list(sim.topology.G.nodes())
+        for ctrl in self.src_control:
+            msg = ctrl["message"]
+            dst = ctrl["distribution"]
+            for item in range(self.number_generators):
+                id = random.choice(id_nodes)
+                for number in range(ctrl["number"]):
+                    idsrc = sim.deploy_source(app_name, id_node=id, msg=msg, distribution=dst)
+
+        for ctrl in self.sink_control:
+            module = ctrl["module"]
+            best_device = ctrl["id"]
+            for number in range(ctrl["number"]):
+                sim.deploy_sink(app_name, node=best_device, module=module)
+
+    def run(self, sim):
+        import matplotlib.pyplot as plt
+        import pandas as pd
+
+        logger.debug("Activiting - Population movement")
+        if self.pos == None:
+            self.pos = {}
+            df = pd.read_csv("pos_network.csv")
+            for r in df.iterrows():
+                self.pos[r[0]] = (r[1].x, r[1].y)
+            del df
+
+        fig = plt.figure(figsize=(10, 8), dpi=100)
+        ax = fig.add_subplot(111)
+        nx.draw(sim.topology.G, with_labels=True, pos=self.pos, node_size=60, node_color="orange", font_size=5)
+
+        # fig, ax = plt.subplots(nrows=1, ncols=1)  # create figure & 1 axis
+        for node in list(sim.alloc_DES.values()):
+            # for id_s, service in enumerate(current_services):
+            # for node in current_services[service]:
+            #     node = sim.alloc_DES[key]
+            #     print "WL in node: ",node
+            if node != 72:
+                circle2 = plt.Circle(self.pos[node], 40, color="green", alpha=0.8)
+                ax.add_artist(circle2)
+
+        # top centralized device
+        circle2 = plt.Circle(self.pos[72], 60, color="red", alpha=0.8)
+        ax.add_artist(circle2)
+
+        # nx.draw(sim.topology.G, self.pos, node_color='gray', alpha=0.4)
+
+        # labels = nx.draw_networkx_labels(sim.topology.G, self.pos)
+
+        plt.text(2, 1000, "Step: %i" % self.activation, {"color": "C0", "fontsize": 16})
+        # for i in range(10):
+        #     plt.text(i, -.7, i, {'color': 'C2', 'fontsize': 10 + (i * .5)})  # app2
+        # for i in range(10):
+        #     plt.text(i, -1.2, 9 - i, {'color': 'C1', 'fontsize': 10 + (9 - i) * 0.5})  # app3
+
+        fig.savefig("figure/net_%03d.png" % self.activation)  # save the figure to file
+        plt.close(fig)  # close the figure
+        # exit()
+
+        # para cada modulo generador desplegado en la topologia
+        # -- trazo el camino mas cercano hacia un modulo
+        #    -- muevo dicho generador hasta el siguiente path -1 del anterior trazado
+
+        for key in list(sim.alloc_source.keys()):
+            node_src = sim.alloc_DES[key]
+            path = list(nx.shortest_path(sim.topology.G, source=node_src, target=self.node_dst))
+            print(path)
+            if len(path) > 2:
+                next_src_position = path[1]
+                # print path,next_src_position
+                sim.alloc_DES[key] = next_src_position
+            else:
+                None
+                # This source cannot move more
+
+        self.activation += 1
+
+        # print "-" * 40
+        # print "DES\t| TOPO \t| Src.Mod \t| Modules"
+        # print "-" * 40
+        # for k in sim.alloc_DES:
+        #    print k, "\t|", self.alloc_DES[k], "\t|", self.alloc_source[k][
+        #        "module"] if k in self.alloc_source.keys() else "--", "\t\t|", fullAssignation[k][
+        #        "Module"] if k in fullAssignation.keys() else "--"
+        # print "-" * 40
+
+
+# TODO Remove this class, the population does not care how it got created
+class JSONPopulation(Population):
+    def __init__(self, json, iteration, **kwargs):
+        super(JSONPopulation, self).__init__(**kwargs)
+        self.data = json
+        self.it = iteration
+
+    def initial_allocation(self, sim, app_name):
+        # for item in self.data["sinks"]:
+        #     app_name = item["app"]
+        #     module = item["module_name"]
+        #     idtopo = item["id_resource"]
+        #     sim.deploy_sink(app_name, node=idtopo, module=module)
+
+        for item in self.data["sources"]:
+            if item["app"] == app_name:
+                app_name = item["app"]
+                idtopo = item["id_resource"]
+                lambd = item["lambda"]
+                app = sim.apps[app_name]
+                msg = app.messages[item["message"]]
+
+                dDistribution = ExponentialDistribution(name="Exp", lambd=lambd, seed=self.it)
+
+                idsrc = sim.deploy_source(app_name, id_node=idtopo, msg=msg, distribution=dDistribution)
+
+
+class DynamicPopulation(Population):
+    """
+    We launch one user by invocation
+    """
+
+    def __init__(self, data, iteration, **kwargs):
+        super(DynamicPopulation, self).__init__(**kwargs)
+        self.data = data
+        self.it = iteration
+        self.userOrderInputByInvocation = []
+        logger.info(" Initializating dynamic population: %s" % self.name)
+
+    """
+    In userOrderInputByInvocation, we create the user apparition sequence
+    """
+
+    def initial_allocation(self, sim, app_name):
+        size = len(self.data)
+        self.userOrderInputByInvocation = random.sample(list(range(size)), size)
+
+    """
+    In each invocation, we launch one user
+    """
+
+    def run(self, sim):
+        if len(self.userOrderInputByInvocation) > 0:
+            idx = self.userOrderInputByInvocation.pop(0)
+            item = self.data[idx]
+
+            app_name = item["app"]
+            idtopo = item["id_resource"]
+            lambd = item["lambda"]
+
+            logger.info("Launching user %i (app: %s), in node: %i, at time: %i " % (item["id_resource"], app_name, idtopo, sim.env.now))
+
+            app = sim.apps[app_name]
+            msg = app.get_message[item["message"]]
+
+            # A basic creation of the seed: unique for each user and different in each simulation repetition
+            seed = item["id_resource"] * 1000 + item["lambda"] + self.it
+
+            dDistribution = ExponentialDistribution(name="Exp", lambd=lambd, seed=seed)
+            idsrc = sim.deploy_source(app_name, id_node=idtopo, msg=msg, distribution=dDistribution)

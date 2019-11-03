@@ -78,6 +78,29 @@ class CloudPlacement(Placement):
                     process_id = simulation.deploy_module(app_name, module, services[module], id_cluster)
 
 
+class JSONPlacementOnlyCloud(Placement):
+    """Initialization of the service only in the cloud. We filter the rest of the assignments from the JSON file"""
+
+    def __init__(self, json, idcloud, **kwargs):
+        super(JSONPlacementOnlyCloud, self).__init__(**kwargs)
+        self.data = json
+        self.idcloud = idcloud
+        logger.info(" Placement Initialization of %s in NodeCLOUD: %i" % (self.name, self.idcloud))
+
+    def initial_allocation(self, sim, app_name):
+        for item in self.data["initialAllocation"]:
+            idtopo = item["id_resource"]
+            print(idtopo)
+            if idtopo == self.idcloud:
+                # print item
+                app_name = item["app"]
+                module = item["module_name"]
+                app = sim.apps[app_name]
+                services = app.services
+                # print services[module]
+                process_id = sim.deploy_module(app_name, module, services[module], [idtopo])
+
+
 class ClusterPlacement(Placement):
     """Locates the services of the application in the cheapest cluster regardless of where the sources or sinks are located.  # TODO Docstring wrong?
 
@@ -134,3 +157,16 @@ class EdgePlacement(Placement):
                 process_id = simulation.deploy_module(app_name, module, services[module], id_proxies)  # TODO Unused variable
             elif "Client" == module:
                 process_id = simulation.deploy_module(app_name, module, services[module], id_mobiles)  # TODO Unused variable
+
+
+class NoPlacementOfModules(Placement):
+    """
+    This implementation locates the services of the application in the cheapest cluster regardless of where the sources or sinks are located.
+
+    It only runs once, in the initialization.
+
+    """
+
+    def initial_allocation(self, simulation, app_name):
+        # The are not modules to be allocated
+        None

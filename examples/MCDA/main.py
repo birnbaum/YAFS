@@ -1,30 +1,22 @@
-"""
-
-    This example
-
-    @author: Isaac Lera & Carlos Guerrero
-
-"""
+import collections
+import json
+import logging.config
 import os
+import pickle
 import random
 import time
-import json
+
 import networkx as nx
-import logging.config
-import collections
-import pickle
 import numpy as np
 
-from yafs.core import Simulation, ExponentialDistribution
-from yafs.application import Application, Message
-from yafs.topology import Topology
-from yafs.utils import fractional_selectivity
-
-from yafs.placement import JSONPlacement
 from examples.MCDA.MCDAPathSelectionNPlacement import MCDARoutingAndDeploying
 from examples.MCDA.WAPathSelectionNPlacement import WARoutingAndDeploying
-from examples.MCDA.jsonDynamicPopulation import DynamicPopulation
-from examples.MCDA.placementOnlyCloud import JSONPlacementOnlyCloud
+from yafs.application import Application, Message
+from yafs.core import Simulation, ExponentialDistribution
+from yafs.placement import JSONPlacement, JSONPlacementOnlyCloud
+from yafs.population import DynamicPopulation
+from yafs.topology import Topology
+from yafs.utils import fractional_selectivity
 
 
 def create_applications_from_json(data):
