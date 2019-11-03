@@ -65,15 +65,9 @@ def main(simulated_time):
 
     app = create_application()
 
-    """
-    PLACEMENT algorithm
-    """
     placement = CloudPlacement("onCloud")  # it defines the deployed rules: module-device
     placement.scaleService({"ServiceA": 1})
 
-    """
-    POPULATION algorithm
-    """
     # In ifogsim, during the creation of the application, the Sensors are assigned to the topology, in this case no.
     # As mentioned, YAFS differentiates the adaptive sensors and their topological assignment.
     # In their case, the use a statical assignment.
@@ -88,9 +82,9 @@ def main(simulated_time):
     population.set_src_control({"model": "sensor-device", "number": 1, "message": app.messages["M.A"],
                                 "distribution": DeterministicDistribution(name="Deterministic", time=100)})
 
-    s = Simulation(t, default_results_path="Results")
+    s = Simulation(t)
     s.deploy_app(app, placement=placement, population=population, selection=FirstShortestPathSelection())
-    s.run(until=simulated_time)
+    s.run(until=simulated_time, results_path="results")
     utils.draw_topology(t, s.get_alloc_entities())
 
     print("\n--- RESULTS ---")

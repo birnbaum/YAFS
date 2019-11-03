@@ -34,7 +34,7 @@ class Simulation:
     SINK_METRIC = "SINK_M"
     LINK_METRIC = "LINK"
 
-    def __init__(self, topology: Topology, default_results_path=None):
+    def __init__(self, topology: Topology):
         # TODO Refactor this class. Way too many fields, no clear separation of concerns.
 
         self.topology = topology
@@ -49,7 +49,7 @@ class Simulation:
 
         self.applications = {}
 
-        self.metrics = Metrics(default_results_path=default_results_path)
+        self.metrics = Metrics()
 
         self.placement_policy = {}  # for app.name the placement algorithm
         self.population_policy = {}  # for app.name the population algorithm
@@ -197,22 +197,16 @@ class Simulation:
                 latency_msg_link = transmit + propagation
                 logger.debug(f"Link: {link}; Latency: {latency_msg_link}")
 
-                # update link metrics
-                self.metrics.insert_link(
-                    {
-                        "id": message.id,
-                        "type": self.LINK_METRIC,
-                        "src": link[0],
-                        "dst": link[1],
-                        "app": message.app_name,
-                        "latency": latency_msg_link,
-                        "message": message.name,
-                        "ctime": self.env.now,
-                        "size": message.size,
-                        "buffer": self.network_pump,
-                        # "path":message.path
-                    }
-                )
+                self.metrics.append_transmission(id=message.id,
+                                                 type=self.LINK_METRIC,
+                                                 src=link[0],
+                                                 dst=link[1],
+                                                 app=message.app_name,
+                                                 latency=latency_msg_link,
+                                                 message=message.name,
+                                                 ctime=self.env.now,
+                                                 size=message.size,
+                                                 buffer=self.network_pump)
 
                 # We compute the future latency considering the current utilization of the link
                 if last_used < self.env.now:
@@ -299,7 +293,7 @@ class Simulation:
 
         logger.debug("STOP_Process - Module Pure Source\t#DES:%i" % process_id)
 
-    def __update_node_metrics(self, app, module, message, des, type):
+    def __update_node_metrics(self, app, module, message, des, type_):
         try:
             """
             It computes the service time in processing a message and record this event
@@ -367,28 +361,21 @@ class Simulation:
                     if self.alloc_source[k]["id"] == message.path[0]:
                         sourceDES = k
 
-            # print "Source DES ",sourceDES
-            # print "-" * 50
-
-            self.metrics.insert(
-                {
-                    "id": message.id,
-                    "type": type,
-                    "app": app,
-                    "module": module,
-                    "message": message.name,
-                    "DES.src": sourceDES,
-                    "DES.dst": des,
-                    "module.src": message.src,
-                    "TOPO.src": message.path[0],
-                    "TOPO.dst": id_node,
-                    "service": time_service,
-                    "time_in": self.env.now,
-                    "time_out": time_service + self.env.now,
-                    "time_emit": float(message.timestamp),
-                    "time_reception": float(message.timestamp_rec),
-                }
-            )
+            self.metrics.append_event(id=message.id,
+                                      type=type_,
+                                      app=app,
+                                      module=module,
+                                      message=message.name,
+                                      DES_src=sourceDES,
+                                      DES_dst=des,
+                                      module_src=message.src,
+                                      TOPO_src=message.path[0],
+                                      TOPO_dst=id_node,
+                                      service=time_service,
+                                      time_in=self.env.now,
+                                      time_out=time_service + self.env.now,
+                                      time_emit=float(message.timestamp),
+                                      time_reception=float(message.timestamp_rec))
 
             return time_service
         except KeyError:
@@ -872,13 +859,14 @@ class Simulation:
             )
         print("-" * 40)
 
-    def run(self, until: int, test_initial_deploy: bool = False, progress_bar: bool = True):
+    def run(self, until: int, results_path: Optional[str] = None, test_initial_deploy: bool = False, progress_bar: bool = True):
         """Runs the simulation
 
         Args:
             until: Defines a stop time
-            test_initial_deploy  # TODO
-            progress_bar  # TODO
+            results_path: TODO
+            test_initial_deploy: TODO
+            progress_bar: TODO
         """
         # Creating app.sources and deploy the sources in the topology
         for pop in self.population_policy.values():
@@ -897,4 +885,5 @@ class Simulation:
             for i in tqdm(range(1, until), total=until, disable=(not progress_bar)):
                 self.env.run(until=i)
 
-        self.metrics.close()
+        if results_path:
+            self.metrics.write(results_path)

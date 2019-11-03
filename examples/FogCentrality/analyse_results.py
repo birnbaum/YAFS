@@ -1,6 +1,7 @@
 from yafs.metrics import *
 import matplotlib.pyplot as plt
 
+# TODO: This file seems pretty outdated, can we delete it?
 
 community_size = [50, 100, 200, 300]
 
@@ -35,7 +36,7 @@ for topo in topologies:
             else:
                 print("\t\tSpeedup %f" % (float(len(dl)) / vcluster))
             values[idx].append(len(dl))
-exit()
+
 
 experiments = len(community_size)
 
