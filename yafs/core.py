@@ -10,11 +10,10 @@ from tqdm import tqdm
 
 from yafs.application import Application, Message
 from yafs.distribution import *
-from yafs.metrics import EventLog
 from yafs.placement import Placement
 from yafs.population import Population
 from yafs.selection import Selection
-from yafs.stats import Stats
+from yafs.stats import Stats, EventLog
 from yafs.topology import Topology
 
 EVENT_UP_ENTITY = "node_up"

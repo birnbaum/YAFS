@@ -56,7 +56,7 @@ class JSONPlacement(Placement):  # TODO The placement should not care how it was
                 module = item["module_name"]
                 idtopo = item["id_resource"]
 
-                app = simulation.apps[app_name]
+                app = simulation.applications[app_name]
                 services = app.services
                 process_id = simulation.deploy_module(app_name, module, services[module], [idtopo])  # TODO unused variable
 

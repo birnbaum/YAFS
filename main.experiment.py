@@ -87,10 +87,7 @@ def main(simulated_time):
     simulation.run(until=simulated_time, results_path="results")
     utils.draw_topology(t, simulation.get_alloc_entities())
 
-    print("\n--- RESULTS ---")
-
-    time_loops = [["M.A", "M.B"]]
-    simulation.stats.print_report(1000, topology=t, time_loops=time_loops)
+    simulation.stats.print_report(1000, topology=t, time_loops=[["M.A", "M.B"]])
 
 
 if __name__ == "__main__":

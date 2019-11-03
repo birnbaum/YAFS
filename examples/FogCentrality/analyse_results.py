@@ -1,7 +1,7 @@
-from yafs.metrics import *
 import matplotlib.pyplot as plt
 
 # TODO: This file seems pretty outdated, can we delete it?
+from yafs.stats import EventLog
 
 community_size = [50, 100, 200, 300]
 
