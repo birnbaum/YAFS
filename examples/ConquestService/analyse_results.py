@@ -1,22 +1,7 @@
-#!/usr/bin/env python2
-# -*- coding: utf-8 -*-
-"""
-Created on Wed Jan  9 11:03:53 2019
-
-@author: isaaclera
-"""
-
-import collections
+import matplotlib.patheffects as pe
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-import matplotlib.pyplot as plt
-import pickle
-from scipy import stats
-import matplotlib.patheffects as pe
-import os
-import networkx as nx
-import json
-import time
 
 
 def set_box_color(bp, color):
