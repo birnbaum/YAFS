@@ -87,7 +87,7 @@ def __add_mobile_agent(self, ides, gme):
     # The mobile starts
 
     yield self.env.timeout(gme.start)
-    self.logger.info("(#DES:%i)\t--- Mobile Entity STARTS :\t%s " % (ides, gme._id))
+    logger.info("(#DES:%i)\t--- Mobile Entity STARTS :\t%s " % (ides, gme._id))
     while (len(gme.path) - 1 > gme.current_position) and self.des_process_running[ides]:
         e = (gme.path[gme.current_position], gme.path[gme.current_position + 1])
         data = self.street_network.get_edge_data(*e)
@@ -99,7 +99,7 @@ def __add_mobile_agent(self, ides, gme):
         # take an action?
         gme.next_time = next_time
 
-        self.logger.info("(#DES:%i)\t--- DO ACTION :\t%s " % (ides, gme._id))
+        logger.info("(#DES:%i)\t--- DO ACTION :\t%s " % (ides, gme._id))
         gme.do.action(gme)
 
         # TODO Can the MA wait more time in that node?
@@ -111,7 +111,7 @@ def __add_mobile_agent(self, ides, gme):
     if self.des_process_running[ides]:
         gme.do.action(gme)
 
-    self.logger.info("(#DES:%i)\t--- Mobile Entity ENDS :\t%s " % (ides, gme._id))
+    logger.info("(#DES:%i)\t--- Mobile Entity ENDS :\t%s " % (ides, gme._id))
     # print "Mobile agent: %s ends " % gme.plate
 
 def add_mobile_agent(self, gme):

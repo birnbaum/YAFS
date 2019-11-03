@@ -1,24 +1,16 @@
-"""
-
-    This example implements a simple evolutive deployment of fog devices to study the latency of two applications.
-    There is a comparison between:
-    - One application has a cloud placement
-    - Another one (equivalent application) has an evolutive deployement on fog devices
-
-    @author: isaac
-
+"""This example implements a simple evolutive deployment of fog devices to study the latency of two applications.
+There is a comparison between:
+- One application has a cloud placement
+- Another one (equivalent application) has an evolutive deployement on fog devices
 """
 
 from yafs.core import Simulation
 from yafs.application import Application, Message
-from yafs import Topology
+from yafs.population import PopAndFailures
+from yafs.selection import BroadPath
+from yafs.topology import Topology
 from yafs.distribution import *
 
-from .Evolutive_population import Pop_and_Failures
-from .selection_multipleDeploys import BroadPath
-
-
-import itertools
 import time
 import operator
 import copy
@@ -29,7 +21,6 @@ RANDOM_SEED = 1
 
 
 def create_application(name):
-    # APLICATION
     a = Application(name=name)
 
     a.set_modules([{"Generator": {"Type": Application.TYPE_SOURCE}}, {"Actuator": {"Type": Application.TYPE_SINK}}])
@@ -97,7 +88,7 @@ def main(simulated_time):
     # you can use whatever funciton to change the topology
     dStart = DeterministicDistributionStartPoint(0, 100, name="Deterministic")
     dStart2 = ExponentialDistributionStartPoint(500, 100.0, name="Deterministic")
-    pop = Pop_and_Failures(name="mttf-nodes", srcs=number_generators, activation_dist=dStart2)
+    pop = PopAndFailures(name="mttf-nodes", srcs=number_generators, activation_dist=dStart2)
     pop.set_sink_control({"ids": top20_devices, "number": 1, "module": app1.sink_modules})
 
     dDistribution = DeterministicDistribution(name="Deterministic", time=10)

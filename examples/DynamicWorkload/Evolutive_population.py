@@ -32,7 +32,7 @@ class Population_Move(Population):
                 sim.deploy_sink(app_name, node=best_device, module=module)
 
     def run(self, sim):
-        self.logger.debug("Activiting - Population movement")
+        logger.debug("Activiting - Population movement")
         if self.pos == None:
             self.pos = {}
             df = pd.read_csv("pos_network.csv")

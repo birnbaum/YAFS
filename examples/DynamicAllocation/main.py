@@ -1,36 +1,31 @@
+"""This example implements a simple evolutive deployment of fog devices to study the latency of two applications.
+There is a comparison between:
+- One application has a cloud placement
+- Another one (equivalent application) has an evolutive deployement on fog devices
+"""
+
+import copy
+import operator
 import random
-
-"""
-
-    This example implements a simple evolutive deployment of fog devices to study the latency of two applications.
-    There is a comparison between:
-    - One application has a cloud placement
-    - Another one (equivalent application) has an evolutive deployement on fog devices
-
-    @author: isaac
-
-"""
-
-from yafs.core import Simulation
-from yafs.application import Application, Message
-from yafs import Topology
-from yafs.distribution import DeterministicDistribution, DeterministicDistributionStartPoint
-
-from .Evolutive_population import Evolutive, Statical
-from .selection_multipleDeploys import CloudPath_RR, BroadPath
+import time
+import logging
 
 import networkx as nx
 import numpy as np
-import copy
-import itertools
-import time
-import operator
+
+from yafs.application import Application, Message
+from yafs.core import Simulation
+from yafs.distribution import DeterministicDistribution, DeterministicDistributionStartPoint
+from yafs.population import Evolutive, Statical
+from yafs.selection import BroadPath, CloudPathRR
+from yafs.topology import Topology
 
 RANDOM_SEED = 1
 
+logger = logging.getLogger(__name__)
+
 
 def create_application(name):
-    # APLICATION
     a = Application(name=name)
 
     a.set_modules([{"Generator": {"Type": Application.TYPE_SOURCE}}, {"Actuator": {"Type": Application.TYPE_SINK}}])
@@ -42,12 +37,8 @@ def create_application(name):
 
 # @profile
 def main(simulated_time):
-
     random.seed(RANDOM_SEED)
     np.random.seed(RANDOM_SEED)
-    """
-    TOPOLOGY from a json
-    """
 
     t = Topology()
     t.G = nx.read_graphml("Euclidean.graphml")
@@ -112,8 +103,7 @@ def main(simulated_time):
     SELECTOR algorithm
     """
     selectorPath1 = BroadPath()
-
-    selectorPath2 = CloudPath_RR()
+    selectorPath2 = CloudPathRR()
 
     """
     SIMULATION ENGINE

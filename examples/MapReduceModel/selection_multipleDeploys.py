@@ -43,7 +43,7 @@ class DeviceSpeedAwareRouting(Selection):
             return minPath, bestDES
 
         except (nx.NetworkXNoPath, nx.NodeNotFound) as e:
-            self.logger.warning("There is no path between two nodes: %s - %s " % (node_src, node_dst))
+            logger.warning("There is no path between two nodes: %s - %s " % (node_src, node_dst))
             print("Simulation ends?")
             return [], None
 
