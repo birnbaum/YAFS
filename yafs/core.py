@@ -10,10 +10,11 @@ from tqdm import tqdm
 
 from yafs.application import Application, Message
 from yafs.distribution import *
-from yafs.metrics import Metrics
+from yafs.metrics import EventLog
 from yafs.placement import Placement
 from yafs.population import Population
 from yafs.selection import Selection
+from yafs.stats import Stats
 from yafs.topology import Topology
 
 EVENT_UP_ENTITY = "node_up"
@@ -49,7 +50,7 @@ class Simulation:
 
         self.applications = {}
 
-        self.metrics = Metrics()
+        self.event_log = EventLog()
 
         self.placement_policy = {}  # for app.name the placement algorithm
         self.population_policy = {}  # for app.name the population algorithm
@@ -102,7 +103,11 @@ class Simulation:
 
         # This variable control the lag of each busy network links. It avoids the generation of a DES-process for each link
         # edge -> last_use_channel (float) = Simulation time
-        self.last_busy_time = {}  # must be updated with up/down nodes
+        self.last_busy_time = {}  # must be updated with up/down node
+
+    @property
+    def stats(self):
+        return Stats(self.event_log)
         
     def _next_process_id(self) -> int:
         self._process_id += 1
@@ -197,16 +202,16 @@ class Simulation:
                 latency_msg_link = transmit + propagation
                 logger.debug(f"Link: {link}; Latency: {latency_msg_link}")
 
-                self.metrics.append_transmission(id=message.id,
-                                                 type=self.LINK_METRIC,
-                                                 src=link[0],
-                                                 dst=link[1],
-                                                 app=message.app_name,
-                                                 latency=latency_msg_link,
-                                                 message=message.name,
-                                                 ctime=self.env.now,
-                                                 size=message.size,
-                                                 buffer=self.network_pump)
+                self.event_log.append_transmission(id=message.id,
+                                                   type=self.LINK_METRIC,
+                                                   src=link[0],
+                                                   dst=link[1],
+                                                   app=message.app_name,
+                                                   latency=latency_msg_link,
+                                                   message=message.name,
+                                                   ctime=self.env.now,
+                                                   size=message.size,
+                                                   buffer=self.network_pump)
 
                 # We compute the future latency considering the current utilization of the link
                 if last_used < self.env.now:
@@ -361,21 +366,21 @@ class Simulation:
                     if self.alloc_source[k]["id"] == message.path[0]:
                         sourceDES = k
 
-            self.metrics.append_event(id=message.id,
-                                      type=type_,
-                                      app=app,
-                                      module=module,
-                                      message=message.name,
-                                      DES_src=sourceDES,
-                                      DES_dst=des,
-                                      module_src=message.src,
-                                      TOPO_src=message.path[0],
-                                      TOPO_dst=id_node,
-                                      service=time_service,
-                                      time_in=self.env.now,
-                                      time_out=time_service + self.env.now,
-                                      time_emit=float(message.timestamp),
-                                      time_reception=float(message.timestamp_rec))
+            self.event_log.append_event(id=message.id,
+                                        type=type_,
+                                        app=app,
+                                        module=module,
+                                        message=message.name,
+                                        DES_src=sourceDES,
+                                        DES_dst=des,
+                                        module_src=message.src,
+                                        TOPO_src=message.path[0],
+                                        TOPO_dst=id_node,
+                                        service=time_service,
+                                        time_in=self.env.now,
+                                        time_out=time_service + self.env.now,
+                                        time_emit=float(message.timestamp),
+                                        time_reception=float(message.timestamp_rec))
 
             return time_service
         except KeyError:
@@ -886,4 +891,4 @@ class Simulation:
                 self.env.run(until=i)
 
         if results_path:
-            self.metrics.write(results_path)
+            self.event_log.write(results_path)

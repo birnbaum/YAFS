@@ -14,7 +14,7 @@ path = "examples/DynamicFailuresOnNodes/"
 
 s = Stats(defaultPath=path + "Results_%s_exp" % (size))
 # Network
-s.print_results(size, time_loops=time_loops)
+s.print_report(size, time_loops=time_loops)
 
 failures = [
     {"id": 398, "module": False, "time": 0},

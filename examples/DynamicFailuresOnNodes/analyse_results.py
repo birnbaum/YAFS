@@ -115,7 +115,7 @@ print("Number of nodes removed: ", len(failures))
 # Basic analysis
 time_loops = [["M.Action"]]
 s = Stats(defaultPath=path + "Results_%s_exp" % (size))
-s.print_results(size, time_loops=time_loops)
+s.print_report(size, time_loops=time_loops)
 
 # Visualization of latency time series:
 

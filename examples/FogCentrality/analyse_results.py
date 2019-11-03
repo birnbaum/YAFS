@@ -20,7 +20,7 @@ labelsFunctions = ["Cloud", "Eigenvector"]
 
 values = [[], [], [], []]
 
-m = Metrics()
+m = EventLog()
 
 for topo in topologies:
     print(topo)

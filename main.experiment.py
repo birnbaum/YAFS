@@ -82,15 +82,15 @@ def main(simulated_time):
     population.set_src_control({"model": "sensor-device", "number": 1, "message": app.messages["M.A"],
                                 "distribution": DeterministicDistribution(name="Deterministic", time=100)})
 
-    s = Simulation(t)
-    s.deploy_app(app, placement=placement, population=population, selection=FirstShortestPathSelection())
-    s.run(until=simulated_time, results_path="results")
-    utils.draw_topology(t, s.get_alloc_entities())
+    simulation = Simulation(t)
+    simulation.deploy_app(app, placement=placement, population=population, selection=FirstShortestPathSelection())
+    simulation.run(until=simulated_time, results_path="results")
+    utils.draw_topology(t, simulation.get_alloc_entities())
 
     print("\n--- RESULTS ---")
-    m = Stats(default_path="Results")  # Same name of the results
+
     time_loops = [["M.A", "M.B"]]
-    m.print_results(1000, topology=t, time_loops=time_loops)
+    simulation.stats.print_report(1000, topology=t, time_loops=time_loops)
 
 
 if __name__ == "__main__":

@@ -15,7 +15,7 @@ path = "examples/DynamicWorkload/"
 
 s = Stats(defaultPath=path + "Results_%s" % (size))
 # Network
-s.print_results(size, time_loops=time_loops)
+s.print_report(size, time_loops=time_loops)
 
 
 df = s.df

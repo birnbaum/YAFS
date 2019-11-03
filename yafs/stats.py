@@ -1,47 +1,47 @@
 import numpy as np
 import pandas as pd
 
-from yafs.metrics import Metrics
+from yafs.metrics import EventLog
 
 
 # TODO Missing documentation
 class Stats:
-    def __init__(self, default_path: str = "result"):
-        self.df = _load_csv(default_path + ".csv")
-        self.df_link = _load_csv(default_path + "_link.csv")
-
-    def bytes_transmitted(self):
-        return self.df_link["size"].sum()
+    def __init__(self, event_log: EventLog):
+        self.messages = pd.DataFrame(event_log.message_log)
+        self.transmission = pd.DataFrame(event_log.transmission_log)
 
     def count_messages(self):
-        return len(self.df_link)
+        return len(self.messages)
+
+    def bytes_transmitted(self):
+        return self.transmission["size"].sum()
 
     def utilization(self, id_entity, total_time, from_time=0.0):
-        if "time_service" not in self.df.columns:  # cached
-            self.df["time_service"] = self.df.time_out - self.df.time_in
-        values = self.df.groupby("DES.dst").time_service.agg("sum")
+        if "time_service" not in self.messages.columns:  # cached
+            self.messages["time_service"] = self.messages.time_out - self.messages.time_in
+        values = self.messages.groupby("DES.dst").time_service.agg("sum")
         return values[id_entity] / total_time
 
     def compute_times_df(self):
-        self.df["time_latency"] = self.df["time_reception"] - self.df["time_emit"]
-        self.df["time_wait"] = self.df["time_in"] - self.df["time_reception"]  #
-        self.df["time_service"] = self.df["time_out"] - self.df["time_in"]
-        self.df["time_response"] = self.df["time_out"] - self.df["time_reception"]
-        self.df["time_total_response"] = self.df["time_response"] + self.df["time_latency"]
+        self.messages["time_latency"] = self.messages["time_reception"] - self.messages["time_emit"]
+        self.messages["time_wait"] = self.messages["time_in"] - self.messages["time_reception"]  #
+        self.messages["time_service"] = self.messages["time_out"] - self.messages["time_in"]
+        self.messages["time_response"] = self.messages["time_out"] - self.messages["time_reception"]
+        self.messages["time_total_response"] = self.messages["time_response"] + self.messages["time_latency"]
 
     def times(self, time, value="mean"):
-        if "time_response" not in self.df.columns:
+        if "time_response" not in self.messages.columns:
             self.compute_times_df()
-        return self.df.groupby("message").agg({time: value})
+        return self.messages.groupby("message").agg({time: value})
 
     def average_loop_response(self, time_loops):
         """
         No hay chequeo de la existencia del loop: user responsability
         """
-        if "time_response" not in self.df.columns:
+        if "time_response" not in self.messages.columns:
             self.compute_times_df()
 
-        resp_msg = self.df.groupby("message").agg({"time_total_response": ["mean", "count"]})  # Its not necessary to have "count"
+        resp_msg = self.messages.groupby("message").agg({"time_total_response": ["mean", "count"]})  # Its not necessary to have "count"
         resp_msg.columns = ["_".join(col).strip() for col in resp_msg.columns.values]
         results = []
 
@@ -57,14 +57,14 @@ class Stats:
 
         return results
 
-    def get_watt(self, totaltime, topology, by=Metrics.WATT_SERVICE):
+    def get_watt(self, totaltime, topology, by=EventLog.WATT_SERVICE):
         results = {}
-        if by == Metrics.WATT_SERVICE:
+        if by == EventLog.WATT_SERVICE:
             # Tiempo de actividad / runeo
-            if "time_response" not in self.df.columns:  # cached
+            if "time_response" not in self.messages.columns:  # cached
                 self.compute_times_df()
 
-            nodes = self.df.groupby("TOPO.dst").agg({"time_service": "sum"})
+            nodes = self.messages.groupby("TOPO.dst").agg({"time_service": "sum"})
             for id_node in nodes.index:
                 results[id_node] = {
                     "model": topology.G.nodes[id_node]["model"],
@@ -91,10 +91,10 @@ class Stats:
         nodeInfo = topology.G.nodes
         results = {}
         # Tiempo de actividad / runeo
-        if "time_response" not in self.df.columns:  # cached
+        if "time_response" not in self.messages.columns:  # cached
             self._compute_times_df()
 
-        nodes = self.df.groupby("TOPO.dst").agg({"time_service": "sum"})
+        nodes = self.messages.groupby("TOPO.dst").agg({"time_service": "sum"})
 
         for id_node in nodes.index:
             if nodeInfo[id_node]["type"] == Entity.ENTITY_CLOUD:
@@ -106,7 +106,7 @@ class Stats:
                 cost += nodes.loc[id_node].time_service * nodeInfo[id_node]["COST"]
         return cost, results
 
-    def print_results(self, total_time, topology, time_loops=None):
+    def print_report(self, total_time, topology, time_loops=None):
         print(("\tSimulation Time: %0.2f" % total_time))
 
         if time_loops is not None:
@@ -144,31 +144,23 @@ class Stats:
                 return results[i]
 
     def average_messages_not_transmitted(self):
-        return np.mean(self.df_link.buffer)
+        return np.mean(self.transmission.buffer)
 
     def peak_messages_not_transmitted(self):
-        return np.max(self.df_link.buffer)
+        return np.max(self.transmission.buffer)
 
     def messages_not_transmitted(self):
-        return self.df_link.buffer[-1:]
+        return self.transmission.buffer[-1:]
 
     def get_df_modules(self):
-        g = self.df.groupby(["module", "DES.dst"]).agg({"service": ["mean", "sum", "count"]})
+        g = self.messages.groupby(["module", "DES.dst"]).agg({"service": ["mean", "sum", "count"]})
         return g.reset_index()
 
     def get_df_service_utilization(self, service, time):
         """Returns the utilization(%) of a specific module"""
-        g = self.df.groupby(["module", "DES.dst"]).agg({"service": ["mean", "sum", "count"]})
+        g = self.messages.groupby(["module", "DES.dst"]).agg({"service": ["mean", "sum", "count"]})
         g.reset_index(inplace=True)
         h = pd.DataFrame()
         h["module"] = g[g.module == service].module
         h["utilization"] = g[g.module == service]["service"]["sum"] * 100 / time
         return h
-
-
-def _load_csv(path: str) -> pd.DataFrame:
-    df = pd.read_csv(path)
-    if df.empty:
-        raise ValueError(f"Cannot analyze results: \"{path}\" is empty")
-    else:
-        return df

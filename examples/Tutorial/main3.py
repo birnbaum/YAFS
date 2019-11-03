@@ -173,7 +173,7 @@ if __name__ == "__main__":
     print("-" * 20)
     m = Stats(default_path="Results_multiple")  # Same name of the results
     time_loops = [["M.A", "M.B"]]
-    m.print_results(1000, time_loops=time_loops)
+    m.print_report(1000, time_loops=time_loops)
     print("\t- Network saturation -")
     print("\t\tAverage waiting messages : %i" % m.average_messages_not_transmitted())
     print("\t\tPeak of waiting messages : %i" % m.peak_messages_not_transmitted())
