@@ -31,8 +31,6 @@ class Simulation:
     """
 
     NODE_METRIC = "COMP_M"
-    SOURCE_METRIC = "SRC_M"
-    FORWARD_METRIC = "FWD_M"
     SINK_METRIC = "SINK_M"
     LINK_METRIC = "LINK"
 
@@ -45,7 +43,7 @@ class Simulation:
         self.env.process(self._network_process())
         self.network_ctrl_pipe = simpy.Store(self.env)
 
-        self._process_id = -1  # Unique identifier for each process in the DES  # TODO Why -1 ??
+        self._process_id = 0  # Unique identifier for each process in the DES
         self._message_id = 0  # Unique identifier for each message
         self.network_pump = 0  # Shared resource that controls the exchange of messages in the topology
 
@@ -53,13 +51,8 @@ class Simulation:
 
         self.metrics = Metrics(default_results_path=default_results_path)
 
-        self.unreachabled_links = 0
-
         self.placement_policy = {}  # for app.name the placement algorithm
         self.population_policy = {}  # for app.name the population algorithm
-
-        # for app.nmae
-        # self.process_topology = {}
 
         # Start/stop flag for each pure source
         # key: id.source.process
@@ -137,41 +130,31 @@ class Simulation:
                 logger.debug("\tStopping DES process: %s\n\n" % process)
                 self.stop_process(process)
 
-    def __send_message(self, app_name: str, message: Message, process_id, type):
-        """
-        Any exchange of messages between modules is done with this function and updates the metrics when the message achieves the destination module
+    def _send_message(self, app_name: str, message: Message, process_id):
+        """Sends a message between modules and updates the metrics once the message reaches the destination module
 
         Args:
-            app_name (string)º
-            message: (:mod:`Message`)
-
-            process_id TODO ???
-            type TODO ???
-
-        Kwargs:
-            id_src (int) identifier of a pure source module TODO ???
+            app_name: TODO
+            message: TODO
+            process_id: TODO
         """
         # TODO IMPROVE asignation of topo = alloc_DES(IdDES) , It has to move to the get_path process
         try:
             paths, dst_process_id = self.selector_path[app_name].get_path(
                 self, app_name, message, self.alloc_DES[process_id], self.alloc_DES, self.alloc_module, self.last_busy_time, from_des=process_id
             )
-
             if dst_process_id == [None] or dst_process_id == [[]]:
                 logger.warning("(#DES:%i)\t--- Unreacheable DST:\t%s: PATH:%s " % (process_id, message.name, paths))
                 logger.debug("From __send_message function: ")
                 logger.debug("NODES (%i)" % len(self.topology.G.nodes()))
-
             else:
                 logger.debug("(#DES:%i)\t--- SENDING Message:\t%s: PATH:%s  DES:%s" % (process_id, message.name, paths, dst_process_id))
-
-                # May be, the selector of path decides broadcasting multiples paths
+                # May be, the selector of path decides broadcasting multiples paths  # TODO What does this comment mean?
                 for idx, path in enumerate(paths):
                     msg = copy.copy(message)
                     msg.path = copy.copy(path)
                     msg.app_name = app_name
                     msg.process_id = dst_process_id[idx]
-
                     self.network_ctrl_pipe.put(msg)
         except KeyError:
             logger.warning("(#DES:%i)\t--- Unreacheable DST:\t%s " % (process_id, message.name))
@@ -312,7 +295,7 @@ class Simulation:
                 msg.timestamp = self.env.now
                 msg.id = self._next_message_id()
 
-                self.__send_message(name_app, msg, process_id, self.SOURCE_METRIC)
+                self._send_message(name_app, msg, process_id)
 
         logger.debug("STOP_Process - Module Pure Source\t#DES:%i" % process_id)
 
@@ -456,18 +439,18 @@ class Simulation:
                 logger.debug("(App:%s#DES:%i#%s)\tModule - Generating Message:\t%s" % (app_name, process_id, module, message.name))
                 msg = copy.copy(message)
                 msg.timestamp = self.env.now
-                self.__send_message(app_name, msg, process_id, self.SOURCE_METRIC)
+                self._send_message(app_name, msg, process_id)
 
         logger.debug("STOP_Process - Module Source: %s\t#DES:%i" % (module, process_id))
 
-    def __add_consumer_module(self, ides, app_name, module, register_consumer_msg):
+    def __add_consumer_module(self, process_id, app_name, module, register_consumer_msg):
         """
         It generates a DES process associated to a compute module
         """
-        logger.debug("Added_Process - Module Consumer: %s\t#DES:%i" % (module, ides))
-        while self.des_process_running[ides]:
-            if self.des_process_running[ides]:
-                msg = yield self.consumer_pipes["%s%s%i" % (app_name, module, ides)].get()
+        logger.debug("Added_Process - Module Consumer: %s\t#DES:%i" % (module, process_id))
+        while self.des_process_running[process_id]:
+            if self.des_process_running[process_id]:
+                msg = yield self.consumer_pipes["%s%s%i" % (app_name, module, process_id)].get()
                 # One pipe for each module name
 
                 m = self.applications[app_name].services[module]
@@ -502,10 +485,10 @@ class Simulation:
                         # The module only computes this type of message one time.
                         # It records once
                         if not doBefore:
-                            logger.debug("(App:%s#DES:%i#%s)\tModule - Recording the message:\t%s" % (app_name, ides, module, msg.name))
+                            logger.debug("(App:%s#DES:%i#%s)\tModule - Recording the message:\t%s" % (app_name, process_id, module, msg.name))
                             type = self.NODE_METRIC
 
-                            service_time = self.__update_node_metrics(app_name, module, msg, ides, type)
+                            service_time = self.__update_node_metrics(app_name, module, msg, process_id, type)
 
                             yield self.env.timeout(service_time)
                             doBefore = True
@@ -517,43 +500,43 @@ class Simulation:
                             """
                             Sink behaviour (nothing to send)
                             """
-                            logger.debug("(App:%s#DES:%i#%s)\tModule - Sink Message:\t%s" % (app_name, ides, module, msg.name))
+                            logger.debug("(App:%s#DES:%i#%s)\tModule - Sink Message:\t%s" % (app_name, process_id, module, msg.name))
                             continue
                         else:
                             if register["dist"](**register["param"]):  ### THRESHOLD DISTRIBUTION to Accept the message from source
                                 if not register["module_dest"]:
                                     # it is not a broadcasting message
                                     logger.debug(
-                                        "(App:%s#DES:%i#%s)\tModule - Transmit Message:\t%s" % (app_name, ides, module, register["message_out"].name)
+                                        "(App:%s#DES:%i#%s)\tModule - Transmit Message:\t%s" % (app_name, process_id, module, register["message_out"].name)
                                     )
 
                                     msg_out = copy.copy(register["message_out"])
                                     msg_out.timestamp = self.env.now
                                     msg_out.id = msg.id
                                     msg_out.last_idDes = copy.copy(msg.last_idDes)
-                                    msg_out.last_idDes.append(ides)
+                                    msg_out.last_idDes.append(process_id)
 
-                                    self.__send_message(app_name, msg_out, ides, self.FORWARD_METRIC)
+                                    self._send_message(app_name, msg_out, process_id)
 
                                 else:
                                     # it is a broadcasting message
                                     logger.debug(
-                                        "(App:%s#DES:%i#%s)\tModule - Broadcasting Message:\t%s" % (app_name, ides, module, register["message_out"].name)
+                                        "(App:%s#DES:%i#%s)\tModule - Broadcasting Message:\t%s" % (app_name, process_id, module, register["message_out"].name)
                                     )
 
                                     msg_out = copy.copy(register["message_out"])
                                     msg_out.timestamp = self.env.now
                                     msg_out.last_idDes = copy.copy(msg.last_idDes)
                                     msg_out.id = msg.id
-                                    msg_out.last_idDes = msg.last_idDes.append(ides)
+                                    msg_out.last_idDes = msg.last_idDes.append(process_id)
                                     for idx, module_dst in enumerate(register["module_dest"]):
                                         if random.random() <= register["p"][idx]:
-                                            self.__send_message(app_name, msg_out, ides, self.FORWARD_METRIC)
+                                            self._send_message(app_name, msg_out, process_id)
 
                             else:
-                                logger.debug("(App:%s#DES:%i#%s)\tModule - Stopped Message:\t%s" % (app_name, ides, module, register["message_out"].name))
+                                logger.debug("(App:%s#DES:%i#%s)\tModule - Stopped Message:\t%s" % (app_name, process_id, module, register["message_out"].name))
 
-        logger.debug("STOP_Process - Module Consumer: %s\t#DES:%i" % (module, ides))
+        logger.debug("STOP_Process - Module Consumer: %s\t#DES:%i" % (module, process_id))
 
     def __add_sink_module(self, ides, app_name, module):
         """
