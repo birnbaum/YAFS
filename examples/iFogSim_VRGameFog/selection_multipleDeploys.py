@@ -7,7 +7,6 @@ class CloudPath_RR(Selection):
         self.rr = {}  # for a each type of service, we have a mod-counter
 
     def get_path(self, sim, app_name, message, topology_src, alloc_DES, alloc_module, traffic, from_des):
-
         node_src = topology_src
         DES_dst = alloc_module[app_name][message.dst]  # returns an array with all DES process serving
 
@@ -18,9 +17,6 @@ class CloudPath_RR(Selection):
         # print "\tNode _ src (id_topology): %i" % node_src
         # print "\tRequest service: %s " % (message.dst)
         # print "\tProcess serving that service: %s (pos ID: %i)" % (DES_dst, self.rr[message.dst])
-
-        bestPath = []
-        bestDES = []
 
         if message.name == "M.Sensor" or message.name == "M.Player_Game_State":  # both messages are adressed to modules deployed in cloud
             next_DES_dst = DES_dst[self.rr[message.dst]]

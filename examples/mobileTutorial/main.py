@@ -1,32 +1,20 @@
-"""
-
-    This example
-
-    @author: Isaac Lera & Carlos Guerrero
-
-"""
-import os
-import time
 import json
 import logging.config
+import os
 import subprocess
-
-import numpy as np
-
-from yafs.core import Simulation
-from yafs.application import Application, Message
-from yafs.customMovement import MovementUpdate
-from yafs.topology import Topology
-from yafs.distribution import *
-from yafs.coverage import CircleCoverage
-from yafs.utils import *
-
-from yafs.placement import JSONPlacement
-from .selection_multipleDeploys import DeviceSpeedAwareRouting
+import time
 
 import trackanimation
-
-from .jsonMobilePopulation import JSONPopulation
+from yafs.application import Application, Message
+from yafs.core import Simulation
+from yafs.coverage import CircleCoverage
+from yafs.customMovement import MovementUpdate
+from yafs.distribution import *
+from yafs.placement import JSONPlacement
+from yafs.population import JSONPopulation2
+from yafs.selection import DeviceSpeedAwareRouting
+from yafs.topology import Topology
+from yafs.utils import fractional_selectivity
 
 
 def create_applications_from_json(data):
@@ -129,7 +117,7 @@ def main(path, path_results, number_simulation_steps, tracks, topology, case, it
     """
     # Each user/mobile entity has an unique population politic
     wl = json.load(open(path + "workload.json"))  # workload behaviour
-    pop = JSONPopulation(name="Statical", json=wl, it=it)
+    pop = JSONPopulation2(name="Statical", json=wl, it=it)
 
     """
     Deploying application with specific distribution in the simulator
@@ -137,7 +125,7 @@ def main(path, path_results, number_simulation_steps, tracks, topology, case, it
     """
     for aName in list(apps.keys()):
         # print "Deploying app: ",aName
-        pop_app = JSONPopulation(name="Statical_%s" % aName, json={}, it=it)
+        pop_app = JSONPopulation2(name="Statical_%s" % aName, json={}, it=it)
         data = []
         for element in pop.data["sources"]:
             if element["app"] == aName:

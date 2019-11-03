@@ -1,14 +1,15 @@
-import numpy as np
+import matplotlib.pyplot as plt
 import pandas as pd
 
+from yafs.stats import Stats
+
 # for size in [100,1000,10000,100000,1000000]:
+
 time_loops = [["M.EGG", "M.Sensor", "M.Concentration"]]
-import matplotlib.pyplot as plt
 
 #### ANALYSE FILES YAFS
 
 police = "cloud"
-
 police = "edge"
 
 # print depth

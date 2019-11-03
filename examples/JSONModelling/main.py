@@ -1,27 +1,16 @@
-"""
-
-    This example
-
-    @author: Isaac Lera & Carlos Guerrero
-
-"""
 import json
+import time
 
 import networkx as nx
 
-from yafs.core import Simulation
 from yafs.application import Application, Message
-from yafs.topology import Topology
-from yafs.placement import JSONPlacement
+from yafs.core import Simulation
 from yafs.distribution import *
-import numpy as np
-
+from yafs.placement import JSONPlacement
+from yafs.population import JSONPopulation
+from yafs.selection import DeviceSpeedAwareRouting
+from yafs.topology import Topology
 from yafs.utils import fractional_selectivity
-
-from .selection_multipleDeploys import DeviceSpeedAwareRouting
-from .jsonPopulation import JSONPopulation
-
-import time
 
 RANDOM_SEED = 1
 

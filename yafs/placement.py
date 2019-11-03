@@ -61,23 +61,6 @@ class JSONPlacement(Placement):  # TODO The placement should not care how it was
                 process_id = simulation.deploy_module(app_name, module, services[module], [idtopo])  # TODO unused variable
 
 
-class CloudPlacement(Placement):
-    """Locates the services of the application in the cheapest cloud regardless of where the sources or sinks are located.  # TODO Docstring wrong?
-
-    It only runs once, in the initialization.
-    """
-
-    def initial_allocation(self, simulation: "Simulation", app_name: str):  # TODO Why does the placement know about the simulation?
-        id_cluster = simulation.topology.find_IDs({"mytag": "cloud"})  # TODO These are very implicit assumptions about module naming...
-        app = simulation.applications[app_name]
-        services = app.services
-
-        for module in services:
-            if module in self.scaleServices:
-                for rep in range(0, self.scaleServices[module]):
-                    process_id = simulation.deploy_module(app_name, module, services[module], id_cluster)
-
-
 class JSONPlacementOnlyCloud(Placement):
     """Initialization of the service only in the cloud. We filter the rest of the assignments from the JSON file"""
 
@@ -99,6 +82,94 @@ class JSONPlacementOnlyCloud(Placement):
                 services = app.services
                 # print services[module]
                 process_id = sim.deploy_module(app_name, module, services[module], [idtopo])
+
+
+class CloudPlacement(Placement):
+    """Locates the services of the application in the cheapest cloud regardless of where the sources or sinks are located.  # TODO Docstring wrong?
+
+    It only runs once, in the initialization.
+    """
+
+    def initial_allocation(self, simulation: "Simulation", app_name: str):  # TODO Why does the placement know about the simulation?
+        id_cluster = simulation.topology.find_IDs({"mytag": "cloud"})  # TODO These are very implicit assumptions about module naming...
+        app = simulation.applications[app_name]
+        services = app.services
+
+        for module in services:
+            if module in self.scaleServices:
+                for rep in range(0, self.scaleServices[module]):
+                    process_id = simulation.deploy_module(app_name, module, services[module], id_cluster)
+
+
+class CloudPlacementIFogSIM(Placement):
+    """
+    This implementation locates the services of the application in the cheapest cloud regardless of where the sources or sinks are located.
+
+    It only runs once, in the initialization.
+
+    """
+
+    def initial_allocation(self, simulation, app_name):
+        # We find the ID-nodo/resource
+        value = {"model": "Cluster"}
+        id_cluster = simulation.topology.find_IDs(value)  # there is only ONE Cluster
+        value = {"model": "m-"}
+        id_mobiles = simulation.topology.find_IDs(value)
+
+        # Given an application we get its modules implemented
+        app = simulation.apps[app_name]
+        services = app.services
+
+        for module in list(services.keys()):
+            if "Coordinator" == module:
+                if "Coordinator" in list(self.scaleServices.keys()):
+                    # print self.scaleServices["Coordinator"]
+                    for rep in range(0, self.scaleServices["Coordinator"]):
+                        process_id = simulation.deploy_module(app_name, module, services[module], id_cluster)  # Deploy as many modules as elements in the array
+
+            elif "Calculator" == module:
+                if "Calculator" in list(self.scaleServices.keys()):
+                    for rep in range(0, self.scaleServices["Calculator"]):
+                        process_id = simulation.deploy_module(app_name, module, services[module], id_cluster)
+
+            elif "Client" == module:
+                process_id = simulation.deploy_module(app_name, module, services[module], id_mobiles)
+
+
+class FogPlacement(Placement):
+    """
+    This implementation locates the services of the application in the fog-device regardless of where the sources or sinks are located.
+
+    It only runs once, in the initialization.
+
+    """
+
+    def initial_allocation(self, simulation, app_name):
+        # We find the ID-nodo/resource
+        value = {"model": "Cluster"}
+        id_cluster = simulation.topology.find_IDs(value)  # there is only ONE Cluster
+
+        value = {"model": "d-"}
+        id_proxies = simulation.topology.find_IDs(value)
+
+        value = {"model": "m-"}
+        id_mobiles = simulation.topology.find_IDs(value)
+
+        # Given an application we get its modules implemented
+        app = simulation.applications[app_name]
+        services = app.services
+
+        for module in list(services.keys()):
+            if "Coordinator" == module:
+                if "Coordinator" in list(self.scaleServices.keys()):
+                    for rep in range(0, self.scaleServices["Coordinator"]):
+                        process_id = simulation.deploy_module(app_name, module, services[module], id_cluster)  # Deploy as many modules as elements in the array
+            elif "Calculator" == module:
+                if "Calculator" in list(self.scaleServices.keys()):
+                    for rep in range(0, self.scaleServices["Calculator"]):
+                        process_id = simulation.deploy_module(app_name, module, services[module], id_proxies)
+            elif "Client" == module:
+                process_id = simulation.deploy_module(app_name, module, services[module], id_mobiles)
 
 
 class ClusterPlacement(Placement):

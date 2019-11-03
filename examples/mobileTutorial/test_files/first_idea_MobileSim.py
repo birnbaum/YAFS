@@ -1,97 +1,28 @@
-#!/usr/bin/env python2
-# -*- coding: utf-8 -*-
-"""
-Created on Mon Mar 18 13:39:00 2019
+import random
+from collections import OrderedDict
+from functools import partial
 
-@author: isaaclera
-"""
-
-import simpy
-import osmnx as ox
-import matplotlib.pyplot as plt
 import networkx as nx
 import numpy as np
-import random
-from matplotlib import colors
-from shapely.ops import transform
-from functools import partial
+import osmnx as ox
 import pyproj
 import scipy.spatial
-from collections import OrderedDict
+import simpy
+from shapely.ops import transform
 
+from examples.mobileTutorial.myAction import CustomAction
+from yafs.mobileEntity import GenericMobileEntity
 
 random.seed(0)
-
-
-# =============================================================================
-# Triggered actions when a mobile agent is under the coverage of a IoT device (edge/sensor)
-# =============================================================================
-
-
-class generic_action(object):
-    # service_coverage
-    #   key   => street node network
-    #   value => id. module SW
-
-    def __init__(self, service_coverage, env):
-        self.service_coverage = service_coverage
-        self.env = env
-
-    def action(self, mobile_agent):
-        None
-
-
-class my_custom_action(generic_action):
-    def __init__(self, *args, **kwargs):
-        super(my_custom_action, self).__init__(*args, **kwargs)
-        self.plates = {}
-        self.fees = {}
-
-    # mandatory function
-    def action(self, ma):  # mobile_entity
-        # print "ACTION"
-        # print ma
-        # print ma.next_time
-        # print ma.get_current_position()
-        # print "-"*10
-        if ma.get_current_position() in list(service_coverage.keys()):
-            if ma.plate in self.plates:
-                self.fees[ma.plate] = {"arrive": self.plates[ma.plate], "end": self.env.now}
-            else:
-                self.plates[ma.plate] = self.env.now
-
 
 # =============================================================================
 #  Generic definition of a mobile agent
 # =============================================================================
 # In this example, I thought in vehicles (cars)
 
-# More constructs are necessaries: random paths,
-# A speed is necessary? or/and use of mov. distributions?
-class generic_mobile_entity(object):  # GME
-    def __init__(self, _id, path, speed, action=None, start=0):
-        self.__default_speed = 10.0
-        self._id = _id
-        self.path = path
-        self.speed = speed
-        self.next_time = None
-
-        self.do = action
-        self.start = start
-
-        self.current_position = 0  # path index
-
-        if speed == 0.0:
-            self.speed = self.__default_speed
-
-    def __str__(self):
-        return "Agent (%i) in node: %i[%i/%i]" % (self._id, self.path[self.current_position], self.current_position, len(self.path) - 1)
-
-    def get_current_position(self):
-        return self.path[self.current_position]
 
 
-class car_agent(generic_mobile_entity):
+class car_agent(GenericMobileEntity):
     def __init__(self, *args, **kwargs):
         super(car_agent, self).__init__(*args, **kwargs)
         self.plate = "EU" + str(self._id)
@@ -255,7 +186,7 @@ print(service_coverage)
 env = simpy.Environment()
 counter = 0
 
-action = my_custom_action(service_coverage, env)
+action = CustomAction(service_coverage, env)
 
 for i in range(10000):
     try:

@@ -1,23 +1,23 @@
+"""Availability-aware Service Placement Policy in Fog Computing Based on Graph Partitions
+
+https://ieeexplore.ieee.org/document/8588297
+"""
+
 import json
 import logging
 import os
+import time
 
 import networkx as nx
 
-from yafs.core import Simulation
 from yafs.application import Application, Message
-from yafs.topology import Topology
-from yafs.placement import JSONPlacement
+from yafs.core import Simulation
 from yafs.distribution import *
-import numpy as np
-
+from yafs.placement import JSONPlacement
+from yafs.population import JSONPopulation
+from yafs.selection import DeviceSpeedAwareRouting2
+from yafs.topology import Topology
 from yafs.utils import fractional_selectivity
-
-from .selection_multipleDeploys import DeviceSpeedAwareRouting
-from .jsonPopulation import JSONPopulation
-
-import time
-
 
 logger = logging.getLogger(__name__)
 
@@ -94,7 +94,7 @@ def main(simulated_time, experiment_path, ilpPath, it):
     """
     SELECTOR algorithm
     """
-    selectorPath = DeviceSpeedAwareRouting()
+    selectorPath = DeviceSpeedAwareRouting2()
 
     """
     SIMULATION ENGINE

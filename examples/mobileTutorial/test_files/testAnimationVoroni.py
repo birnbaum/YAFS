@@ -1,17 +1,11 @@
-import trackanimation
-from trackanimation.animation import AnimationTrack
+from itertools import zip_longest as zip_longest
+
 import numpy as np
+from tqdm import tqdm
+
+import trackanimation
 
 # Simple example
-
-from trackanimation.tracking import DFTrack
-import numpy as np
-import matplotlib.pyplot as plt
-
-import matplotlib as mpl
-from itertools import zip_longest as zip_longest
-from tqdm import tqdm
-import scipy
 
 # runfile('/Users/isaaclera/PycharmProjects/YAFS/src/examples/mobileTutorial/testAnimationVoroni.py', wdir='/Users/isaaclera/PycharmProjects/YAFS/src/')
 

@@ -1,27 +1,16 @@
-"""
-
-    This example
-
-    @author: Isaac Lera & Carlos Guerrero
-
-"""
 import json
+import time
 
 import networkx as nx
 
-from yafs.core import Simulation
 from yafs.application import Application, Message
-from yafs import Topology
-from yafs import JSONPlacement
+from yafs.core import Simulation
 from yafs.distribution import *
-import numpy as np
-
+from yafs.placement import JSONPlacement
+from yafs.population import JSONPopulation
+from yafs.selection import DeviceSpeedAwareRouting2
+from yafs.topology import Topology
 from yafs.utils import fractional_selectivity
-
-from .selection_multipleDeploys import DeviceSpeedAwareRouting
-from .jsonPopulation import JSONPopulation
-
-import time
 
 
 def create_applications_from_json(data):
@@ -96,7 +85,7 @@ def main(simulated_time, experimento, ilpPath, it):
     """
     SELECTOR algorithm
     """
-    selectorPath = DeviceSpeedAwareRouting()
+    selectorPath = DeviceSpeedAwareRouting2()
 
     """
     SIMULATION ENGINE

@@ -1,6 +1,8 @@
 # TODO Documentation, why is this a module?
 
 
+# More constructs are necessaries: random paths,
+# A speed is necessary? or/and use of mov. distributions?
 class GenericMobileEntity:  # GME
     def __init__(self, id, path, speed, action=None, start=0):
         self.__default_speed = 10.0  # TODO Shouldn't this just be the argument default value?

@@ -1,34 +1,24 @@
-"""
+"""Implementation of "VRGameFog.java [#f1]_  of EGG_GAME a latency-sensitive online game" presented in [#f2]_ (first case study).
 
-    This example is an implementation of "VRGameFog.java [#f1]_  of EGG_GAME a latency-sensitive online game" presented in [#f2]_ (first case study).
-
-    .. [#f1] https://github.com/wolfbrother/iFogSim/blob/master/src/org/fog/examples/VRGameFog.java
-    .. [#f2] Gupta, H., Vahid Dastjerdi, A., Ghosh, S. K., & Buyya, R. (2017). iFogSim: A toolkit for modeling and simulation of resource management techniques in the Internet of Things, Edge and Fog computing environments. Software: Practice and Experience, 47(9), 1275-1296.
-
-    Created on Wed Nov 22 15:03:21 2017
-
-    @author: isaac
-
+.. [#f1] https://github.com/Cloudslab/iFogSim/blob/master/src/org/fog/test/perfeval/VRGameFog.java
+.. [#f2] Gupta, H., Vahid Dastjerdi, A., Ghosh, S. K., & Buyya, R. (2017). iFogSim: A toolkit for modeling and simulation of resource management techniques in the Internet of Things, Edge and Fog computing environments. Software: Practice and Experience, 47(9), 1275-1296.
 """
 
 import argparse
-
-from yafs.core import Simulation
-from yafs.application import Application, Message, Module
-
-from yafs.population import *
-from yafs.topology import Topology
-
-from examples.VRGameFog_IFogSim_WL.selection_multipleDeploys import BroadPath, CloudPath_RR
-from examples.VRGameFog_IFogSim_WL.placement_Cluster_Edge import CloudPlacement, FogPlacement
-from yafs.distribution import DeterministicDistribution
-from yafs.utils import fractional_selectivity
 import time
+
+from examples.iFogSim_VRGameFog.selection_multipleDeploys import BroadPath, CloudPath_RR
+from yafs.application import Application, Message, Module
+from yafs.core import Simulation
+from yafs.distribution import DeterministicDistribution
+from yafs.placement import CloudPlacement, FogPlacement
+from yafs.population import *
 from yafs.stats import Stats
+from yafs.topology import Topology
+from yafs.utils import fractional_selectivity
 
 
 def create_application():
-    # APLICATION
     a = Application(name="EGG_GAME", modules=[
         Module("EGG", is_source=True),
         Module("Display", is_sink=True),

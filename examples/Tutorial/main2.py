@@ -1,24 +1,19 @@
-"""
-
-    @author: isaac
-
-"""
 import random
+import time
+
+import networkx as nx
+import numpy as np
 
 from yafs import utils
-from yafs.core import Simulation
 from yafs.application import Application, Message
-
-from yafs.population import *
-from yafs.topology import Topology
-
-from examples.Tutorial.simpleSelection import MinPath_RoundRobin
-from examples.Tutorial.simplePlacement import CloudPlacement
+from yafs.core import Simulation
 from yafs.distribution import DeterministicDistribution
-from yafs.utils import fractional_selectivity
+from yafs.placement import CloudPlacement
+from yafs.population import StaticPopulation
+from yafs.selection import MinPathRoundRobin
 from yafs.stats import Stats
-import time
-import numpy as np
+from yafs.topology import Topology
+from yafs.utils import fractional_selectivity
 
 RANDOM_SEED = 1
 
@@ -131,7 +126,7 @@ def main(simulated_time):
     """
     # Their "selector" is actually the shortest way, there is not type of orchestration algorithm.
     # This implementation is already created in selector.class,called: First_ShortestPath
-    selectorPath = MinPath_RoundRobin()
+    selectorPath = MinPathRoundRobin()
 
     """
     SIMULATION ENGINE

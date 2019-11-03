@@ -1,7 +1,9 @@
+"""Triggered actions when a mobile agent is under the coverage of a IoT device (edge/sensor)"""
+
 import logging
 
 
-class generic_action(object):
+class GenericAction:
     # service_coverage
     #   key   => street node network
     #   value => id. module SW
@@ -13,9 +15,9 @@ class generic_action(object):
         None
 
 
-class my_custom_action(generic_action):
+class CustomAction(GenericAction):
     def __init__(self, *args, **kwargs):
-        super(my_custom_action, self).__init__(*args, **kwargs)
+        super(CustomAction, self).__init__(*args, **kwargs)
         self.plates = {}
         self.fees = {}
 

@@ -4,6 +4,7 @@ from abc import ABC
 
 import networkx as nx
 
+from yafs import distribution
 from yafs.distribution import Distribution, ExponentialDistribution
 
 logger = logging.getLogger(__name__)
@@ -379,6 +380,38 @@ class JSONPopulation(Population):
                 idsrc = sim.deploy_source(app_name, id_node=idtopo, msg=msg, distribution=dDistribution)
 
 
+class JSONPopulation2(Population):
+    def __init__(self, json, it, **kwargs):
+        super().__init__(**kwargs)
+        self.data = json
+        self.it = it
+
+    def initial_allocation(self, sim, app_name):
+        for idx, behaviour in enumerate(self.data["sources"]):
+            # Creating the type of the distribution
+            # behaviour["args"] should have the same attributes of the used distribution
+            class_ = getattr(distribution, behaviour["distribution"])
+            if "seed" not in list(behaviour["args"].keys()):
+                seed = idx + self.it
+                instance_distribution = class_(name="h%i" % idx, seed=seed, **behaviour["args"])
+            else:
+                instance_distribution = class_(name="h%i" % idx, **behaviour["args"])
+
+            # Getting information from the APP
+            app_name = behaviour["app"]
+            app = sim.apps[app_name]
+            msg = app.messages[behaviour["message"]]
+
+            # TODO Include a more flexible constructor
+            # if behaviour["entity"] == "all":
+            #     for entity in sim.mobile_fog_entities:
+            #         print entity
+            #         idsrc = sim.deploy_source(app_name, id_node=int(entity), msg=msg, distribution=instance_distribution)
+            # else:
+
+            idsrc = sim.deploy_source(app_name, id_node=behaviour["entity"], msg=msg, distribution=instance_distribution)
+
+
 class DynamicPopulation(Population):
     """
     We launch one user by invocation
@@ -422,3 +455,46 @@ class DynamicPopulation(Population):
 
             dDistribution = ExponentialDistribution(name="Exp", lambd=lambd, seed=seed)
             idsrc = sim.deploy_source(app_name, id_node=idtopo, msg=msg, distribution=dDistribution)
+
+
+class SimpleDynamicChanges(Population):
+    """Statically assigns the generation of a source in a node of the topology. It is only invoked in the initialization."""
+
+    def __init__(self, run_times, **kwargs):
+        self.run_times = run_times
+        super(SimpleDynamicChanges, self).__init__(**kwargs)
+
+    def initial_allocation(self, sim, app_name):
+
+        # Assignment of SINK and SOURCE pure modules
+        for id_entity in sim.topology.G.nodes:
+            entity = sim.topology.G.nodes[id_entity]
+            for ctrl in self.sink_control:
+                # A node can have several sinks modules
+                if entity["model"] == ctrl["model"]:
+                    # In this node there is a sink
+                    module = ctrl["module"]
+                    for number in range(ctrl["number"]):
+                        sim.deploy_sink(app_name, node=id_entity, module=module)
+            # end for sink control
+
+            for ctrl in self.src_control:
+                # A node can have several source modules
+                if entity["model"] == ctrl["model"]:
+                    msg = ctrl["message"]
+                    dst = ctrl["distribution"]
+                    for number in range(ctrl["number"]):
+                        idsrc = sim.deploy_source(app_name, id_node=id_entity, msg=msg, distribution=dst)
+                        # the idsrc can be used to control the deactivation of the process in a dynamic behaviour
+
+            # end for src control
+        # end assignments
+
+    def run(self, sim):
+
+        if self.run_times == 0:  # In addition, we can stop the process according to any criteria
+            sim.stop_process(sim.get_DES(self.name))
+        else:
+            self.run_times -= 1
+            # Run whatever you want
+            print("Running Population-Evolution: %i" % self.run_times)
