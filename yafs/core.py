@@ -5,6 +5,7 @@ from collections import Callable
 from typing import Optional, List, Dict
 
 import simpy
+from simpy import Process
 from tqdm import tqdm
 
 from yafs.application import Application, Message, Service
@@ -48,11 +49,6 @@ class Simulation:
 
         self.placement_policy = {}  # for app.name the placement algorithm
         self.population_policy = {}  # for app.name the population algorithm
-
-        # Start/stop flag for each pure source
-        # key: id.source.process
-        # value: Boolean
-        self.des_process_running = {}
 
         # key: app.name
         # value: des process
@@ -270,7 +266,6 @@ class Simulation:
             logger.debug("\n\nRemoving node: %i, Total nodes: %i" % (node, len(self.topology.G)))
             self.remove_node(node)
             for process in processes:
-                logger.debug("\tStopping DES process: %s\n\n" % process)
                 self.stop_process(process)
 
     def _sink_module_process(self, node_id, app_name, module_name):
@@ -325,7 +320,6 @@ class Simulation:
             Process id
         """
         process = self.env.process(self._source_process(node_id, app_name, message, distribution))
-        self.des_process_running[process] = True
         self.process_to_node[process] = node_id
         self.alloc_source[process] = {"id": node_id, "app": app_name, "module": message.src, "name": message.name}
         return process
@@ -354,7 +348,6 @@ class Simulation:
             Process id
         """
         process = self.env.process(self._consumer_process(node_id, app_name, module, services))
-        self.des_process_running[process] = True
         self.process_to_node[process] = node_id
 
         # To generate the QUEUE of a SERVICE module
@@ -409,7 +402,6 @@ class Simulation:
             module: module
         """
         process = self.env.process(self._sink_module_process(node_id, app_name, module))
-        self.des_process_running[process] = True
         self.process_to_node[process] = node_id
 
         self.__add_consumer_service_pipe(app_name, module)
@@ -420,23 +412,14 @@ class Simulation:
                 self.app_to_module_to_processes[app_name][module] = []
         self.app_to_module_to_processes[app_name][module].append(process)
 
-    def stop_process(self, id: int):  # TODO Use SimPy functionality for this
-        """All pure source modules (sensors) are controlled by this boolean.
-        Using this function (:mod:`Population`) algorithm can stop one source
-
-        Args:
-            id.source: the identifier of the DES process.
-        """
-        self.des_process_running[id] = False
-
-    def start_process(self, id: int):  # TODO Use SimPy functionality for this
-        """All pure source modules (sensors) are controlled by this boolean.
-        Using this function (:mod:`Population`) algorithm can start one source
-
-        Args:
-            id.source: the identifier of the DES process.
-        """
-        self.des_process_running[id] = True
+    def stop_process(self, process: Process):
+        """TODO"""
+        process.interrupt()
+        del self.process_to_node[process]
+        for app in self.app_to_module_to_processes:
+            for module_name in self.app_to_module_to_processes[app]:
+                if process in self.app_to_module_to_processes[app][module_name]:
+                    self.app_to_module_to_processes[app][module_name].remove(process)
 
     def deploy_app(self, app: Application, placement: Placement, population: Population, selection: Selection):
         """This process is responsible for linking the *application* to the different algorithms (placement, population, and service)"""
@@ -459,7 +442,6 @@ class Simulation:
             self.placement_policy[placement.name] = {"placement_policy": placement, "apps": []}
             if placement.activation_dist is not None:
                 process = self.env.process(self._placement_process(placement))
-                self.des_process_running[process] = True
                 self.des_control_process[placement.name] = process
 
     def _deploy_population(self, population):
@@ -467,7 +449,6 @@ class Simulation:
             self.population_policy[population.name] = {"population_policy": population, "apps": []}
             if population.activation_dist is not None:
                 process = self.env.process(self._population_process(population))
-                self.des_process_running[process] = True
                 self.des_control_process[population.name] = process
 
     def _placement_process(self, placement):
@@ -505,31 +486,19 @@ class Simulation:
                 all_des.append(k)
 
         # Clearing related structures
-        for des in self.app_to_module_to_processes[app_name][service_name]:
-            if des in all_des:
-                self.app_to_module_to_processes[app_name][service_name].remove(des)
-                self.stop_process(des)
-                del self.process_to_node[des]
+        for process in self.app_to_module_to_processes[app_name][service_name]:
+            if process in all_des:
+                self.stop_process(process)
 
-    def remove_node(self, id_node_topology):
+    def remove_node(self, node):
         # Stopping related processes deployed in the module and clearing main structure: alloc_DES
-        des_tmp = []
-        if id_node_topology in list(self.process_to_node.values()):
-            for k, v in list(self.process_to_node.items()):
-                if v == id_node_topology:
-                    des_tmp.append(k)
-                    self.stop_process(k)
-                    del self.process_to_node[k]
-
-        # Clearing other related structures
-        for k, v in list(self.app_to_module_to_processes.items()):
-            for k2, v2 in list(self.app_to_module_to_processes[k].items()):
-                for item in des_tmp:
-                    if item in v2:
-                        v2.remove(item)
+        if node in list(self.process_to_node.values()):
+            for process, p_node in list(self.process_to_node.items()):
+                if p_node == node:
+                    self.stop_process(process)
 
         # Finally removing node from topology
-        self.topology.G.remove_node(id_node_topology)
+        self.topology.G.remove_node(node)
 
     def print_debug_assignaments(self):
         """Prints debug information about the assignment of DES process - Topology ID - Source Module or Modules"""

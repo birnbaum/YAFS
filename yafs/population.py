@@ -454,11 +454,10 @@ class SimpleDynamicChanges(Population):
     """Statically assigns the generation of a source in a node of the topology. It is only invoked in the initialization."""
 
     def __init__(self, run_times, **kwargs):
-        self.run_times = run_times
+        self.run_times = run_times  # TODO Reimplement
         super(SimpleDynamicChanges, self).__init__(**kwargs)
 
     def initial_allocation(self, sim, app_name):
-
         # Assignment of SINK and SOURCE pure modules
         for id_entity in sim.topology.G.nodes:
             entity = sim.topology.G.nodes[id_entity]
@@ -469,7 +468,6 @@ class SimpleDynamicChanges(Population):
                     module = ctrl["module"]
                     for number in range(ctrl["number"]):
                         sim.deploy_sink(app_name, node_id=id_entity, module=module)
-            # end for sink control
 
             for ctrl in self.src_control:
                 # A node can have several source modules
@@ -478,14 +476,3 @@ class SimpleDynamicChanges(Population):
                     dst = ctrl["distribution"]
                     for number in range(ctrl["number"]):
                         sim.deploy_source(app_name, node_id=id_entity, message=msg, distribution=dst)
-
-            # end for src control
-        # end assignments
-
-    def run(self, sim):
-        if self.run_times == 0:  # In addition, we can stop the process according to any criteria
-            sim.stop_process(sim.des_control_process[self.name])
-        else:
-            self.run_times -= 1
-            # Run whatever you want
-            print("Running Population-Evolution: %i" % self.run_times)

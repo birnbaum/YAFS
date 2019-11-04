@@ -88,7 +88,7 @@ def __add_mobile_agent(self, ides, gme):
 
     yield self.env.timeout(gme.start)
     logger.info("(#DES:%i)\t--- Mobile Entity STARTS :\t%s " % (ides, gme._id))
-    while (len(gme.path) - 1 > gme.current_position) and self.des_process_running[ides]:
+    while (len(gme.path) - 1 > gme.current_position):
         e = (gme.path[gme.current_position], gme.path[gme.current_position + 1])
         data = self.street_network.get_edge_data(*e)
         try:
@@ -108,15 +108,13 @@ def __add_mobile_agent(self, ides, gme):
         gme.current_position += 1
 
     # Last movement
-    if self.des_process_running[ides]:
-        gme.do.action(gme)
+    gme.do.action(gme)
 
     logger.info("(#DES:%i)\t--- Mobile Entity ENDS :\t%s " % (ides, gme._id))
     # print "Mobile agent: %s ends " % gme.plate
 
 def add_mobile_agent(self, gme):
     ides = self._get_id_process()
-    self.des_process_running[ides] = True
     self.env.process(self.__add_mobile_agent(ides, gme))
 
     ### ATENCION COONTROLAR VAR: INTERNAS
