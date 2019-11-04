@@ -15,9 +15,6 @@ from yafs.selection import Selection
 from yafs.stats import Stats, EventLog
 from yafs.topology import Topology
 
-EVENT_UP_ENTITY = "node_up"
-EVENT_DOWN_ENTITY = "node_down"
-
 logger = logging.getLogger(__name__)
 
 
@@ -347,33 +344,6 @@ class Simulation:
                 logger.debug("\tStopping DES process: %s\n\n" % process)
                 self.stop_process(process)
 
-    """
-    MEJORAR - ASOCIAR UN PROCESO QUE LOS CONTROLES®.
-    """
-
-    def __add_up_node_process(self, next_event, **param):
-        process_id = self._next_process_id()
-        logger.debug("Added_Process - UP entity Creation\t#DES:%i" % process_id)
-        while True:
-            # TODO Define function to ADD a new NODE in topology
-            yield self.env.timeout(next_event(**param))
-            logger.debug("(DES:%i) %7.4f Node " % (process_id, self.env.now))
-        logger.debug("STOP_Process - UP entity Creation\t#DES%i" % process_id)
-
-    """
-    MEJORAR - ASOCIAR UN PROCESO QUE LOS CONTROLES.
-    """
-
-    def __add_down_node_process(self, next_event, **param):
-        process_id = self._next_process_id()
-        self.des_process_running[process_id] = True
-        logger.debug("Added_Process - Down entity Creation\t#DES:%i" % process_id)
-        while self.des_process_running[process_id]:
-            yield self.env.timeout(next_event(**param))
-            logger.debug("(DES:%i) %7.4f Node " % (process_id, self.env.now))
-
-        logger.debug("STOP_Process - Down entity Creation\t#DES%i" % process_id)
-
     def _consumer_process(self, process_id: int, app_name: str, module_name: str, services: List[Service]):
         """Process associated to a compute module"""
         logger.debug("Added_Process - Module Consumer: %s\t#DES:%i" % (module_name, process_id))
@@ -450,15 +420,6 @@ class Simulation:
         while True:
             yield self.env.timeout(next(distribution))
             function(**param)
-
-    def register_event_entity(self, next_event_dist, event_type=EVENT_UP_ENTITY, **args):
-        """
-        TODO
-        """
-        if event_type == EVENT_UP_ENTITY:
-            self.env.process(self.__add_up_node_process(next_event_dist, **args))
-        elif event_type == EVENT_DOWN_ENTITY:
-            self.env.process(self.__add_down_node_process(next_event_dist, **args))
 
     def deploy_source(self, app_name: str, id_node: int, msg, distribution) -> int:
         """Add a DES process for deploy pure source modules (sensors)

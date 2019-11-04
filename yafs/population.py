@@ -78,8 +78,7 @@ class StaticPopulation(Population):
                     msg = ctrl["message"]
                     dst = ctrl["distribution"]
                     for number in range(ctrl["number"]):
-                        idsrc = sim.deploy_source(app_name, id_node=id_entity, msg=msg, distribution=dst)
-                        # the idsrc can be used to control the deactivation of the process in a dynamic behaviour
+                        sim.deploy_source(app_name, node_id=id_entity, msg=msg, distribution=dst)
 
     def run(self, sim: "Simulation"):
         raise NotImplementedError()
@@ -101,7 +100,7 @@ class Evolutive(Population):
             for item in range(self.number_generators):
                 id = random.choice(id_nodes)
                 for number in range(ctrl["number"]):
-                    idsrc = sim.deploy_source(app_name, id_node=id, msg=msg, distribution=dst)
+                    sim.deploy_source(app_name, node_id=id, msg=msg, distribution=dst)
 
         # ASSIGNAMENT of the first SINK
         fog_device = self.fog_devices[0][0]
@@ -137,7 +136,7 @@ class Statical(Population):
             for item in range(self.number_generators):
                 id = random.choice(list(sim.topology.G.nodes()))
                 for number in range(ctrl["number"]):
-                    idsrc = sim.deploy_source(app_name, id_node=id, msg=msg, distribution=dst, param=param)
+                    sim.deploy_source(app_name, node_id=id, msg=msg, distribution=dst, param=param)
 
         # ASSIGNAMENT of the only one SINK
         for ctrl in self.sink_control:
@@ -163,7 +162,7 @@ class Statical2(Population):
                 msg = ctrl["message"]
                 dst = ctrl["distribution"]
                 for idx in ctrl["id"]:
-                    idsrc = sim.deploy_source(app_name, id_node=idx, msg=msg, distribution=dst)
+                    sim.deploy_source(app_name, node_id=idx, msg=msg, distribution=dst)
 
         for ctrl in self.sink_control:
             if "id" in list(ctrl.keys()):
@@ -189,7 +188,7 @@ class PopAndFailures(Population):
             for item in range(self.number_generators):
                 id = random.choice(id_nodes)
                 for number in range(ctrl["number"]):
-                    idsrc = sim.deploy_source(app_name, id_node=id, msg=msg, distribution=dst)
+                    sim.deploy_source(app_name, node_id=id, msg=msg, distribution=dst)
 
         for ctrl in self.sink_control:
             module = ctrl["module"]
@@ -267,7 +266,7 @@ class PopulationMove(Population):
             for item in range(self.number_generators):
                 id = random.choice(id_nodes)
                 for number in range(ctrl["number"]):
-                    idsrc = sim.deploy_source(app_name, id_node=id, msg=msg, distribution=dst)
+                    sim.deploy_source(app_name, node_id=id, msg=msg, distribution=dst)
 
         for ctrl in self.sink_control:
             module = ctrl["module"]
@@ -371,7 +370,7 @@ class JSONPopulation(Population):
 
                 dDistribution = ExponentialDistribution(name="Exp", lambd=lambd, seed=self.it)
 
-                idsrc = sim.deploy_source(app_name, id_node=idtopo, msg=msg, distribution=dDistribution)
+                sim.deploy_source(app_name, node_id=idtopo, msg=msg, distribution=dDistribution)
 
 
 class JSONPopulation2(Population):
@@ -400,10 +399,10 @@ class JSONPopulation2(Population):
             # if behaviour["entity"] == "all":
             #     for entity in sim.mobile_fog_entities:
             #         print entity
-            #         idsrc = sim.deploy_source(app_name, id_node=int(entity), msg=msg, distribution=instance_distribution)
+            #         sim.deploy_source(app_name, id_node=int(entity), msg=msg, distribution=instance_distribution)
             # else:
 
-            idsrc = sim.deploy_source(app_name, id_node=behaviour["entity"], msg=msg, distribution=instance_distribution)
+            sim.deploy_source(app_name, node_id=behaviour["entity"], msg=msg, distribution=instance_distribution)
 
 
 class DynamicPopulation(Population):
@@ -448,7 +447,7 @@ class DynamicPopulation(Population):
             seed = item["id_resource"] * 1000 + item["lambda"] + self.it
 
             dDistribution = ExponentialDistribution(name="Exp", lambd=lambd, seed=seed)
-            idsrc = sim.deploy_source(app_name, id_node=idtopo, msg=msg, distribution=dDistribution)
+            sim.deploy_source(app_name, node_id=idtopo, msg=msg, distribution=dDistribution)
 
 
 class SimpleDynamicChanges(Population):
@@ -478,8 +477,7 @@ class SimpleDynamicChanges(Population):
                     msg = ctrl["message"]
                     dst = ctrl["distribution"]
                     for number in range(ctrl["number"]):
-                        idsrc = sim.deploy_source(app_name, id_node=id_entity, msg=msg, distribution=dst)
-                        # the idsrc can be used to control the deactivation of the process in a dynamic behaviour
+                        sim.deploy_source(app_name, node_id=id_entity, msg=msg, distribution=dst)
 
             # end for src control
         # end assignments
