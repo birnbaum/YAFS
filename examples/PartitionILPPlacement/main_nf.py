@@ -10,7 +10,6 @@ from yafs.placement import JSONPlacement
 from yafs.population import JSONPopulation
 from yafs.selection import DeviceSpeedAwareRouting2
 from yafs.topology import Topology
-from yafs.utils import fractional_selectivity
 
 
 def create_applications_from_json(data):
@@ -32,7 +31,7 @@ def create_applications_from_json(data):
         # print "Total mensajes creados %i" %len(ms.keys())
         for idx, message in enumerate(app["transmission"]):
             if "message_out" in list(message.keys()):
-                a.add_service_module(message["module"], ms[message["message_in"]], ms[message["message_out"]], fractional_selectivity, threshold=1.0)
+                a.add_service_module(message["module"], ms[message["message_in"]], ms[message["message_out"]])
             else:
                 a.add_service_module(message["module"], ms[message["message_in"]])
 

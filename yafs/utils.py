@@ -11,33 +11,6 @@ import math
 
 # TODO Refactor, many methods like `create_pos` are only used in examples and never in the core lib
 
-# DISTRIBUTIONS
-
-# def next_time_uniform_dist(min,max):
-#     #Ensure that return value is non negative number and bigger than 0
-#     return random.randint(min,max)
-#
-# def next_time_exponential_dist(lambd):
-#     return random.expovariate(1 / lambd)
-#
-# def next_time_periodic(time_shift):
-#     return time_shift
-#
-# def deterministicDistribution(time_shift):
-#     return time_shift
-#
-def fractional_selectivity(threshold):
-    return random.random() <= threshold
-
-
-#
-#
-# def start_undeterminedDistribution(start,time_shift):
-#     return start
-
-
-###########
-
 
 def create_pos(G, scale):
     x = nx.get_node_attributes(G, "x")

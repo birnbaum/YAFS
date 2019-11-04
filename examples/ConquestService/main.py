@@ -14,7 +14,6 @@ from yafs.placement import JSONPlacement
 from yafs.population import Population
 from yafs.selection import Selection
 from yafs.topology import Topology, load_yafs_json
-from yafs.utils import fractional_selectivity
 
 logger = logging.getLogger(__name__)
 
@@ -286,7 +285,7 @@ def create_applications_from_json(data):
         # print "Total mensajes creados %i" %len(ms.keys())
         for idx, message in enumerate(app["transmission"]):
             if "message_out" in list(message.keys()):
-                a.add_service_module(message["module"], ms[message["message_in"]], ms[message["message_out"]], fractional_selectivity, threshold=1.0)
+                a.add_service_module(message["module"], ms[message["message_in"]], ms[message["message_out"]])
             else:
                 a.add_service_module(message["module"], ms[message["message_in"]])
         applications[app["name"]] = a

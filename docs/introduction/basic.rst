@@ -73,7 +73,7 @@ A **message** is the representation of a request between two modules. A message 
 
 We illustrate this example using *EEG_GAME application* [#f1]_ following the idea used in CloudSim [#f2]_ and other similar cloud simulators.
 
-.. note::  User defines the distribution functions that modules use to create and send the different messages. In this example, the user defines: *fractional_selectivity* and *next_time_periodic*.
+.. note::  User defines the distribution functions that modules use to create and send the different messages. In this example, the user defines: *next_time_periodic*.
 
 .. note::  In *sim.utils* package there are defined several distributions
 
@@ -108,7 +108,7 @@ We illustrate this example using *EEG_GAME application* [#f1]_ following the ide
         MODULES/SERVICES: Definition of Generators and Consumers (AppEdges and TupleMappings in iFogSim)
         """
         # MODULE SERVICES
-        a.add_service_module("ServiceA", m_a, m_b, fractional_selectivity, threshold=1.0)
+        a.add_service_module("ServiceA", m_a, m_b)
 
         return a
 

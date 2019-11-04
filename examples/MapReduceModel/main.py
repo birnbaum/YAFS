@@ -1,8 +1,3 @@
-"""
-    This example...
-    @author: Isaac Lera & Carlos Guerrero
-
-"""
 import json
 import argparse
 from yafs.core import Simulation
@@ -11,11 +6,6 @@ from yafs.topology import Topology
 from yafs.placement import JSONPlacement
 from yafs.distribution import *
 import numpy as np
-
-from yafs.utils import fractional_selectivity
-
-from .selection_multipleDeploys import DeviceSpeedAwareRouting
-from .jsonPopulation import JSONPopulation
 
 import time
 import networkx as nx
@@ -47,13 +37,12 @@ def create_applications_from_json(data):
                 value_treshld = 1.0
                 if "fractional" in list(message.keys()):
                     value_treshld = message["fractional"]
-                a.add_service_module(message["module"], ms[message["message_in"]], ms[message["message_out"]], fractional_selectivity, threshold=value_treshld)
+                a.add_service_module(message["module"], ms[message["message_in"]], ms[message["message_out"]], probability=value_treshld)
             else:
                 a.add_service_module(message["module"], ms[message["message_in"]])
 
         applications[app["name"]] = a
 
-    # a.add_service_module("Client", m_egg, m_sensor, fractional_selectivity, threshold=0.9)
     return applications
 
 

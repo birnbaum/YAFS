@@ -627,7 +627,7 @@ class Simulation:
         self.__add_consumer_service_pipe(app_name, module, process_id)
 
         self.alloc_DES[process_id] = id_node
-        if module not in self.alloc_module[app_name]:
+        if module not in self.alloc_module[app_name]:  # TODO defaultdict
             self.alloc_module[app_name][module] = []
         self.alloc_module[app_name][module].append(process_id)
 
@@ -713,22 +713,19 @@ class Simulation:
 
         return alloc_entities
 
-    def deploy_module(self, app_name, module, services, ids):
+    def deploy_module(self, app_name, module, services, node_ids):
         register_consumer_msg = []
         id_DES = []
 
-        # print module
         for service in services:
-            """
-            A module can manage multiples messages as well as pass them as create them.
-            """
+            # A module can manage multiples messages as well as pass them and create them.
             if service["type"] == Application.TYPE_SOURCE:
                 """
                 The MODULE can generate messages according with a distribution:
                 It adds a DES process for mananging it:  __add_source_module
                 """
-                for id_topology in ids:
-                    id_DES.append(self.__deploy_source_module(app_name, module, distribution=service["dist"], msg=service["message_out"], id_node=id_topology))
+                for node_id in node_ids:
+                    id_DES.append(self.__deploy_source_module(app_name, module, distribution=service["dist"], msg=service["message_out"], id_node=node_id))
             else:
                 """
                 The MODULE can deal with different messages, "tuppleMapping (iFogSim)",
@@ -741,14 +738,13 @@ class Simulation:
                         "message_in": service["message_in"],
                         "message_out": service["message_out"],
                         "module_dest": service["module_dest"],
-                        "dist": service["dist"],
-                        "param": service["param"],
+                        "probability": service["probability"],
                     }
                 )
 
         if len(register_consumer_msg) > 0:
-            for id_topology in ids:
-                id_DES.append(self.__deploy_module(app_name, module, id_topology, register_consumer_msg))
+            for node_id in node_ids:
+                id_DES.append(self._deploy_module(app_name, module, node_id, register_consumer_msg))
 
         return id_DES
 

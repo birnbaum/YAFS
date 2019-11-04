@@ -13,7 +13,6 @@ from yafs.population import StaticPopulation
 from yafs.selection import MinPathRoundRobin
 from yafs.stats import Stats
 from yafs.topology import Topology
-from yafs.utils import fractional_selectivity
 
 RANDOM_SEED = 1
 
@@ -45,7 +44,7 @@ def create_application():
     MODULES/SERVICES: Definition of Generators and Consumers (AppEdges and TupleMappings in iFogSim)
     """
     # MODULE SERVICES
-    a.add_service_module("ServiceA", m_a, m_b, fractional_selectivity, threshold=1.0)
+    a.add_service_module("ServiceA", m_a, m_b)
 
     return a
 

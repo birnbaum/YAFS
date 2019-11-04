@@ -106,6 +106,7 @@ class Application:
         self.messages[msg.name] = msg
 
     def add_service_source(self, module_name: str, distribution: Callable = None, message: Message = None, module_dst: List = None, p: List = None):
+        # TODO Why do we have to make this "non-pure" distinction?
         """Link to each non-pure module a management for creating messages
 
         Args:
@@ -131,33 +132,28 @@ class Application:
                 {"type": Application.TYPE_SOURCE, "dist": distribution, "message_out": message, "module_dest": module_dst, "p": p}
             )
 
-    def add_service_module(self, module_name: str, message_in, message_out="", distribution="", module_dst: List = None, p: List = None, **param):
+    def add_service_module(self, module_name: str, message_in: Message, message_out: Message, probability: float = 1.0, p: Optional[List] = None,
+                           module_dst: Optional[List] = None):
         # TODO Is message_out of type Message or str?
-        # TODO Fix mutable default arguments
         # MODULES/SERVICES: Definition of Generators and Consumers (AppEdges and TupleMappings in iFogSim)
         """Link to each non-pure module a management of transfering of messages
 
         Args:
             module_name: module name
-            message_in (Message): input message
-            message_out (Message): output message. If Empty the module is a sink
-            distribution (function): a function with a distribution function
-            module_dst (list): a list of modules who can receive this message. Broadcasting.
-            p (list): a list of probabilities to send this message. Broadcasting
-
-        Kwargs:
-            param (dict): the parameters for *distribution* function
-
+            message_in: input message
+            message_out: Output message. If Empty the module is a sink
+            probability: Probability to process the message
+            p: a list of probabilities to send this message. Broadcasting  # TODO Understand and refactor
+            module_dst: a list of modules who can receive this message. Broadcasting.
         """
         self.services[module_name].append(
             {
                 "type": Application.TYPE_MODULE,
-                "dist": distribution,
-                "param": param,
                 "message_in": message_in,
                 "message_out": message_out,
-                "module_dest": module_dst,
+                "probability": probability,
                 "p": p,
+                "module_dest": module_dst,
             }
         )
 

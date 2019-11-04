@@ -11,7 +11,6 @@ from yafs.selection import ShortestPath
 from yafs.topology import Topology, load_yafs_json
 
 from yafs.distribution import DeterministicDistribution
-from yafs.utils import fractional_selectivity
 import time
 import numpy as np
 
@@ -32,7 +31,7 @@ def create_application(name: str = "SimpleApp"):
     a.add_source_messages(message_a)
 
     # MODULES/SERVICES: Definition of Generators and Consumers (AppEdges and TupleMappings in iFogSim)
-    a.add_service_module("service_a", message_a, message_b, fractional_selectivity, threshold=1.0)
+    a.add_service_module("service_a", message_a, message_b)
 
     return a
 

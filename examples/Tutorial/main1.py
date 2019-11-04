@@ -10,7 +10,6 @@ from yafs.placement import CloudPlacement
 from yafs.population import *
 from yafs.selection import FirstShortestPath
 from yafs.topology import Topology, load_yafs_json
-from yafs.utils import fractional_selectivity
 
 RANDOM_SEED = 1
 
@@ -30,7 +29,7 @@ def create_application():
     a.add_source_messages(message_a)
 
     # MODULES/SERVICES: Definition of Generators and Consumers (AppEdges and TupleMappings in iFogSim)
-    a.add_service_module("ServiceA", message_a, message_b, fractional_selectivity, threshold=1.0)
+    a.add_service_module("ServiceA", message_a, message_b)
 
     return a
 

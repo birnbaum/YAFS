@@ -49,7 +49,6 @@ from yafs.placement import JSONPlacement
 from yafs.population import JSONPopulation
 from yafs.selection import MinShortPath
 from yafs.topology import Topology
-from yafs.utils import fractional_selectivity
 
 RANDOM_SEED = 1
 
@@ -94,10 +93,10 @@ def create_application():
     a.add_service_source("Calculator", distribution, m_player_game_state)  # According with the comments on VRGameFog.java, the period is 100ms
     a.add_service_source("Coordinator", distribution, m_global_game_state)
     # # MODULE SERVICES
-    a.add_service_module("Client", m_egg, m_sensor, fractional_selectivity, threshold=0.9)
-    a.add_service_module("Client", m_concentration, m_self_state_update, fractional_selectivity, threshold=1.0)
-    a.add_service_module("Client", m_global_game_state, m_global_state_update, fractional_selectivity, threshold=1.0)
-    a.add_service_module("Calculator", m_sensor, m_concentration, fractional_selectivity, threshold=1.0)
+    a.add_service_module("Client", m_egg, m_sensor, probability=0.9)
+    a.add_service_module("Client", m_concentration, m_self_state_update)
+    a.add_service_module("Client", m_global_game_state, m_global_state_update)
+    a.add_service_module("Calculator", m_sensor, m_concentration)
     a.add_service_module("Coordinator", m_player_game_state)
 
     return a
