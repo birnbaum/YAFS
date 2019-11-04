@@ -377,69 +377,43 @@ class Simulation:
 
         logger.debug("STOP_Process - Down entity Creation\t#DES%i" % process_id)
 
-    def __add_consumer_module(self, process_id: int, app_name: str, module: str, services: List[Service]):
+    def _consumer_process(self, process_id: int, app_name: str, module: str, services: List[Service]):
         """Process associated to a compute module"""
         logger.debug("Added_Process - Module Consumer: %s\t#DES:%i" % (module, process_id))
         while self.des_process_running[process_id]:
-            if self.des_process_running[process_id]:
-                msg = yield self.consumer_pipes["%s%s%i" % (app_name, module, process_id)].get()
-                # One pipe for each module name
+            message = yield self.consumer_pipes["%s%s%i" % (app_name, module, process_id)].get()
+            accepting_services = [s for s in services if message.name == s.message_in.name]
 
-                # print "Registers len: %i" %len(register_consumer_msg)
-                doBefore = False
-                for service in services:
-                    if msg.name == service.message_in.name:
-                        # The message can be treated by this module
+            if accepting_services:
+                logger.debug(f"{app_name}:{module}:{process_id}\tRecording message\t{message.name}")
+                type = self.NODE_METRIC  # TODO Remove
+                service_time = self.__update_node_metrics(app_name, module, message, process_id, type)
+                yield self.env.timeout(service_time)
 
-                        # The module only computes this type of message one time.
-                        # It records once
-                        if not doBefore:
-                            logger.debug("(App:%s#DES:%i#%s)\tModule - Recording the message:\t%s" % (app_name, process_id, module, msg.name))
-                            type = self.NODE_METRIC
+            for service in accepting_services:  # Processing the message
+                if not service.message_out:
+                    logger.debug(f"{app_name}:{module}:{process_id}\tSink message\t{message.name}")
+                    continue
 
-                            service_time = self.__update_node_metrics(app_name, module, msg, process_id, type)
-
-                            yield self.env.timeout(service_time)
-                            doBefore = True
-
-                        """
-                        Transferring the message
-                        """
-                        if not service.message_out:
-                            """
-                            Sink behaviour (nothing to send)
-                            """
-                            logger.debug("(App:%s#DES:%i#%s)\tModule - Sink Message:\t%s" % (app_name, process_id, module, msg.name))
-                            continue
-                        else:
-                            if random.random() <= service.probability:
-                                last_idDes = msg.last_idDes + [process_id]
-                                msg_out = service.message_out.evolve(timestamp=self.env.now, id=msg.id, last_idDes=last_idDes)
-
-                                if not service.module_dst:
-                                    # it is not a broadcasting message
-                                    logger.debug(
-                                        "(App:%s#DES:%i#%s)\tModule - Transmit Message:\t%s" % (app_name, process_id, module, service.message_out.name)
-                                    )
-                                    self._send_message(app_name, msg_out, process_id)
-                                else:
-                                    # it is a broadcasting message
-                                    logger.debug(
-                                        "(App:%s#DES:%i#%s)\tModule - Broadcasting Message:\t%s" % (app_name, process_id, module, service.message_out.name)
-                                    )
-                                    for idx, module_dst in enumerate(service.module_dst):
-                                        if random.random() <= service["p"][idx]:
-                                            self._send_message(app_name, msg_out, process_id)
-
-                            else:
-                                logger.debug("(App:%s#DES:%i#%s)\tModule - Stopped Message:\t%s" % (app_name, process_id, module, service.message_out.name))
-
+                if random.random() <= service.probability:
+                    last_idDes = message.last_idDes + [process_id]
+                    msg_out = service.message_out.evolve(timestamp=self.env.now, id=message.id, last_idDes=last_idDes)
+                    if not service.module_dst:
+                        # it is not a broadcasting message
+                        logger.debug(f"{app_name}:{module}:{process_id}\tTransmit message\t{service.message_out.name}")
+                        self._send_message(app_name, msg_out, process_id)
+                    else:
+                        # it is a broadcasting message
+                        logger.debug(f"{app_name}:{module}:{process_id}\tBroadcasting message\t{service.message_out.name}")
+                        for idx, module_dst in enumerate(service.module_dst):
+                            if random.random() <= service["p"][idx]:
+                                self._send_message(app_name, msg_out, process_id)
+                else:
+                    logger.debug(f"{app_name}:{module}:{process_id}\tDenied message\t{service.message_out.name}")
         logger.debug("STOP_Process - Module Consumer: %s\t#DES:%i" % (module, process_id))
 
     def __add_sink_module(self, ides, app_name, module):
-        """
-        It generates a DES process associated to a SINK module
-        """
+        """Process associated to a SINK module"""
         logger.debug("Added_Process - Module Pure Sink: %s\t#DES:%i" % (module, ides))
         while True and self.des_process_running[ides]:
             msg = yield self.consumer_pipes["%s%s%i" % (app_name, module, ides)].get()
@@ -456,9 +430,6 @@ class Simulation:
     def __add_consumer_service_pipe(self, app_name, module, process_id):
         logger.debug("Creating PIPE: %s%s%i " % (app_name, module, process_id))
         self.consumer_pipes["%s%s%i" % (app_name, module, process_id)] = simpy.Store(self.env)
-
-    def get_DES(self, name):
-        return self.des_control_process[name]
 
     def deploy_monitor(self, name: str, function: Callable, distribution: Callable, **param):
         """Add a DES process for user purpose
@@ -528,7 +499,7 @@ class Simulation:
         """
         process_id = self._next_process_id()
         self.des_process_running[process_id] = True
-        self.env.process(self.__add_consumer_module(process_id, app_name, module, services))
+        self.env.process(self._consumer_process(process_id, app_name, module, services))
         # To generate the QUEUE of a SERVICE module
         self.__add_consumer_service_pipe(app_name, module, process_id)
 
@@ -669,13 +640,12 @@ class Simulation:
             )
         print("-" * 40)
 
-    def run(self, until: int, results_path: Optional[str] = None, test_initial_deploy: bool = False, progress_bar: bool = True):
+    def run(self, until: int, results_path: Optional[str] = None, progress_bar: bool = True):
         """Runs the simulation
 
         Args:
             until: Defines a stop time
             results_path: TODO
-            test_initial_deploy: TODO
             progress_bar: TODO
         """
         # Creating app.sources and deploy the sources in the topology
@@ -690,9 +660,8 @@ class Simulation:
 
         self.print_debug_assignaments()
 
-        if not test_initial_deploy:
-            for i in tqdm(range(1, until), total=until, disable=(not progress_bar)):
-                self.env.run(until=i)
+        for i in tqdm(range(1, until), total=until, disable=(not progress_bar)):
+            self.env.run(until=i)
 
         if results_path:
             self.event_log.write(results_path)

@@ -371,7 +371,7 @@ def main():
                     for idx, app in enumerate(apps):
                         s.deploy_app(app, placement, pops[idx], selectorPath)
 
-                    s.run(stop_time, test_initial_deploy=False, progress_bar=False)
+                    s.run(stop_time, progress_bar=False)
 
                 # end for algorithms
             # end for communities size

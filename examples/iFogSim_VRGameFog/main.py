@@ -246,7 +246,7 @@ def main(simulated_time, depth, police):
     s = Simulation(t, default_results_path="Results_%s_%i_%i" % (police, stop_time, depth))
     s.deploy_app(app, placement, pop, selectorPath)
 
-    s.run(stop_time, test_initial_deploy=False, progress_bar=False)
+    s.run(stop_time, progress_bar=False)
     # s.draw_allocated_topology() # for debugging
 
 

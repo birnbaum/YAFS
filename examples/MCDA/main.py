@@ -113,7 +113,7 @@ def main(simulated_time, path, pathResults, case, failuresON, it, idcloud):
         s.deploy_app(apps[aName], placement, pop_app, selectorPath)
 
     logging.info(" Performing simulation: %s %i " % (case, it))
-    s.run(stop_time, test_initial_deploy=False, progress_bar=False)  # TEST to TRUE
+    s.run(stop_time, progress_bar=False)  # TEST to TRUE
 
     ## Enrouting information
     # print "Values"

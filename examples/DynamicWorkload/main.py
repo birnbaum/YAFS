@@ -123,7 +123,7 @@ def main(simulated_time):
     s = Simulation(t, default_results_path="Results_%s" % (simulated_time))
     s.deploy_app(app1, placement, pop, selectorPath)
 
-    s.run(simulated_time, test_initial_deploy=False, progress_bar=False)
+    s.run(simulated_time, progress_bar=False)
 
     # s.draw_allocated_topology() # for debugging
     s.print_debug_assignaments()

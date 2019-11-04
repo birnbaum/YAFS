@@ -485,9 +485,8 @@ class SimpleDynamicChanges(Population):
         # end assignments
 
     def run(self, sim):
-
         if self.run_times == 0:  # In addition, we can stop the process according to any criteria
-            sim.stop_process(sim.get_DES(self.name))
+            sim.stop_process(sim.des_control_process[self.name])
         else:
             self.run_times -= 1
             # Run whatever you want
