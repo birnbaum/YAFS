@@ -1,4 +1,5 @@
 from collections import defaultdict
+from copy import copy
 from typing import Callable, List, Optional, Dict
 
 
@@ -46,12 +47,18 @@ class Message:
         self.app_name = None  # TODO Remove this, Message should have no knowledge about application
         self.timestamp_rec = 0  # TODO ??
 
+        self.id = -1  # TODO ??
         self.process_id = None  # TODO ??
         self.last_idDes = []  # TODO ??
-        self.id = -1  # TODO ??
 
     def __str__(self):
         return f"Message<name=\"{self.name}\", id=\"{self.id}\", src=\"{self.src.name}\", dst=\"{self.dst.name}\">"
+
+    def evolve(self, **kwargs) -> "Message":
+        message = copy(self)
+        for key, value in kwargs.items():
+            setattr(message, key, value)
+        return message
 
 
 class Application:

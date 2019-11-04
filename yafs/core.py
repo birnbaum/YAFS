@@ -354,24 +354,24 @@ class Simulation:
             # WARNING. If there are more than two equal modules deployed in the same entity,
             # it will not be possible to determine which process sent this package at this point.
             # That information will have to be calculated by the trace of the message (message.id)
-            sourceDES = -1
+            src_process = -1
             try:
                 DES_possible = self.alloc_module[app][message.src]
                 for eDES in DES_possible:
                     if self.alloc_DES[eDES] == message.path[0]:
-                        sourceDES = eDES
+                        src_process = eDES
             except:
                 for k in list(self.alloc_source.keys()):
                     if self.alloc_source[k]["id"] == message.path[0]:
-                        sourceDES = k
+                        src_process = k
 
             self.event_log.append_event(id=message.id,
                                         type=type_,
                                         app=app,
                                         module=module,
                                         message=message.name,
-                                        DES_src=sourceDES,
-                                        DES_dst=des,
+                                        DES_src=src_process,
+                                        DES_dst=dst_process,
                                         module_src=message.src,
                                         TOPO_src=message.path[0],
                                         TOPO_dst=id_node,
@@ -384,13 +384,9 @@ class Simulation:
             return time_service
         except KeyError:
             # The node can be removed
-            logger.critical("Make sure that this node has been removed or it has all mandatory attributes - Node: DES:%i" % des)
+            logger.critical("Make sure that this node has been removed or it has all mandatory attributes - Node: DES:%i" % dst_process)
             return 0
 
-        # logger.debug("TS[%s] - DES: %i - %d"%(module,des,time_service))
-        # except:
-        #     logger.warning("This module has been removed previously to the arrival time of this message. DES: %i"%des)
-        #     return 0
 
     """
     MEJORAR - ASOCIAR UN PROCESO QUE LOS CONTROLES®.
@@ -428,9 +424,8 @@ class Simulation:
             yield self.env.timeout(next(distribution))
             if self.des_process_running[process_id]:
                 logger.debug("(App:%s#DES:%i#%s)\tModule - Generating Message:\t%s" % (app_name, process_id, module, message.name))
-                msg = copy.copy(message)
-                msg.timestamp = self.env.now
-                self._send_message(app_name, msg, process_id)
+                new_message = message.evolve(timestamp=self.env.now)
+                self._send_message(app_name, new_message, process_id)
 
         logger.debug("STOP_Process - Module Source: %s\t#DES:%i" % (module, process_id))
 
@@ -481,31 +476,21 @@ class Simulation:
                             continue
                         else:
                             if register["dist"](**register["param"]):  ### THRESHOLD DISTRIBUTION to Accept the message from source
+
+                                last_idDes = msg.last_idDes + [process_id]
+                                msg_out = register["message_out"].evolve(timestamp=self.env.now, id=msg.id, last_idDes=last_idDes)
+
                                 if not register["module_dest"]:
                                     # it is not a broadcasting message
                                     logger.debug(
                                         "(App:%s#DES:%i#%s)\tModule - Transmit Message:\t%s" % (app_name, process_id, module, register["message_out"].name)
                                     )
-
-                                    msg_out = copy.copy(register["message_out"])
-                                    msg_out.timestamp = self.env.now
-                                    msg_out.id = msg.id
-                                    msg_out.last_idDes = copy.copy(msg.last_idDes)
-                                    msg_out.last_idDes.append(process_id)
-
                                     self._send_message(app_name, msg_out, process_id)
-
                                 else:
                                     # it is a broadcasting message
                                     logger.debug(
                                         "(App:%s#DES:%i#%s)\tModule - Broadcasting Message:\t%s" % (app_name, process_id, module, register["message_out"].name)
                                     )
-
-                                    msg_out = copy.copy(register["message_out"])
-                                    msg_out.timestamp = self.env.now
-                                    msg_out.last_idDes = copy.copy(msg.last_idDes)
-                                    msg_out.id = msg.id
-                                    msg_out.last_idDes = msg.last_idDes.append(process_id)
                                     for idx, module_dst in enumerate(register["module_dest"]):
                                         if random.random() <= register["p"][idx]:
                                             self._send_message(app_name, msg_out, process_id)
@@ -709,8 +694,8 @@ class Simulation:
         # Add Selection control to the App
         self.selector_path[app.name] = selection
 
-    def get_alloc_entities(self):
-        """ It returns a dictionary of deployed services
+    def get_alloc_entities(self) -> Dict[int, List]:
+        """Returns a dictionary of deployed services
         key : id-node
         value: a list of deployed services
         """
@@ -718,16 +703,13 @@ class Simulation:
         for key in self.topology.G.nodes:
             alloc_entities[key] = []
 
-        for id_des_process in self.alloc_source:
-            src_deployed = self.alloc_source[id_des_process]
-            # print "Module (SRC): %s(%s) - deployed at entity.id: %s" %(src_deployed["module"],src_deployed["app"],src_deployed["id"])
-            alloc_entities[src_deployed["id"]].append(src_deployed["app"] + "#" + src_deployed["module"])
+        for src_deployed in self.alloc_source.values():
+            alloc_entities[src_deployed["id"]].append(src_deployed["app"] + "#" + src_deployed["module"].name)
 
         for app in self.alloc_module:
-            for module in self.alloc_module[app]:
-                # print "Module (MOD): %s(%s) - deployed at entities.id: %s" % (module,app,self.alloc_module[app][module])
-                for process_id in self.alloc_module[app][module]:
-                    alloc_entities[self.alloc_DES[process_id]].append(app + "#" + module)
+            for module_name in self.alloc_module[app]:
+                for process_id in self.alloc_module[app][module_name]:
+                    alloc_entities[self.alloc_DES[process_id]].append(app + "#" + module_name)
 
         return alloc_entities
 
