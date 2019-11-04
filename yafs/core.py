@@ -144,33 +144,19 @@ class Simulation:
         return self._message_id
 
     def _send_message(self, app_name: str, message: Message, process_id: int):
-        """Sends a message between modules and updates the metrics once the message reaches the destination module
+        """Sends a message between modules and updates the metrics once the message reaches the destination module"""
+        selection = self.selector_path[app_name]
+        src_node = self.process_to_node[process_id]
+        dst_processes = self.app_to_module_to_processes[app_name][message.dst.name]
+        dst_nodes = [self.process_to_node[dev] for dev in dst_processes]
 
-        Args:
-            app_name: TODO
-            message: TODO
-            process_id: TODO
-        """
-        # TODO IMPROVE asignation of topo = alloc_DES(IdDES) , It has to move to the get_path process
-        try:
-            paths, dst_process_id = self.selector_path[app_name].get_path(
-                self, app_name, message, self.alloc_DES[process_id], self.alloc_DES, self.alloc_module, self.last_busy_time, from_des=process_id
-            )
-            if dst_process_id == [None] or dst_process_id == [[]]:
-                logger.warning("(#DES:%i)\t--- Unreacheable DST:\t%s: PATH:%s " % (process_id, message.name, paths))
-                logger.debug("From __send_message function: ")
-                logger.debug("NODES (%i)" % len(self.topology.G.nodes()))
-            else:
-                logger.debug("(#DES:%i)\t--- SENDING Message:\t%s: PATH:%s  DES:%s" % (process_id, message.name, paths, dst_process_id))
-                # May be, the selector of path decides broadcasting multiples paths  # TODO What does this comment mean?
-                for idx, path in enumerate(paths):
-                    msg = copy.copy(message)
-                    msg.path = copy.copy(path)
-                    msg.app_name = app_name
-                    msg.process_id = dst_process_id[idx]
-                    self.network_ctrl_pipe.put(msg)
-        except KeyError:
-            logger.warning("(#DES:%i)\t--- Unreacheable DST:\t%s " % (process_id, message.name))
+        paths = selection.get_paths(self.topology.G, message, src_node, dst_nodes)
+        for path in paths:
+            dst_node = path[-1]
+            dst_process_id = self.process_from_module_in_node(dst_node, app_name, message.dst.name)
+            new_message = message.evolve(path=path, process_id=dst_process_id, app_name=app_name)
+            logger.debug(f"Process {process_id} sending {message} via path {path} to process {dst_process_id}")
+            self.network_ctrl_pipe.put(new_message)
 
     def _network_process(self):
         """Internal DES-process who manages the latency of messages sent in the network.
