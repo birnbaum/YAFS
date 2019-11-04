@@ -70,7 +70,7 @@ class StaticPopulation(Population):
                     # In this node there is a sink
                     module = ctrl["module"]
                     for number in range(ctrl["number"]):
-                        sim.deploy_sink(app_name, node=id_entity, module=module)
+                        sim.deploy_sink(app_name, node_id=id_entity, module=module)
 
             for ctrl in self.src_control:
                 # A node can have several source modules
@@ -78,7 +78,7 @@ class StaticPopulation(Population):
                     msg = ctrl["message"]
                     dst = ctrl["distribution"]
                     for number in range(ctrl["number"]):
-                        sim.deploy_source(app_name, node_id=id_entity, msg=msg, distribution=dst)
+                        sim.deploy_source(app_name, node_id=id_entity, message=msg, distribution=dst)
 
     def run(self, sim: "Simulation"):
         raise NotImplementedError()
@@ -100,7 +100,7 @@ class Evolutive(Population):
             for item in range(self.number_generators):
                 id = random.choice(id_nodes)
                 for number in range(ctrl["number"]):
-                    sim.deploy_source(app_name, node_id=id, msg=msg, distribution=dst)
+                    sim.deploy_source(app_name, node_id=id, message=msg, distribution=dst)
 
         # ASSIGNAMENT of the first SINK
         fog_device = self.fog_devices[0][0]
@@ -108,7 +108,7 @@ class Evolutive(Population):
         for ctrl in self.sink_control:
             module = ctrl["module"]
             for number in range(ctrl["number"]):
-                sim.deploy_sink(app_name, node=fog_device, module=module)
+                sim.deploy_sink(app_name, node_id=fog_device, module=module)
 
     def run(self, sim):
         if len(self.fog_devices) > 0:
@@ -119,7 +119,7 @@ class Evolutive(Population):
                 module = ctrl["module"]
                 app_name = ctrl["app"]
                 for number in range(ctrl["number"]):
-                    sim.deploy_sink(app_name, node=fog_device, module=module)
+                    sim.deploy_sink(app_name, node_id=fog_device, module=module)
 
 
 # TODO Whats the difference to StaticPopulation?
@@ -136,14 +136,14 @@ class Statical(Population):
             for item in range(self.number_generators):
                 id = random.choice(list(sim.topology.G.nodes()))
                 for number in range(ctrl["number"]):
-                    sim.deploy_source(app_name, node_id=id, msg=msg, distribution=dst, param=param)
+                    sim.deploy_source(app_name, node_id=id, message=msg, distribution=dst, param=param)
 
         # ASSIGNAMENT of the only one SINK
         for ctrl in self.sink_control:
             module = ctrl["module"]
             best_device = ctrl["id"]
             for number in range(ctrl["number"]):
-                sim.deploy_sink(app_name, node=best_device, module=module)
+                sim.deploy_sink(app_name, node_id=best_device, module=module)
 
 
 # TODO Whats the difference to StaticPopulation?
@@ -162,13 +162,13 @@ class Statical2(Population):
                 msg = ctrl["message"]
                 dst = ctrl["distribution"]
                 for idx in ctrl["id"]:
-                    sim.deploy_source(app_name, node_id=idx, msg=msg, distribution=dst)
+                    sim.deploy_source(app_name, node_id=idx, message=msg, distribution=dst)
 
         for ctrl in self.sink_control:
             if "id" in list(ctrl.keys()):
                 module = ctrl["module"]
                 for idx in ctrl["id"]:
-                    sim.deploy_sink(app_name, node=idx, module=module)
+                    sim.deploy_sink(app_name, node_id=idx, module=module)
 
 
 class PopAndFailures(Population):
@@ -188,14 +188,14 @@ class PopAndFailures(Population):
             for item in range(self.number_generators):
                 id = random.choice(id_nodes)
                 for number in range(ctrl["number"]):
-                    sim.deploy_source(app_name, node_id=id, msg=msg, distribution=dst)
+                    sim.deploy_source(app_name, node_id=id, message=msg, distribution=dst)
 
         for ctrl in self.sink_control:
             module = ctrl["module"]
             ids_coefficient = ctrl["ids"]
             for id in ids_coefficient:
                 for number in range(ctrl["number"]):
-                    sim.deploy_sink(app_name, node=id[0], module=module)
+                    sim.deploy_sink(app_name, node_id=id[0], module=module)
 
     def getProcessFromThatNode(self, sim, node_to_remove):
         if node_to_remove in list(sim.alloc_DES.values()):
@@ -266,13 +266,13 @@ class PopulationMove(Population):
             for item in range(self.number_generators):
                 id = random.choice(id_nodes)
                 for number in range(ctrl["number"]):
-                    sim.deploy_source(app_name, node_id=id, msg=msg, distribution=dst)
+                    sim.deploy_source(app_name, node_id=id, message=msg, distribution=dst)
 
         for ctrl in self.sink_control:
             module = ctrl["module"]
             best_device = ctrl["id"]
             for number in range(ctrl["number"]):
-                sim.deploy_sink(app_name, node=best_device, module=module)
+                sim.deploy_sink(app_name, node_id=best_device, module=module)
 
     def run(self, sim):
         import matplotlib.pyplot as plt
@@ -370,7 +370,7 @@ class JSONPopulation(Population):
 
                 dDistribution = ExponentialDistribution(name="Exp", lambd=lambd, seed=self.it)
 
-                sim.deploy_source(app_name, node_id=idtopo, msg=msg, distribution=dDistribution)
+                sim.deploy_source(app_name, node_id=idtopo, message=msg, distribution=dDistribution)
 
 
 class JSONPopulation2(Population):
@@ -402,7 +402,7 @@ class JSONPopulation2(Population):
             #         sim.deploy_source(app_name, id_node=int(entity), msg=msg, distribution=instance_distribution)
             # else:
 
-            sim.deploy_source(app_name, node_id=behaviour["entity"], msg=msg, distribution=instance_distribution)
+            sim.deploy_source(app_name, node_id=behaviour["entity"], message=msg, distribution=instance_distribution)
 
 
 class DynamicPopulation(Population):
@@ -447,7 +447,7 @@ class DynamicPopulation(Population):
             seed = item["id_resource"] * 1000 + item["lambda"] + self.it
 
             dDistribution = ExponentialDistribution(name="Exp", lambd=lambd, seed=seed)
-            sim.deploy_source(app_name, node_id=idtopo, msg=msg, distribution=dDistribution)
+            sim.deploy_source(app_name, node_id=idtopo, message=msg, distribution=dDistribution)
 
 
 class SimpleDynamicChanges(Population):
@@ -468,7 +468,7 @@ class SimpleDynamicChanges(Population):
                     # In this node there is a sink
                     module = ctrl["module"]
                     for number in range(ctrl["number"]):
-                        sim.deploy_sink(app_name, node=id_entity, module=module)
+                        sim.deploy_sink(app_name, node_id=id_entity, module=module)
             # end for sink control
 
             for ctrl in self.src_control:
@@ -477,7 +477,7 @@ class SimpleDynamicChanges(Population):
                     msg = ctrl["message"]
                     dst = ctrl["distribution"]
                     for number in range(ctrl["number"]):
-                        sim.deploy_source(app_name, node_id=id_entity, msg=msg, distribution=dst)
+                        sim.deploy_source(app_name, node_id=id_entity, message=msg, distribution=dst)
 
             # end for src control
         # end assignments

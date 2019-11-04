@@ -181,7 +181,7 @@ class DynamicPopulation(Population):
 
             dDistribution = ExponentialDistribution(name="Exp", lambd=lambd, seed=seed)
 
-            idsrc = sim.deploy_source(app_name, id_node=idtopo, msg=msg, distribution=dDistribution)
+            idsrc = sim.deploy_source(app_name, node_id=idtopo, message=msg, distribution=dDistribution)
 
 
 class DeviceSpeedAwareRouting(Selection):

@@ -37,7 +37,7 @@ class EventLog:
 
     def append_event(self, **kwargs) -> None:
         columns = set(kwargs.keys())
-        expected_columns = {"id", "type", "app", "module", "message", "DES_src", "DES_dst", "TOPO_src", "TOPO_dst", "module_src", "service",
+        expected_columns = {"id", "type", "app", "module", "message", "TOPO_src", "TOPO_dst", "module_src", "service",
                             "time_in", "time_out", "time_emit", "time_reception"}
         if columns != expected_columns:
             raise ValueError(f"Cannot append metrics event:\nExpected columns: {expected_columns}\nGot: {columns}")
@@ -45,7 +45,7 @@ class EventLog:
 
     def append_transmission(self, **kwargs) -> None:
         columns = set(kwargs.keys())
-        expected_columns = {"id", "type", "src", "dst", "app", "latency", "message", "ctime", "size", "buffer"}
+        expected_columns = {"id", "src", "dst", "app", "latency", "message", "ctime", "size", "buffer"}
         if columns != expected_columns:
             raise ValueError(f"Cannot append metrics transmission:\nExpected columns: {expected_columns}\nGot: {columns}")
         self.transmission_log.append(kwargs)

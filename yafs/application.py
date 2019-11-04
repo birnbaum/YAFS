@@ -71,7 +71,6 @@ class Message:
         self.timestamp_rec = 0  # TODO ??
 
         self.id = -1  # TODO ??
-        self.last_idDes = []  # TODO ??
 
     def __str__(self):
         return f"Message<name=\"{self.name}\", id=\"{self.id}\", src=\"{self.src.name}\", dst=\"{self.dst.name}\">"

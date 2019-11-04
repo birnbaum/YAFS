@@ -29,7 +29,7 @@ class CloudPath_RR(Selection):
             return bestPath, bestDES
 
         if message.name == "M.Concentration":
-            DES_dst = [message.last_idDes[0]]
+            DES_dst = [message.last_idDes[0]]  # TODO Process IDs have been removed from the Simulation
 
         best_path = []
         best_DES = []
@@ -133,7 +133,7 @@ class BroadPath(Selection):
                         return bestPath, bestDES
 
         if message.name == "M.Concentration":
-            DES_dst = [message.last_idDes[0]]
+            DES_dst = [message.last_idDes[0]]  # TODO Process IDs have been removed from the Simulation
 
         best_path = []
         best_DES = []
