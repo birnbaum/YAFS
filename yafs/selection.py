@@ -5,6 +5,7 @@ from typing import Tuple
 
 import networkx as nx
 
+from yafs.application import Message
 from yafs.topology import Topology
 
 logger = logging.getLogger(__name__)

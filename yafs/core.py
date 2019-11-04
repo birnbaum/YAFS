@@ -1,6 +1,5 @@
 """This module unifies the event-discrete simulation environment with the rest of modules: placement, topology, selection, population, utils and metrics."""
 
-import copy
 import logging
 from collections import Callable
 from typing import Optional, List, Dict
@@ -704,15 +703,14 @@ class Simulation:
             progress_bar: TODO
         """
         # Creating app.sources and deploy the sources in the topology
-        for pop in self.population_policy.values():
-            for app_name in pop["apps"]:
-                pop["population_policy"].initial_allocation(self, app_name)
+        for population in self.population_policy.values():
+            for app_name in population["apps"]:
+                population["population_policy"].initial_allocation(self, app_name)
 
         # Creating initial deploy of services
-        for place in self.placement_policy.values():
-            for app_name in place["apps"]:
-                print("APP_NAME ", app_name)
-                place["placement_policy"].initial_allocation(self, app_name)  # internally consideres the apps in charge
+        for placement in self.placement_policy.values():
+            for app_name in placement["apps"]:
+                placement["placement_policy"].initial_allocation(self, app_name)  # internally consideres the apps in charge
 
         self.print_debug_assignaments()
 

@@ -1,5 +1,6 @@
 import logging
 import random
+from typing import Tuple, List
 
 from yafs import utils
 from yafs.core import Simulation
@@ -17,22 +18,16 @@ import numpy as np
 RANDOM_SEED = 1
 
 
-def create_application(name: str = "SimpleApp"):
+def create_application(name: str = "SimpleApp") -> Tuple[Application, List[Message]]:
     sensor = Module("sensor", is_source=True)
     service_a = Module("service_a", is_source=True)
     actuator = Module("actuator", is_source=True)
-    a = Application(name=name, modules=[sensor, service_a, actuator])
-
-    # Messages among MODULES (AppEdge in iFogSim)
     message_a = Message("M.A", src=sensor, dst=service_a, instructions=20 * 10 ^ 6, size=1000)
     message_b = Message("M.B", src=service_a, dst=actuator, instructions=30 * 10 ^ 6, size=500)
+    service_a.add_service(message_a, message_b)  # TODO Weird back-referencing objects
+    application = Application(name=name, modules=[sensor, service_a, actuator])
 
-    # Defining which messages will be dynamically generated # the generation is controlled by Population algorithm
-    a.add_source_messages(message_a)
-
-    service_a.add_service(message_a, message_b)
-
-    return a
+    return application, [message_a]
 
 
 # @profile
@@ -53,35 +48,32 @@ def main(simulated_time):
     })
     t = Topology(G)
 
-    app1 = create_application("App1")
-    app2 = create_application("App2")
+    app1, source_messages1 = create_application("App1")
+    app2, source_messages2 = create_application("App2")
 
     placement = CloudPlacement("onCloud")  # it defines the deployed rules: module-device
     placement.scaleService({"service_a": 1})
 
     distribution = DeterministicDistribution(name="Deterministic", time=100)
-    # In ifogsim, during the creation of the application, the Sensors are assigned to the topology, in this case no.
-    # As mentioned, YAFS differentiates the adaptive sensors and their topological assignment.
-    # In their case, the use a statical assignment.
-    # For each type of sink modules we set a deployment on some type of devices
-    # A control sink consists on:
-    #  args:
-    #     model (str): identifies the device or devices where the sink is linked
-    #     number (int): quantity of sinks linked in each device
-    #     module (str): identifies the module from the app who receives the messages
+    # TODO Sink hardcoded
     population = StaticPopulation("Statical")
-    population.set_sink_control({"model": "actuator-device", "number": 1, "module": "actuator"})  # TODO Sink hardcoded
-    population.set_src_control({"model": "sensor-device",
-                                "number": 1,
-                                "message": app1.messages["M.A"],
-                                "distribution": distribution})
+    population.set_sink_control({"model": "actuator-device",  # identifies the device or devices where the sink is linked
+                                 "number": 1,  # quantity of sinks linked in each device
+                                 "module": "actuator"})  # identifies the module from the app who receives the messages
+
+    # TODO It appears that the current implementation does not respect applications
+    for source_message in source_messages1:
+        population.set_src_control({"model": "sensor-device",
+                                    "number": 1,
+                                    "message": source_message,
+                                    "distribution": distribution})
 
     selection = ShortestPath()
 
     simulation = Simulation(t)
     simulation.deploy_app(app1, placement=placement, population=population, selection=selection)
     simulation.deploy_app(app2, placement=placement, population=population, selection=selection)
-    simulation.run(until=simulated_time, results_path="results")
+    simulation.run(until=simulated_time, results_path="results", progress_bar=False)
     utils.draw_topology(t, simulation.get_alloc_entities())
 
     simulation.stats.print_report(1000, topology=t, time_loops=[["M.A", "M.B"]])
@@ -89,6 +81,7 @@ def main(simulated_time):
 
 if __name__ == "__main__":
     logging.basicConfig(format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.DEBUG)
+    logging.getLogger("matplotlib").setLevel(logging.WARNING)
     start_time = time.time()
     main(simulated_time=1000)
     print(("\n--- %s seconds ---" % (time.time() - start_time)))

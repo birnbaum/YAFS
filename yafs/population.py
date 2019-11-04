@@ -1,6 +1,6 @@
 import logging
 import random
-from abc import ABC
+from abc import ABC, abstractmethod
 
 import networkx as nx
 
@@ -31,8 +31,8 @@ class Population(ABC):
     def __init__(self, name: str, activation_dist: Distribution = None):
         self.name = name
         self.activation_dist = activation_dist
-        self.src_control = []  # TODO Private or document
-        self.sink_control = []  # TODO Private or document
+        self.src_control = []  # TODO Private or document  # TODO Make this a class
+        self.sink_control = []  # TODO Private or document  # TODO Make this a class
 
     def set_sink_control(self, values):
         """Localization of sink modules"""
@@ -46,23 +46,14 @@ class Population(ABC):
         """Stores the drivers of each message generator."""
         self.src_control.append(values)
 
-    def initial_allocation(self, sim, app_name):
-        """Given an ecosystem and an application, it starts the allocation of pure sources in the topology.
+    @abstractmethod
+    def initial_allocation(self, sim: "Simulation", app_name: str):
+        """Given an ecosystem and an application, it starts the allocation of pure sources in the topology."""
+        self.run(sim)
 
-        .. attention:: override required
-        """
-        self.run()  # TODO Pass sim??
-
-    # override
-    def run(self, sim):
-        """
-        This method will be invoked during the simulation to change the assignment of the modules that generate the messages.
-
-        Args:
-            sim (:mod: yafs.core.Sim)
-        """
-        logger.debug("Activiting - RUN - Population")
-        """ User definition of the Population evolution """
+    @abstractmethod
+    def run(self, sim: "Simulation"):
+        """Invoked during the simulation to change the assignment of the modules that generate the messages."""
 
 
 class StaticPopulation(Population):
@@ -89,6 +80,9 @@ class StaticPopulation(Population):
                     for number in range(ctrl["number"]):
                         idsrc = sim.deploy_source(app_name, id_node=id_entity, msg=msg, distribution=dst)
                         # the idsrc can be used to control the deactivation of the process in a dynamic behaviour
+
+    def run(self, sim: "Simulation"):
+        raise NotImplementedError()
 
 
 class Evolutive(Population):

@@ -1,4 +1,3 @@
-from collections import defaultdict
 from copy import copy
 from typing import List, Optional, Dict
 
