@@ -94,7 +94,7 @@ class Application:
     def __init__(self, name: str, modules: List[Module]):
         self.name = name
         self.modules = modules
-        self.messages = {}  # TODO Document or private
+        self.messages = {}  # TODO Only used in Population, should probably be removed
 
     def __str__(self):  # TODO Refactor this
         result = f"---- APP: \"{self.name}\"\n"

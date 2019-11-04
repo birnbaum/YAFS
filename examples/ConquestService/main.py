@@ -49,7 +49,7 @@ class CustomStrategy:
         """ returns a dictionary with name_service and a list of node where they are deployed
         example: defaultdict(<type 'list'>, {u'2_19': [15], u'3_22': [5]})
         """
-        current_services = sim.get_alloc_entities()
+        current_services = sim.node_to_modules
         current_services = dict((k, v) for k, v in current_services.items() if len(v) > 0)
         deployed_services = defaultdict(list)
         for k, v in current_services.items():
@@ -126,7 +126,7 @@ class CustomStrategy:
                         if not self.is_already_deployed(sim, service, nextLocation):
                             self.deploy_module(sim, service, nextLocation)
 
-        # entities = sim.get_alloc_entities()
+        # entities = sim.alloc_entities
         # f = open(self.pathResults + "/file_alloc_entities_%s_%i_%i_%i.pkl" % (case, stop_time, it,self.activations), "wb")
         # pickle.dump(entities, f)
         # f.close()
@@ -301,7 +301,9 @@ def main(simulated_time, path, results_path, case, run_id):
     placement_json = json.load(open(path + "allocDefinition.json"))
     placement = JSONPlacement(name="Placement", json=placement_json)
 
-    selectorPath = DeviceSpeedAwareRouting()
+    from yafs.selection import ShortestPath
+    selectorPath = ShortestPath()
+    # selectorPath = DeviceSpeedAwareRouting()
 
     s = Simulation(topology=Topology(G))
 
@@ -341,7 +343,7 @@ def main(simulated_time, path, results_path, case, run_id):
     evol.summarize()
 
     print("----")
-    entities = s.get_alloc_entities()
+    entities = s.node_to_modules
     src_entities, modules_entities = Counter(), Counter()
     for k, v in entities.items():
         src_entities[k] = 0

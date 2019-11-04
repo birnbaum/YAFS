@@ -74,7 +74,7 @@ def main(simulated_time):
     simulation.deploy_app(app1, placement=placement, population=population, selection=selection)
     simulation.deploy_app(app2, placement=placement, population=population, selection=selection)
     simulation.run(until=simulated_time, results_path="results", progress_bar=False)
-    utils.draw_topology(t, simulation.get_alloc_entities())
+    utils.draw_topology(t, simulation.node_to_modules)
 
     simulation.stats.print_report(1000, topology=t, time_loops=[["M.A", "M.B"]])
 

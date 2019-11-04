@@ -215,7 +215,7 @@ class PopAndFailures(Population):
                     # print "\t\t a sensor: %s" % sim.alloc_source[key]["module"]
                     ## Sources/Sensors modules are not removed
                     return False, [], False
-                someModuleAssignament = sim.get_assigned_structured_modules_from_DES()
+                someModuleAssignament = sim.assigned_structured_modules_from_process()
                 if key in list(someModuleAssignament.keys()):
                     # print "\t\t a module: %s" % someModuleAssignament[key]["module"]
                     if self.count_down < 3:

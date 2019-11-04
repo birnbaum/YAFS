@@ -378,7 +378,7 @@ class WARoutingAndDeploying(Selection):
 
             self.idEvaluation += 1
 
-            des = sim.get_DES_from_Service_In_Node(best_node, app_name, service)
+            des = sim.process_from_module_in_node(best_node, app_name, service)
 
             logging.info("RESULTS: bestNODE: %i, DES: %s" % (best_node, des))
 

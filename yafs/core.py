@@ -62,6 +62,10 @@ class Simulation:
         # value: des process
         self.des_control_process = {}
 
+        # Queues for each message
+        # App+module+process_id -> pipe
+        self.consumer_pipes = {}
+
         """Relationship of pure source with topology entity
 
         id.source.process -> value: dict("id","app","module")
@@ -71,10 +75,6 @@ class Simulation:
             alloc_source[34] = {"id":id_node,"app":app_name,"module":source module}
         """
         self.alloc_source = {}
-
-        # Queues for each message
-        # App+module+process_id -> pipe
-        self.consumer_pipes = {}
 
         """Represents the deployment of a module in a DES PROCESS each DES has a one topology.node.id (see alloc_des var.)
 
@@ -86,14 +86,14 @@ class Simulation:
 
             {"EGG_GAME":{"Controller":[1,3,4],"Client":[4]}}
         """
-        self.alloc_module = {}
+        self.app_to_module_to_processes = {}
 
         """Relationship between DES process and topology.node.id
 
         It is necessary to identify the message.source (topology.node)
         1.N. DES process -> 1. topology.node
         """
-        self.alloc_DES = {}
+        self.process_to_node = {}
 
         # Store for each app.name the selection policy
         # app.name -> Selector
@@ -106,6 +106,34 @@ class Simulation:
     @property
     def stats(self):
         return Stats(self.event_log)
+
+    @property
+    def node_to_modules(self) -> Dict[int, List]:
+        """Returns a dictionary mapping from node ids to their deployed services"""
+        result = {key: [] for key in self.topology.G.nodes}
+        for src_deployed in self.alloc_source.values():
+            result[src_deployed["id"]].append(src_deployed["app"] + "#" + src_deployed["module"].name)
+        for app in self.app_to_module_to_processes:
+            for module_name in self.app_to_module_to_processes[app]:
+                for process_id in self.app_to_module_to_processes[app][module_name]:
+                    result[self.process_to_node[process_id]].append(app + "#" + module_name)
+        return result
+
+    def process_from_module_in_node(self, node, app_name, module_name):
+        deployed = self.app_to_module_to_processes[app_name][module_name]
+        for des in deployed:
+            if self.process_to_node[des] == node:
+                return des
+        return []
+
+    def assigned_structured_modules_from_process(self):
+        fullAssignation = {}
+        for app in self.app_to_module_to_processes:
+            for module in self.app_to_module_to_processes[app]:
+                deployed = self.app_to_module_to_processes[app][module]
+                for des in deployed:
+                    fullAssignation[des] = {"DES": self.process_to_node[des], "module": module}
+        return fullAssignation
         
     def _next_process_id(self) -> int:
         self._process_id += 1
@@ -114,24 +142,6 @@ class Simulation:
     def _next_message_id(self):
         self._message_id += 1
         return self._message_id
-
-    def deploy_node_failure_generator(self, nodes: List[int], distribution: Distribution, logfile: Optional[str] = None) -> None:
-        logger.debug(f"Adding Process: Node Failure Generator (DES:{self._next_process_id()}) <nodes={nodes}, distribution={distribution}>")
-        self.env.process(self._node_failure_generator(nodes, distribution, logfile))
-
-    def _node_failure_generator(self, nodes: List[int], distribution: Distribution, logfile: Optional[str] = None):
-        """Controls the elimination of nodes"""
-        for node in nodes:
-            yield self.env.timeout(next(distribution))
-            processes = [k for k, v in self.alloc_DES.items() if v == node]  # A node can host multiples DES processes
-            if logfile:
-                with open(logfile, "a") as stream:
-                    stream.write("%i,%s,%d\n" % (node, len(processes), self.env.now))
-            logger.debug("\n\nRemoving node: %i, Total nodes: %i" % (node, len(self.topology.G)))
-            self.remove_node(node)
-            for process in processes:
-                logger.debug("\tStopping DES process: %s\n\n" % process)
-                self.stop_process(process)
 
     def _send_message(self, app_name: str, message: Message, process_id: int):
         """Sends a message between modules and updates the metrics once the message reaches the destination module
@@ -292,10 +302,10 @@ class Simulation:
         """computes the service time in processing a message and record this event"""
         try:
             if module in self.applications[app].sink_modules:  # module is a SINK
-                id_node = self.alloc_DES[dst_process]
+                id_node = self.process_to_node[dst_process]
                 time_service = 0
             else:
-                id_node = self.alloc_DES[dst_process]  # module is a processing module
+                id_node = self.process_to_node[dst_process]  # module is a processing module
                 att_node = self.topology.G.nodes[id_node]
                 time_service = message.instructions / float(att_node["IPT"])
 
@@ -305,9 +315,9 @@ class Simulation:
             # That information will have to be calculated by the trace of the message (message.id)
             src_process = -1
             try:
-                DES_possible = self.alloc_module[app][message.src]
+                DES_possible = self.app_to_module_to_processes[app][message.src]
                 for eDES in DES_possible:
-                    if self.alloc_DES[eDES] == message.path[0]:
+                    if self.process_to_node[eDES] == message.path[0]:
                         src_process = eDES
             except:
                 for k in list(self.alloc_source.keys()):
@@ -336,6 +346,23 @@ class Simulation:
             logger.critical("Make sure that this node has been removed or it has all mandatory attributes - Node: DES:%i" % dst_process)
             return 0
 
+    def deploy_node_failure_generator(self, nodes: List[int], distribution: Distribution, logfile: Optional[str] = None) -> None:
+        logger.debug(f"Adding Process: Node Failure Generator (DES:{self._next_process_id()}) <nodes={nodes}, distribution={distribution}>")
+        self.env.process(self._node_failure_generator(nodes, distribution, logfile))
+
+    def _node_failure_generator(self, nodes: List[int], distribution: Distribution, logfile: Optional[str] = None):
+        """Controls the elimination of nodes"""
+        for node in nodes:
+            yield self.env.timeout(next(distribution))
+            processes = [k for k, v in self.process_to_node.items() if v == node]  # A node can host multiples DES processes
+            if logfile:
+                with open(logfile, "a") as stream:
+                    stream.write("%i,%s,%d\n" % (node, len(processes), self.env.now))
+            logger.debug("\n\nRemoving node: %i, Total nodes: %i" % (node, len(self.topology.G)))
+            self.remove_node(node)
+            for process in processes:
+                logger.debug("\tStopping DES process: %s\n\n" % process)
+                self.stop_process(process)
 
     """
     MEJORAR - ASOCIAR UN PROCESO QUE LOS CONTROLES®.
@@ -440,16 +467,6 @@ class Simulation:
 
         logger.debug("STOP_Process - Module Pure Sink: %s\t#DES:%i" % (module, ides))
 
-    def __add_monitor(self, name, function, distribution, **param):
-        """
-        Add a DES process for user purpose
-        """
-        process_id = self._next_process_id()
-        logger.debug("Added_Process - Internal Monitor: %s\t#DES:%i" % (name, process_id))
-        while True:
-            yield self.env.timeout(next(distribution))
-            function(**param)
-
     def __add_consumer_service_pipe(self, app_name, module, process_id):
         logger.debug("Creating PIPE: %s%s%i " % (app_name, module, process_id))
         self.consumer_pipes["%s%s%i" % (app_name, module, process_id)] = simpy.Store(self.env)
@@ -468,7 +485,15 @@ class Simulation:
         Kwargs:
             param (dict): the parameters of the *distribution* function
         """
-        self.env.process(self.__add_monitor(name, function, distribution, **param))
+        self.env.process(self._add_monitor(name, function, distribution, **param))
+
+    def _add_monitor(self, name, function, distribution, **param):
+        """Pprocess for user purpose"""
+        process_id = self._next_process_id()
+        logger.debug("Added_Process - Internal Monitor: %s\t#DES:%i" % (name, process_id))
+        while True:
+            yield self.env.timeout(next(distribution))
+            function(**param)
 
     def register_event_entity(self, next_event_dist, event_type=EVENT_UP_ENTITY, **args):
         """
@@ -498,7 +523,7 @@ class Simulation:
         process_id = self._next_process_id()
         self.des_process_running[process_id] = True
         self.env.process(self.__add_source_population(process_id, app_name, msg, distribution))
-        self.alloc_DES[process_id] = id_node
+        self.process_to_node[process_id] = id_node
         self.alloc_source[process_id] = {"id": id_node, "app": app_name, "module": msg.src, "name": msg.name}
         return process_id
 
@@ -521,10 +546,10 @@ class Simulation:
         # To generate the QUEUE of a SERVICE module
         self.__add_consumer_service_pipe(app_name, module, process_id)
 
-        self.alloc_DES[process_id] = id_node
-        if module not in self.alloc_module[app_name]:  # TODO defaultdict
-            self.alloc_module[app_name][module] = []
-        self.alloc_module[app_name][module].append(process_id)
+        self.process_to_node[process_id] = id_node
+        if module not in self.app_to_module_to_processes[app_name]:  # TODO defaultdict
+            self.app_to_module_to_processes[app_name][module] = []
+        self.app_to_module_to_processes[app_name][module].append(process_id)
 
         return process_id
 
@@ -540,13 +565,13 @@ class Simulation:
         """
         process_id = self._next_process_id()
         self.des_process_running[process_id] = True
-        self.alloc_DES[process_id] = node
+        self.process_to_node[process_id] = node
         self.__add_consumer_service_pipe(app_name, module, process_id)
         # Update the relathionships among module-entity
-        if app_name in self.alloc_module:
-            if module not in self.alloc_module[app_name]:
-                self.alloc_module[app_name][module] = []
-        self.alloc_module[app_name][module].append(process_id)
+        if app_name in self.app_to_module_to_processes:
+            if module not in self.app_to_module_to_processes[app_name]:
+                self.app_to_module_to_processes[app_name][module] = []
+        self.app_to_module_to_processes[app_name][module].append(process_id)
         self.env.process(self.__add_sink_module(process_id, app_name, module))
 
     def stop_process(self, id: int):  # TODO Use SimPy functionality for this
@@ -570,7 +595,7 @@ class Simulation:
     def deploy_app(self, app: Application, placement: Placement, population: Population, selection: Selection):
         """This process is responsible for linking the *application* to the different algorithms (placement, population, and service)"""
         self.applications[app.name] = app
-        self.alloc_module[app.name] = {}
+        self.app_to_module_to_processes[app.name] = {}
 
         # Add Placement controls to the App
         if placement.name not in list(self.placement_policy.keys()):  # First Time
@@ -589,25 +614,6 @@ class Simulation:
         # Add Selection control to the App
         self.selector_path[app.name] = selection
 
-    def get_alloc_entities(self) -> Dict[int, List]:
-        """Returns a dictionary of deployed services
-        key : id-node
-        value: a list of deployed services
-        """
-        alloc_entities = {}
-        for key in self.topology.G.nodes:
-            alloc_entities[key] = []
-
-        for src_deployed in self.alloc_source.values():
-            alloc_entities[src_deployed["id"]].append(src_deployed["app"] + "#" + src_deployed["module"].name)
-
-        for app in self.alloc_module:
-            for module_name in self.alloc_module[app]:
-                for process_id in self.alloc_module[app][module_name]:
-                    alloc_entities[self.alloc_DES[process_id]].append(app + "#" + module_name)
-
-        return alloc_entities
-
     def deploy_module(self, app_name: str, module_name: str, services: List[Service], node_ids: List[int]):
         if len(services) == 0:
             return []
@@ -621,30 +627,30 @@ class Simulation:
         deployed in id_topo
         """
         all_des = []
-        for k, v in list(self.alloc_DES.items()):
+        for k, v in list(self.process_to_node.items()):
             if v == idtopo:
                 all_des.append(k)
 
         # Clearing related structures
-        for des in self.alloc_module[app_name][service_name]:
+        for des in self.app_to_module_to_processes[app_name][service_name]:
             if des in all_des:
-                self.alloc_module[app_name][service_name].remove(des)
+                self.app_to_module_to_processes[app_name][service_name].remove(des)
                 self.stop_process(des)
-                del self.alloc_DES[des]
+                del self.process_to_node[des]
 
     def remove_node(self, id_node_topology):
         # Stopping related processes deployed in the module and clearing main structure: alloc_DES
         des_tmp = []
-        if id_node_topology in list(self.alloc_DES.values()):
-            for k, v in list(self.alloc_DES.items()):
+        if id_node_topology in list(self.process_to_node.values()):
+            for k, v in list(self.process_to_node.items()):
                 if v == id_node_topology:
                     des_tmp.append(k)
                     self.stop_process(k)
-                    del self.alloc_DES[k]
+                    del self.process_to_node[k]
 
         # Clearing other related structures
-        for k, v in list(self.alloc_module.items()):
-            for k2, v2 in list(self.alloc_module[k].items()):
+        for k, v in list(self.app_to_module_to_processes.items()):
+            for k2, v2 in list(self.app_to_module_to_processes[k].items()):
                 for item in des_tmp:
                     if item in v2:
                         v2.remove(item)
@@ -652,40 +658,24 @@ class Simulation:
         # Finally removing node from topology
         self.topology.G.remove_node(id_node_topology)
 
-    def get_DES_from_Service_In_Node(self, node, app_name, service):
-        deployed = self.alloc_module[app_name][service]
-        for des in deployed:
-            if self.alloc_DES[des] == node:
-                return des
-        return []
-
-    def get_assigned_structured_modules_from_DES(self):
-        fullAssignation = {}
-        for app in self.alloc_module:
-            for module in self.alloc_module[app]:
-                deployed = self.alloc_module[app][module]
-                for des in deployed:
-                    fullAssignation[des] = {"DES": self.alloc_DES[des], "module": module}
-        return fullAssignation
-
     def print_debug_assignaments(self):
         """Prints debug information about the assignment of DES process - Topology ID - Source Module or Modules"""
         fullAssignation = {}
 
-        for app in self.alloc_module:
-            for module in self.alloc_module[app]:
-                deployed = self.alloc_module[app][module]
+        for app in self.app_to_module_to_processes:
+            for module in self.app_to_module_to_processes[app]:
+                deployed = self.app_to_module_to_processes[app][module]
                 for des in deployed:
-                    fullAssignation[des] = {"ID": self.alloc_DES[des], "Module": module}  # DES process are unique for each module/element
+                    fullAssignation[des] = {"ID": self.process_to_node[des], "Module": module}  # DES process are unique for each module/element
 
         print("-" * 40)
         print("DES\t| TOPO \t| Src.Mod \t| Modules")
         print("-" * 40)
-        for k in self.alloc_DES:
+        for k in self.process_to_node:
             print(
                 k,
                 "\t|",
-                self.alloc_DES[k],
+                self.process_to_node[k],
                 "\t|",
                 self.alloc_source[k]["name"] if k in list(self.alloc_source.keys()) else "--",
                 "\t\t|",

@@ -137,7 +137,7 @@ def main(simulated_time):
 
     s.run(stop_time, progress_bar=False)
 
-    utils.draw_topology(t, s.get_alloc_entities())
+    utils.draw_topology(t, s.node_to_modules)
 
 
 if __name__ == "__main__":

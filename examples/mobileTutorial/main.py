@@ -157,7 +157,7 @@ def main(path, path_results, number_simulation_steps, tracks, topology, case, it
     s.print_debug_assignaments()
 
     # print "----"
-    # entities = s.get_alloc_entities()
+    # entities = s.alloc_entities
     # src_entities,modules_entities = Counter(),Counter()
     # for k, v in entities.iteritems():
     #     src_entities[k]=0

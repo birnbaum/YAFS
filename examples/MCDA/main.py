@@ -127,7 +127,7 @@ def main(simulated_time, path, pathResults, case, failuresON, it, idcloud):
 
     # Genera un fichero GEPHI donde se marcan los nodos con usuarios (userposition) y los nodos con servicios desplegados (services)
     print("----")
-    l = s.get_alloc_entities()
+    l = s.node_to_modules
     userposition = {}
     deploymentservices = {}
     for k in l:
