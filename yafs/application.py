@@ -9,14 +9,19 @@ class Module:
         self.is_sink = is_sink
         self.data = data if data else {}  # TODO find better name
 
+    def __str__(self):
+        is_source = ", is_source=True" if self.is_source else ""
+        is_sink = ", is_sink=True" if self.is_sink else ""
+        return f"Module<name=\"{self.name}\"{is_source}{is_sink}>"
+
 
 class Message:
     """Representation of a request between two modules.
 
     Args:
         name: Message name, unique for each application
-        src: Name of the module who send this message
-        dst: Name of the module who received this message
+        src: Name of the module who sent this message
+        dst: Name of the module who receives this message
         instructions: Number of instructions to be executed (Instead of MIPS, we use IPt since the time is relative to the simulation units.)
         size: Size in bytes
 
@@ -27,11 +32,11 @@ class Message:
         app_name (str): the name of the application
     """
 
-    def __init__(self, name: str, src: str, dst: str, instructions: int = 0, size: int = 0, broadcasting: bool = False):
+    def __init__(self, name: str, src: Module, dst: Module, instructions: int = 0, size: int = 0, broadcasting: bool = False):
         self.name = name
         self.src = src
         self.dst = dst
-        self.instructions = instructions
+        self.instructions = instructions  # TODO ??
         self.size = size
         self.broadcasting = broadcasting  # TODO document
 
@@ -46,7 +51,7 @@ class Message:
         self.id = -1  # TODO ??
 
     def __str__(self):
-        return f"Message {self.name} ({self.id}). From \"{self.src}\"  to \"{self.dst}\"."
+        return f"Message<name=\"{self.name}\", id=\"{self.id}\", src=\"{self.src.name}\", dst=\"{self.dst.name}\">"
 
 
 class Application:
@@ -59,7 +64,7 @@ class Application:
     def __init__(self, name: str, modules: List[Module]):
         self.name = name
         self.modules = modules
-        self.services = defaultdict(list)  # TODO Document or private
+        self.services = defaultdict(list)
         self.messages = {}  # TODO Document or private
 
     def __str__(self):  # TODO Refactor this

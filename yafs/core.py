@@ -134,7 +134,7 @@ class Simulation:
                 logger.debug("\tStopping DES process: %s\n\n" % process)
                 self.stop_process(process)
 
-    def _send_message(self, app_name: str, message: Message, process_id):
+    def _send_message(self, app_name: str, message: Message, process_id: int):
         """Sends a message between modules and updates the metrics once the message reaches the destination module
 
         Args:
@@ -176,7 +176,7 @@ class Simulation:
 
             # If same SRC and PATH or the message has achieved the penultimate node to reach the dst
             if not message.path or message.path[-1] == message.dst_int or len(message.path) == 1:
-                pipe_id = "%s%s%i" % (message.app_name, message.dst, message.process_id)  # app_name + module_name (dst) + process_id
+                pipe_id = "%s%s%i" % (message.app_name, message.dst.name, message.process_id)  # app_name + module_name (dst) + process_id
                 # Timestamp reception message in the module
                 message.timestamp_rec = self.env.now
                 # The message is sent to the module.pipe
@@ -229,7 +229,7 @@ class Simulation:
                 #     logger.warning("The initial path assigned is unreachabled. Link: (%i,%i). Routing a new one. %i" % (link[0], link[1], self.env.now))
                 #
                 #     paths, DES_dst = self.selector_path[message.app_name].get_path_from_failure(
-                #         self, message, link, self.alloc_DES, self.alloc_module, self.last_busy_time, self.env.now, from_des=message.process_id
+                #         self, message, link, self.alloc_DES, self.alloc_module, self.last_busy_time, self.env.now
                 #     )
                 #
                 #     if DES_dst == [] and paths == []:
@@ -241,12 +241,12 @@ class Simulation:
                 #         logger.debug("(\t New path given. Message is enrouting again.")
                 #         self.network_ctrl_pipe.put(message)
 
-    def __wait_message(self, msg, latency, shift_time):
+    def __wait_message(self, message, latency, shift_time):
         """Simulates the transfer behavior of a message on a link"""
         self.network_pump += 1
         yield self.env.timeout(latency + shift_time)
         self.network_pump -= 1
-        self.network_ctrl_pipe.put(msg)
+        self.network_ctrl_pipe.put(message)
 
     def _placement_process(self, placement):
         """
@@ -458,20 +458,6 @@ class Simulation:
                 for register in register_consumer_msg:
                     if msg.name == register["message_in"].name:
                         # The message can be treated by this module
-                        """
-                        Processing the message
-                        """
-                        # if ides == 3:
-                        #     print "Consumer Message: %d " % self.env.now
-                        #     print "MODULE DES: ",ides
-                        #     print "id ",msg.id
-                        #     print "name ",msg.name
-                        #     print msg.path
-                        #     print msg.dst_int
-                        #     print msg.timestamp
-                        #     print msg.dst
-                        #
-                        #     print "-" * 30
 
                         # The module only computes this type of message one time.
                         # It records once

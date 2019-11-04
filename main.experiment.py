@@ -1,19 +1,13 @@
-"""
-
-    Created on Wed Nov 22 15:03:21 2017
-
-    @author: isaac
-
-"""
+import logging
 import random
 
 from yafs import utils
 from yafs.core import Simulation
 from yafs.application import Application, Message, Module
 from yafs.placement import CloudPlacement
+from yafs.population import StaticPopulation
 
-from yafs.population import *
-from yafs.selection import FirstShortestPath
+from yafs.selection import ShortestPath
 from yafs.topology import Topology, load_yafs_json
 
 from yafs.distribution import DeterministicDistribution
@@ -24,22 +18,21 @@ import numpy as np
 RANDOM_SEED = 1
 
 
-def create_application():
-    a = Application(name="SimpleApp", modules=[  # (S) --> (ServiceA) --> (A)
-        Module("Sensor", is_source=True),
-        Module("ServiceA", data={"RAM": 10}),
-        Module("Actuator", is_sink=True),
-    ])
+def create_application(name: str = "SimpleApp"):
+    sensor = Module("sensor", is_source=True)
+    service_a = Module("service_a", is_source=True)
+    actuator = Module("actuator", is_source=True)
+    a = Application(name=name, modules=[sensor, service_a, actuator])
 
     # Messages among MODULES (AppEdge in iFogSim)
-    message_a = Message("M.A", src="Sensor", dst="ServiceA", instructions=20 * 10 ^ 6, size=1000)
-    message_b = Message("M.B", src="ServiceA", dst="Actuator", instructions=30 * 10 ^ 6, size=500)
+    message_a = Message("M.A", src=sensor, dst=service_a, instructions=20 * 10 ^ 6, size=1000)
+    message_b = Message("M.B", src=service_a, dst=actuator, instructions=30 * 10 ^ 6, size=500)
 
     # Defining which messages will be dynamically generated # the generation is controlled by Population algorithm
     a.add_source_messages(message_a)
 
     # MODULES/SERVICES: Definition of Generators and Consumers (AppEdges and TupleMappings in iFogSim)
-    a.add_service_module("ServiceA", message_a, message_b, fractional_selectivity, threshold=1.0)
+    a.add_service_module("service_a", message_a, message_b, fractional_selectivity, threshold=1.0)
 
     return a
 
@@ -62,11 +55,13 @@ def main(simulated_time):
     })
     t = Topology(G)
 
-    app = create_application()
+    app1 = create_application("App1")
+    app2 = create_application("App2")
 
     placement = CloudPlacement("onCloud")  # it defines the deployed rules: module-device
-    placement.scaleService({"ServiceA": 1})
+    placement.scaleService({"service_a": 1})
 
+    distribution = DeterministicDistribution(name="Deterministic", time=100)
     # In ifogsim, during the creation of the application, the Sensors are assigned to the topology, in this case no.
     # As mentioned, YAFS differentiates the adaptive sensors and their topological assignment.
     # In their case, the use a statical assignment.
@@ -77,12 +72,17 @@ def main(simulated_time):
     #     number (int): quantity of sinks linked in each device
     #     module (str): identifies the module from the app who receives the messages
     population = StaticPopulation("Statical")
-    population.set_sink_control({"model": "actuator-device", "number": 1, "module": "Actuator"})  # TODO Sink hardcoded
-    population.set_src_control({"model": "sensor-device", "number": 1, "message": app.messages["M.A"],
-                                "distribution": DeterministicDistribution(name="Deterministic", time=100)})
+    population.set_sink_control({"model": "actuator-device", "number": 1, "module": "actuator"})  # TODO Sink hardcoded
+    population.set_src_control({"model": "sensor-device",
+                                "number": 1,
+                                "message": app1.messages["M.A"],
+                                "distribution": distribution})
+
+    selection = ShortestPath()
 
     simulation = Simulation(t)
-    simulation.deploy_app(app, placement=placement, population=population, selection=FirstShortestPath())
+    simulation.deploy_app(app1, placement=placement, population=population, selection=selection)
+    simulation.deploy_app(app2, placement=placement, population=population, selection=selection)
     simulation.run(until=simulated_time, results_path="results")
     utils.draw_topology(t, simulation.get_alloc_entities())
 
@@ -90,7 +90,7 @@ def main(simulated_time):
 
 
 if __name__ == "__main__":
-    logging.basicConfig(format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.INFO)
+    logging.basicConfig(format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.DEBUG)
     start_time = time.time()
     main(simulated_time=1000)
     print(("\n--- %s seconds ---" % (time.time() - start_time)))

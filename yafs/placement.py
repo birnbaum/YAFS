@@ -24,7 +24,7 @@ class Placement(ABC):
     def __init__(self, name: str, activation_dist: Callable = None):  # TODO Remove logger
         self.name = name  # TODO What do we need this for
         self.activation_dist = activation_dist
-        self.scaleServices = []  # TODO Rename/Remove this
+        self.scaleServices = []  # TODO What does this do??
 
     def scaleService(self, scale):  # TODO Refactor, this is not pythonic
         self.scaleServices = scale
@@ -95,10 +95,10 @@ class CloudPlacement(Placement):
         app = simulation.applications[app_name]
         services = app.services
 
-        for module in services:
-            if module in self.scaleServices:
-                for rep in range(0, self.scaleServices[module]):
-                    process_id = simulation.deploy_module(app_name, module, services[module], id_cluster)
+        for service in services:
+            if service in self.scaleServices:
+                for rep in range(0, self.scaleServices[service]):
+                    simulation.deploy_module(app_name, service, services[service], id_cluster)
 
 
 class CloudPlacementIFogSIM(Placement):

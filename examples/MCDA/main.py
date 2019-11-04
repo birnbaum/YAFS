@@ -1,3 +1,5 @@
+# TODO This example has >2000 files in it
+
 import collections
 import json
 import logging.config
