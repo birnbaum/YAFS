@@ -8,7 +8,7 @@ from typing import Optional, List, Dict
 import simpy
 from tqdm import tqdm
 
-from yafs.application import Application, Message
+from yafs.application import Application, Message, Service
 from yafs.distribution import *
 from yafs.placement import Placement
 from yafs.population import Population
@@ -365,21 +365,7 @@ class Simulation:
 
         logger.debug("STOP_Process - Down entity Creation\t#DES%i" % process_id)
 
-    def __add_source_module(self, process_id, app_name, module, message, distribution, **param):
-        """
-        It generates a DES process associated to a compute module for the generation of messages
-        """
-        logger.debug("Added_Process - Module Source: %s\t#DES:%i" % (module, process_id))
-        while self.des_process_running[process_id]:
-            yield self.env.timeout(next(distribution))
-            if self.des_process_running[process_id]:
-                logger.debug("(App:%s#DES:%i#%s)\tModule - Generating Message:\t%s" % (app_name, process_id, module, message.name))
-                new_message = message.evolve(timestamp=self.env.now)
-                self._send_message(app_name, new_message, process_id)
-
-        logger.debug("STOP_Process - Module Source: %s\t#DES:%i" % (module, process_id))
-
-    def __add_consumer_module(self, process_id, app_name, module, register_consumer_msg):
+    def __add_consumer_module(self, process_id: int, app_name: str, module: str, services: List[Service]):
         """Process associated to a compute module"""
         logger.debug("Added_Process - Module Consumer: %s\t#DES:%i" % (module, process_id))
         while self.des_process_running[process_id]:
@@ -389,8 +375,8 @@ class Simulation:
 
                 # print "Registers len: %i" %len(register_consumer_msg)
                 doBefore = False
-                for register in register_consumer_msg:
-                    if msg.name == register["message_in"].name:
+                for service in services:
+                    if msg.name == service.message_in.name:
                         # The message can be treated by this module
 
                         # The module only computes this type of message one time.
@@ -407,34 +393,34 @@ class Simulation:
                         """
                         Transferring the message
                         """
-                        if not register["message_out"]:
+                        if not service.message_out:
                             """
                             Sink behaviour (nothing to send)
                             """
                             logger.debug("(App:%s#DES:%i#%s)\tModule - Sink Message:\t%s" % (app_name, process_id, module, msg.name))
                             continue
                         else:
-                            if random.random() <= register["probability"]:
+                            if random.random() <= service.probability:
                                 last_idDes = msg.last_idDes + [process_id]
-                                msg_out = register["message_out"].evolve(timestamp=self.env.now, id=msg.id, last_idDes=last_idDes)
+                                msg_out = service.message_out.evolve(timestamp=self.env.now, id=msg.id, last_idDes=last_idDes)
 
-                                if not register["module_dest"]:
+                                if not service.module_dst:
                                     # it is not a broadcasting message
                                     logger.debug(
-                                        "(App:%s#DES:%i#%s)\tModule - Transmit Message:\t%s" % (app_name, process_id, module, register["message_out"].name)
+                                        "(App:%s#DES:%i#%s)\tModule - Transmit Message:\t%s" % (app_name, process_id, module, service.message_out.name)
                                     )
                                     self._send_message(app_name, msg_out, process_id)
                                 else:
                                     # it is a broadcasting message
                                     logger.debug(
-                                        "(App:%s#DES:%i#%s)\tModule - Broadcasting Message:\t%s" % (app_name, process_id, module, register["message_out"].name)
+                                        "(App:%s#DES:%i#%s)\tModule - Broadcasting Message:\t%s" % (app_name, process_id, module, service.message_out.name)
                                     )
-                                    for idx, module_dst in enumerate(register["module_dest"]):
-                                        if random.random() <= register["p"][idx]:
+                                    for idx, module_dst in enumerate(service.module_dst):
+                                        if random.random() <= service["p"][idx]:
                                             self._send_message(app_name, msg_out, process_id)
 
                             else:
-                                logger.debug("(App:%s#DES:%i#%s)\tModule - Stopped Message:\t%s" % (app_name, process_id, module, register["message_out"].name))
+                                logger.debug("(App:%s#DES:%i#%s)\tModule - Stopped Message:\t%s" % (app_name, process_id, module, service.message_out.name))
 
         logger.debug("STOP_Process - Module Consumer: %s\t#DES:%i" % (module, process_id))
 
@@ -464,11 +450,9 @@ class Simulation:
         while True:
             yield self.env.timeout(next(distribution))
             function(**param)
-        logger.debug("STOP_Process - Internal Monitor: %s\t#DES:%i" % (name, process_id))
 
     def __add_consumer_service_pipe(self, app_name, module, process_id):
         logger.debug("Creating PIPE: %s%s%i " % (app_name, module, process_id))
-
         self.consumer_pipes["%s%s%i" % (app_name, module, process_id)] = simpy.Store(self.env)
 
     def get_DES(self, name):
@@ -519,30 +503,7 @@ class Simulation:
         self.alloc_source[process_id] = {"id": id_node, "app": app_name, "module": msg.src, "name": msg.name}
         return process_id
 
-    def __deploy_source_module(self, app_name: str, module, id_node: int, msg, distribution) -> int:
-        """Add a DES process for deploy  source modules
-        This function its used by (:mod:`Population`) algorithm
-
-        Args:
-            app_name: application name
-            module: TODO
-            id_node: entity.id of the topology who will create the messages
-            msg: TODO
-            distribution (function): a temporary distribution function
-
-        Kwargs:
-            param - the parameters of the *distribution* function  # TODO ???
-
-        Returns:
-            Process id
-        """
-        process_id = self._next_process_id()
-        self.des_process_running[process_id] = True
-        self.env.process(self.__add_source_module(process_id, app_name, module, msg, distribution))
-        self.alloc_DES[process_id] = id_node
-        return process_id
-
-    def _deploy_module(self, app_name: str, module: str, id_node: int, register_consumer_msg: List[Dict]) -> int:
+    def _deploy_module(self, app_name: str, module: str, id_node: int, services: List[Service]) -> int:
         """Add a DES process for deploy  modules
         This function its used by (:mod:`Population`) algorithm
 
@@ -550,14 +511,14 @@ class Simulation:
             app_name: application name
             id_node: entity.id of the topology who will create the messages
             module: module name
-            register_consumer_msg: TODO
+            services: TODO
 
         Returns:
             Process id
         """
         process_id = self._next_process_id()
         self.des_process_running[process_id] = True
-        self.env.process(self.__add_consumer_module(process_id, app_name, module, register_consumer_msg))
+        self.env.process(self.__add_consumer_module(process_id, app_name, module, services))
         # To generate the QUEUE of a SERVICE module
         self.__add_consumer_service_pipe(app_name, module, process_id)
 
@@ -648,40 +609,11 @@ class Simulation:
 
         return alloc_entities
 
-    def deploy_module(self, app_name, module, services, node_ids):
-        register_consumer_msg = []
-        id_DES = []
-
-        for service in services:
-            # A module can manage multiples messages as well as pass them and create them.
-            if service["type"] == Application.TYPE_SOURCE:
-                """
-                The MODULE can generate messages according with a distribution:
-                It adds a DES process for mananging it:  __add_source_module
-                """
-                for node_id in node_ids:
-                    id_DES.append(self.__deploy_source_module(app_name, module, distribution=service["dist"], msg=service["message_out"], id_node=node_id))
-            else:
-                """
-                The MODULE can deal with different messages, "tuppleMapping (iFogSim)",
-                all of them are add a list to be managed in only one DES process
-                MODULE TYPE CONSUMER : adding process:  __add_consumer_module
-                """
-                # 1 module puede consumir N type de messages con diferentes funciones de distribucion
-                register_consumer_msg.append(
-                    {
-                        "message_in": service["message_in"],
-                        "message_out": service["message_out"],
-                        "module_dest": service["module_dest"],
-                        "probability": service["probability"],
-                    }
-                )
-
-        if len(register_consumer_msg) > 0:
-            for node_id in node_ids:
-                id_DES.append(self._deploy_module(app_name, module, node_id, register_consumer_msg))
-
-        return id_DES
+    def deploy_module(self, app_name: str, module_name: str, services: List[Service], node_ids: List[int]):
+        if len(services) == 0:
+            return []
+        else:
+            return [self._deploy_module(app_name, module_name, node_id, services) for node_id in node_ids]
 
     def undeploy_module(self, app_name, service_name, idtopo):
         """Removes all modules deployed in a node

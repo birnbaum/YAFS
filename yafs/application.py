@@ -1,14 +1,38 @@
 from collections import defaultdict
 from copy import copy
-from typing import Callable, List, Optional, Dict
+from typing import List, Optional, Dict
+
+
+class Service:
+    """Definition of Generators and Consumers (AppEdges and TupleMappings in iFogSim)
+
+    Args:
+        message_in: input message
+        message_out: Output message. If Empty the module is a sink
+        probability: Probability to process the message
+        p: a list of probabilities to send this message. Broadcasting  # TODO Understand and refactor
+        module_dst: a list of modules who can receive this message. Broadcasting.
+    """
+    def __init__(self, message_in: "Message", message_out: "Message", probability: float = 1.0, p: Optional[List] = None,
+                 module_dst: Optional[List] = None):
+        self.message_in = message_in
+        self.message_out = message_out
+        self.probability = probability
+        self.p = p if p else []
+        self.module_dst = module_dst if module_dst else []
 
 
 class Module:
     def __init__(self, name: str, is_source: bool = False, is_sink: bool = False, data: Optional[Dict] = None):
         self.name = name
+        self.services = []  # can deal with different messages, "tuppleMapping (iFogSim)"
         self.is_source = is_source
         self.is_sink = is_sink
         self.data = data if data else {}  # TODO find better name
+
+    def add_service(self, message_in: "Message", message_out: "Message", probability: float = 1.0, p: Optional[List] = None,
+                    module_dst: Optional[List] = None):
+        self.services.append(Service(message_in, message_out, probability, p, module_dst))
 
     def __str__(self):
         is_source = ", is_source=True" if self.is_source else ""
@@ -96,6 +120,10 @@ class Application:
         return [module for module in self.modules if module.is_source]
 
     @property
+    def service_modules(self):
+        return [module for module in self.modules if module.services]
+
+    @property
     def sink_modules(self):
         return [module for module in self.modules if module.is_sink]
 
@@ -104,60 +132,3 @@ class Application:
         # Defining which messages will be dynamically generated # the generation is controlled by Population algorithm
         # TODO Check
         self.messages[msg.name] = msg
-
-    def add_service_source(self, module_name: str, distribution: Callable = None, message: Message = None, module_dst: List = None, p: List = None):
-        # TODO Why do we have to make this "non-pure" distinction?
-        """Link to each non-pure module a management for creating messages
-
-        Args:
-            module_name: Module name
-            distribution: A distribution function
-            message: The message
-            module_dst: List of modules who can receive this message. Broadcasting.
-            p: List of probabilities to send this message. Broadcasting
-
-        Kwargs:
-            param_distribution (dict): the parameters for *distribution* function  # TODO ???
-        """
-        # TODO Check
-        if not module_dst:
-            module_dst = []
-        if not p:
-            p = []
-
-        if distribution is not None:
-            if module_name not in self.services:
-                self.services[module_name] = []
-            self.services[module_name].append(
-                {"type": Application.TYPE_SOURCE, "dist": distribution, "message_out": message, "module_dest": module_dst, "p": p}
-            )
-
-    def add_service_module(self, module_name: str, message_in: Message, message_out: Message, probability: float = 1.0, p: Optional[List] = None,
-                           module_dst: Optional[List] = None):
-        # TODO Is message_out of type Message or str?
-        # MODULES/SERVICES: Definition of Generators and Consumers (AppEdges and TupleMappings in iFogSim)
-        """Link to each non-pure module a management of transfering of messages
-
-        Args:
-            module_name: module name
-            message_in: input message
-            message_out: Output message. If Empty the module is a sink
-            probability: Probability to process the message
-            p: a list of probabilities to send this message. Broadcasting  # TODO Understand and refactor
-            module_dst: a list of modules who can receive this message. Broadcasting.
-        """
-        self.services[module_name].append(
-            {
-                "type": Application.TYPE_MODULE,
-                "message_in": message_in,
-                "message_out": message_out,
-                "probability": probability,
-                "p": p,
-                "module_dest": module_dst,
-            }
-        )
-
-    TYPE_SOURCE = "SOURCE"  # Sensor
-    TYPE_MODULE = "MODULE"
-    TYPE_SINK = "SINK"  # Actuator
-

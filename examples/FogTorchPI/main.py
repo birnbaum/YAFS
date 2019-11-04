@@ -90,6 +90,7 @@ def create_application():
     # MODULE SOURCES: only periodic messages
     distribution = DeterministicDistribution(name="Deterministic", time=100)
 
+    # TODO add_service_source has to be re-implemented
     a.add_service_source("Calculator", distribution, m_player_game_state)  # According with the comments on VRGameFog.java, the period is 100ms
     a.add_service_source("Coordinator", distribution, m_global_game_state)
     # # MODULE SERVICES
