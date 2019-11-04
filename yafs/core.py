@@ -63,7 +63,7 @@ class Simulation:
         self.des_control_process = {}
 
         # Queues for each message
-        # App+module+process_id -> pipe
+        # <app_name>:<module_name> -> pipe
         self.consumer_pipes = {}
 
         """Relationship of pure source with topology entity
@@ -152,10 +152,8 @@ class Simulation:
 
         paths = selection.get_paths(self.topology.G, message, src_node, dst_nodes)
         for path in paths:
-            dst_node = path[-1]
-            dst_process_id = self.process_from_module_in_node(dst_node, app_name, message.dst.name)
-            new_message = message.evolve(path=path, process_id=dst_process_id, app_name=app_name)
-            logger.debug(f"Process {process_id} sending {message} via path {path} to process {dst_process_id}")
+            logger.debug(f"Process {process_id} sending {message} via path {path}")
+            new_message = message.evolve(path=path, app_name=app_name)
             self.network_ctrl_pipe.put(new_message)
 
     def _network_process(self):
@@ -171,11 +169,10 @@ class Simulation:
 
             # If same SRC and PATH or the message has achieved the penultimate node to reach the dst
             if not message.path or message.path[-1] == message.dst_int or len(message.path) == 1:
-                pipe_id = "%s%s%i" % (message.app_name, message.dst.name, message.process_id)  # app_name + module_name (dst) + process_id
                 # Timestamp reception message in the module
                 message.timestamp_rec = self.env.now
                 # The message is sent to the module.pipe
-                self.consumer_pipes[pipe_id].put(message)
+                self.consumer_pipes[f"{message.app_name}:{message.dst.name}"].put(message)
             else:
                 # The message is sent at first time or it sent more times.
                 if message.dst_int < 0:
@@ -377,22 +374,23 @@ class Simulation:
 
         logger.debug("STOP_Process - Down entity Creation\t#DES%i" % process_id)
 
-    def _consumer_process(self, process_id: int, app_name: str, module: str, services: List[Service]):
+    def _consumer_process(self, process_id: int, app_name: str, module_name: str, services: List[Service]):
         """Process associated to a compute module"""
-        logger.debug("Added_Process - Module Consumer: %s\t#DES:%i" % (module, process_id))
+        logger.debug("Added_Process - Module Consumer: %s\t#DES:%i" % (module_name, process_id))
         while self.des_process_running[process_id]:
-            message = yield self.consumer_pipes["%s%s%i" % (app_name, module, process_id)].get()
+            pipe_id = f"{app_name}:{module_name}"
+            message = yield self.consumer_pipes[pipe_id].get()
             accepting_services = [s for s in services if message.name == s.message_in.name]
 
             if accepting_services:
-                logger.debug(f"{app_name}:{module}:{process_id}\tRecording message\t{message.name}")
+                logger.debug(f"{pipe_id}\tRecording message\t{message.name}")
                 type = self.NODE_METRIC  # TODO Remove
-                service_time = self.__update_node_metrics(app_name, module, message, process_id, type)
+                service_time = self.__update_node_metrics(app_name, module_name, message, process_id, type)
                 yield self.env.timeout(service_time)
 
             for service in accepting_services:  # Processing the message
                 if not service.message_out:
-                    logger.debug(f"{app_name}:{module}:{process_id}\tSink message\t{message.name}")
+                    logger.debug(f"{app_name}:{module_name}:{process_id}\tSink message\t{message.name}")
                     continue
 
                 if random.random() <= service.probability:
@@ -400,36 +398,37 @@ class Simulation:
                     msg_out = service.message_out.evolve(timestamp=self.env.now, id=message.id, last_idDes=last_idDes)
                     if not service.module_dst:
                         # it is not a broadcasting message
-                        logger.debug(f"{app_name}:{module}:{process_id}\tTransmit message\t{service.message_out.name}")
+                        logger.debug(f"{app_name}:{module_name}:{process_id}\tTransmit message\t{service.message_out.name}")
                         self._send_message(app_name, msg_out, process_id)
                     else:
                         # it is a broadcasting message
-                        logger.debug(f"{app_name}:{module}:{process_id}\tBroadcasting message\t{service.message_out.name}")
+                        logger.debug(f"{app_name}:{module_name}:{process_id}\tBroadcasting message\t{service.message_out.name}")
                         for idx, module_dst in enumerate(service.module_dst):
                             if random.random() <= service["p"][idx]:
                                 self._send_message(app_name, msg_out, process_id)
                 else:
-                    logger.debug(f"{app_name}:{module}:{process_id}\tDenied message\t{service.message_out.name}")
-        logger.debug("STOP_Process - Module Consumer: %s\t#DES:%i" % (module, process_id))
+                    logger.debug(f"{app_name}:{module_name}:{process_id}\tDenied message\t{service.message_out.name}")
+        logger.debug("STOP_Process - Module Consumer: %s\t#DES:%i" % (module_name, process_id))
 
-    def __add_sink_module(self, ides, app_name, module):
+    def __add_sink_module(self, ides, app_name, module_name):
         """Process associated to a SINK module"""
-        logger.debug("Added_Process - Module Pure Sink: %s\t#DES:%i" % (module, ides))
+        logger.debug("Added_Process - Module Pure Sink: %s\t#DES:%i" % (module_name, ides))
         while True and self.des_process_running[ides]:
-            msg = yield self.consumer_pipes["%s%s%i" % (app_name, module, ides)].get()
+            msg = yield self.consumer_pipes[f"{app_name}:{module_name}"].get()
             """
             Processing the message
             """
-            logger.debug("(App:%s#DES:%i#%s)\tModule Pure - Sink Message:\t%s" % (app_name, ides, module, msg.name))
+            logger.debug("(App:%s#DES:%i#%s)\tModule Pure - Sink Message:\t%s" % (app_name, ides, module_name, msg.name))
             type = self.SINK_METRIC
-            service_time = self.__update_node_metrics(app_name, module, msg, ides, type)
+            service_time = self.__update_node_metrics(app_name, module_name, msg, ides, type)
             yield self.env.timeout(service_time)  # service time is 0
 
-        logger.debug("STOP_Process - Module Pure Sink: %s\t#DES:%i" % (module, ides))
+        logger.debug("STOP_Process - Module Pure Sink: %s\t#DES:%i" % (module_name, ides))
 
-    def __add_consumer_service_pipe(self, app_name, module, process_id):
-        logger.debug("Creating PIPE: %s%s%i " % (app_name, module, process_id))
-        self.consumer_pipes["%s%s%i" % (app_name, module, process_id)] = simpy.Store(self.env)
+    def __add_consumer_service_pipe(self, app_name, module_name):
+        pipe_key = f"{app_name}:{module_name}"
+        logger.debug("Creating PIPE: " + pipe_key)
+        self.consumer_pipes[pipe_key] = simpy.Store(self.env)
 
     def deploy_monitor(self, name: str, function: Callable, distribution: Callable, **param):
         """Add a DES process for user purpose
@@ -500,8 +499,9 @@ class Simulation:
         process_id = self._next_process_id()
         self.des_process_running[process_id] = True
         self.env.process(self._consumer_process(process_id, app_name, module, services))
+
         # To generate the QUEUE of a SERVICE module
-        self.__add_consumer_service_pipe(app_name, module, process_id)
+        self.__add_consumer_service_pipe(app_name, module)
 
         self.process_to_node[process_id] = id_node
         if module not in self.app_to_module_to_processes[app_name]:  # TODO defaultdict
@@ -523,7 +523,9 @@ class Simulation:
         process_id = self._next_process_id()
         self.des_process_running[process_id] = True
         self.process_to_node[process_id] = node
-        self.__add_consumer_service_pipe(app_name, module, process_id)
+
+        self.__add_consumer_service_pipe(app_name, module)
+
         # Update the relathionships among module-entity
         if app_name in self.app_to_module_to_processes:
             if module not in self.app_to_module_to_processes[app_name]:

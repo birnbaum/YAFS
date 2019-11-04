@@ -71,7 +71,6 @@ class Message:
         self.timestamp_rec = 0  # TODO ??
 
         self.id = -1  # TODO ??
-        self.process_id = None  # TODO ??
         self.last_idDes = []  # TODO ??
 
     def __str__(self):
