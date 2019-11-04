@@ -95,24 +95,13 @@ class Application:
     def __init__(self, name: str, modules: List[Module]):
         self.name = name
         self.modules = modules
-        self.services = defaultdict(list)
         self.messages = {}  # TODO Document or private
 
     def __str__(self):  # TODO Refactor this
-        result = f"___ APP. Name: {self.name}"
-        result += "\n__ Transmissions "
-        for m in list(self.messages.values()):
-            result += f"\n\tModule: None : M_In: {m.src}  -> M_Out: {m.dst} "
-
-        for modulename in list(self.services.keys()):
-            m = self.services[modulename]
-            result += f"\n\t{modulename}"
-            for ser in m:
-                if "message_in" in list(ser.keys()):
-                    try:
-                        result += f"\t\t M_In: {ser['message_in'].name}  -> M_Out: {ser['message_out'].name} "
-                    except:  # TODO Catch to broad
-                        result += f"\t\t M_In: {ser['message_in'].name}  -> M_Out: [NOTHING] "
+        result = f"---- APP: \"{self.name}\"\n"
+        result += "\n- ".join([str(m) for m in self.modules])
+        result += "----"
+        result += "\n- ".join([str(m) for m in self.messages])
         return result
 
     @property

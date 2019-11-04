@@ -11,10 +11,72 @@ from examples.iFogSim_VRGameFog.selection_multipleDeploys import BroadPath, Clou
 from yafs.application import Application, Message, Module
 from yafs.core import Simulation
 from yafs.distribution import DeterministicDistribution
-from yafs.placement import CloudPlacement, FogPlacement
-from yafs.population import *
+from yafs.placement import Placement
+from yafs.population import StaticPopulation
 from yafs.stats import Stats
 from yafs.topology import Topology
+
+
+class CloudPlacementIFogSIM(Placement):
+
+    def initial_allocation(self, simulation, app_name):
+        # We find the ID-nodo/resource
+        value = {"model": "Cluster"}
+        id_cluster = simulation.topology.find_IDs(value)  # there is only ONE Cluster
+        value = {"model": "m-"}
+        id_mobiles = simulation.topology.find_IDs(value)
+
+        # Given an application we get its modules implemented
+        app = simulation.applications[app_name]
+        for module_name in app.service_modules:
+            module = next(m for m in app.modules if m.name == module_name)
+            if "Coordinator" == module_name:
+                if "Coordinator" in list(self.scaleServices.keys()):
+                    # print self.scaleServices["Coordinator"]
+                    for rep in range(0, self.scaleServices["Coordinator"]):
+                        process_id = simulation.deploy_module(app_name, module.name, module.services, id_cluster)  # Deploy as many modules as elements in the array
+
+            elif "Calculator" == module_name:
+                if "Calculator" in list(self.scaleServices.keys()):
+                    for rep in range(0, self.scaleServices["Calculator"]):
+                        process_id = simulation.deploy_module(app_name, module.name, module.services, id_cluster)
+
+            elif "Client" == module_name:
+                process_id = simulation.deploy_module(app_name, module.name, module.services, id_mobiles)
+
+
+class FogPlacementIFogSIM(Placement):
+    """
+    This implementation locates the services of the application in the fog-device regardless of where the sources or sinks are located.
+
+    It only runs once, in the initialization.
+
+    """
+
+    def initial_allocation(self, simulation, app_name):
+        # We find the ID-nodo/resource
+        value = {"model": "Cluster"}
+        id_cluster = simulation.topology.find_IDs(value)  # there is only ONE Cluster
+
+        value = {"model": "d-"}
+        id_proxies = simulation.topology.find_IDs(value)
+
+        value = {"model": "m-"}
+        id_mobiles = simulation.topology.find_IDs(value)
+
+        # Given an application we get its modules implemented
+        app = simulation.applications[app_name]
+        for module in list(app.services.keys()):
+            if "Coordinator" == module:
+                if "Coordinator" in list(self.scaleServices.keys()):
+                    for rep in range(0, self.scaleServices["Coordinator"]):
+                        process_id = simulation.deploy_module(app_name, module, app.services[module], id_cluster)  # Deploy as many modules as elements in the array
+            elif "Calculator" == module:
+                if "Calculator" in list(self.scaleServices.keys()):
+                    for rep in range(0, self.scaleServices["Calculator"]):
+                        process_id = simulation.deploy_module(app_name, module, app.services[module], id_proxies)
+            elif "Client" == module:
+                process_id = simulation.deploy_module(app_name, module, app.services[module], id_mobiles)
 
 
 def create_application():
@@ -140,11 +202,11 @@ def main(simulated_time, depth, police):
     # In this case: it will deploy all app.modules in the cloud
     if police == "cloud":
         # print "cloud"
-        placement = CloudPlacement("onCloud")
+        placement = CloudPlacementIFogSIM("onCloud")
         placement.scaleService({"Calculator": numOfDepts * numOfMobilesPerDept, "Coordinator": 1})
     else:
         # print "EDGE"
-        placement = FogPlacement("onProxies")
+        placement = FogPlacementIFogSIM("onProxies")
         placement.scaleService({"Calculator": numOfMobilesPerDept, "Coordinator": 1})
 
     # placement = ClusterPlacement("onCluster", activation_dist=next_time_periodic, time_shift=600)
