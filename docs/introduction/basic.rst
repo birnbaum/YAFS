@@ -159,7 +159,7 @@ where internally this function is customized by the user. Mandatory returns are 
 
     class MinimunPath(Selection):
 
-        def get_path(self, sim, app_name, message, topology_src, alloc_DES, alloc_module, traffic):
+        def get_path(self, sim, app_name, message, topology_src, alloc_DES, alloc_module):
             """
             Computes the minimun path among the source elemento of the topology and the localizations of the module
 

@@ -8,7 +8,7 @@ from yafs.core import Simulation
 from yafs.distribution import DeterministicDistribution
 from yafs.placement import CloudPlacement
 from yafs.population import *
-from yafs.selection import FirstShortestPath
+from yafs.selection import ShortestPath
 from yafs.topology import Topology, load_yafs_json
 
 RANDOM_SEED = 1
@@ -72,7 +72,7 @@ def main(simulated_time):
                                 "distribution": DeterministicDistribution(name="Deterministic", time=100)})
 
     simulation = Simulation(t)
-    simulation.deploy_app(app, placement=placement, population=population, selection=FirstShortestPath())
+    simulation.deploy_app(app, placement=placement, population=population, selection=ShortestPath())
     simulation.run(until=simulated_time, results_path="results")
     utils.draw_topology(t, simulation.get_alloc_entities())
 

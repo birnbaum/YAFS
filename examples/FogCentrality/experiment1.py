@@ -8,7 +8,7 @@ from yafs.core import Simulation
 from yafs.distribution import DeterministicDistribution
 from yafs.placement import NoPlacementOfModules
 from yafs.population import Statical2
-from yafs.selection import FirstShortestPath
+from yafs.selection import ShortestPath
 from yafs.topology import Topology
 
 RANDOM_SEED = 1
@@ -182,7 +182,7 @@ def main():
     SELECTOR algorithm
     """
     # This implementation is already created in selector.class,called: First_ShortestPath
-    selectorPath = FirstShortestPath()
+    selectorPath = ShortestPath()
 
     # In this point, the study analizes the behaviour of the deployment of (sink, src) modules (population) in different set of centroide algorithms
     functions = {

@@ -391,7 +391,7 @@ class MCDARoutingAndDeploying(Selection):
         - Move (undeploy and deploy the service)
     """
 
-    def get_path(self, sim, app_name, message, topology_src, alloc_DES, alloc_module, traffic, from_des):
+    def get_paths(self, sim, app_name, message, topology_src, alloc_DES, alloc_module):
         # print message
         # Entity that sends the message
         node_src = topology_src
@@ -459,7 +459,7 @@ class MCDARoutingAndDeploying(Selection):
 
         return [path], des
 
-    def get_path_from_failure(self, sim, message, link, alloc_DES, alloc_module, traffic, ctime, from_des):
+    def get_path_from_failure(self, sim, message, link, alloc_DES, alloc_module, ctime):
         # print "Example of enrouting"
         # print message.path # [86, 242, 160, 164, 130, 301, 281, 216]
         # print message.dst_int  # 301
@@ -478,7 +478,7 @@ class MCDARoutingAndDeploying(Selection):
             # print "DST: ",node_dst #261
             # print "INT: ",message.dst_int #301
 
-            path, des = self.get_path(sim, message.app_name, message, node_src, alloc_DES, alloc_module, traffic, from_des)
+            path, des = self.get_paths(sim, message.app_name, message, node_src, alloc_DES, alloc_module)
             if len(path[0]) > 0:
                 # print path # [[164, 130, 380, 110, 216]]
                 # print des # [40]

@@ -3,7 +3,7 @@
 import copy
 import logging
 from collections import Callable
-from typing import Optional, List
+from typing import Optional, List, Dict
 
 import simpy
 from tqdm import tqdm
@@ -279,78 +279,28 @@ class Simulation:
         logger.debug("STOP_Process - Population Algorithm\t#DES:%i" % process_id)
 
     def __add_source_population(self, process_id, name_app, message, distribution):
-        """
-        A DES-process who controls the invocation of several Pure Source Modules
-        """
+        """Process who controls the invocation of several Pure Source Modules"""
         logger.debug("Added_Process - Module Pure Source\t#DES:%i" % process_id)
         while True and self.des_process_running[process_id]:
-            nextTime = next(distribution)
-            yield self.env.timeout(nextTime)
+            yield self.env.timeout(next(distribution))
             if self.des_process_running[process_id]:
-                logger.debug("(App:%s#DES:%i)\tModule - Generating Message: %s \t(T:%d)" % (name_app, process_id, message.name, self.env.now))
-
-                msg = copy.copy(message)
-                msg.timestamp = self.env.now
-                msg.id = self._next_message_id()
-
-                self._send_message(name_app, msg, process_id)
-
+                logger.debug(f"{name_app}:{process_id}\tGenerating Message: {message.name} \t(T:{self.env.now})")
+                new_message = message.evolve(timestamp=self.env.now, id=self._next_message_id())
+                self._send_message(name_app, new_message, process_id)
         logger.debug("STOP_Process - Module Pure Source\t#DES:%i" % process_id)
 
-    def __update_node_metrics(self, app, module, message, des, type_):
+    def __update_node_metrics(self, app, module, message, dst_process, type_):
+        """computes the service time in processing a message and record this event"""
         try:
-            """
-            It computes the service time in processing a message and record this event
-            """
-            if module in self.applications[app].sink_modules:
-                """
-                The module is a SINK (Actuactor)
-                """
-                id_node = self.alloc_DES[des]
+            if module in self.applications[app].sink_modules:  # module is a SINK
+                id_node = self.alloc_DES[dst_process]
                 time_service = 0
             else:
-                """
-                The module is a processing module
-                """
-                id_node = self.alloc_DES[des]
-
-                # att_node = self.topology.G.nodes[id_node] # WARNING DEPRECATED from V1.0
+                id_node = self.alloc_DES[dst_process]  # module is a processing module
                 att_node = self.topology.G.nodes[id_node]
-
                 time_service = message.instructions / float(att_node["IPT"])
 
-            """
-            it records the entity.id who sends this message
-            """
-            # if not message.path:
-            #     from_id_source = id_node  # same src like dst
-            # else:
-            #     from_id_source = message.path[0]
-            #
-            # # if message.id == 1072:
-            #        print "-"*50
-            #        print "Module: ",module # module that receives the request (RtR)
-            #        print "DES ",des # DES process who RtR
-            #        print "ID MODULE: ",id_node  #Topology entity who RtR
-            #        print "Message.name ",message.name # Message name
-            #        print "Message.id ", message.id #Message generator id
-            #        print "Message.path ",message.path #enrouting path
-            #        print "Message src ",message.src #module source who send the request
-            #        print "Message dst ",message.dst #module dst (the entity that RtR)
-            #        print "Message idDEs ",message.process_id #DES intermediate process that process the request
-            #        print "TOPO.src ", message.path[0] #entity that RtR
-            #        print "TOPO.dst ", int(self.alloc_DES[des]) #DES process that RtR
-            #        print "time service ",time_service
-            #        exit()
-
-            #
-            # # print "MODULE: ",self.alloc_module[app][module]
-            # # tmp = []
-            # # for it in self.alloc_module[app][module]:
-            # #     tmp.append(self.alloc_DES[it])
-            # # print "ALLOC:  ", tmp
-            # # print "PATH 0: " ,message.path[0]
-
+            # TODO Investigate
             # WARNING. If there are more than two equal modules deployed in the same entity,
             # it will not be possible to determine which process sent this package at this point.
             # That information will have to be calculated by the trace of the message (message.id)
@@ -430,23 +380,12 @@ class Simulation:
         logger.debug("STOP_Process - Module Source: %s\t#DES:%i" % (module, process_id))
 
     def __add_consumer_module(self, process_id, app_name, module, register_consumer_msg):
-        """
-        It generates a DES process associated to a compute module
-        """
+        """Process associated to a compute module"""
         logger.debug("Added_Process - Module Consumer: %s\t#DES:%i" % (module, process_id))
         while self.des_process_running[process_id]:
             if self.des_process_running[process_id]:
                 msg = yield self.consumer_pipes["%s%s%i" % (app_name, module, process_id)].get()
                 # One pipe for each module name
-
-                m = self.applications[app_name].services[module]
-
-                # for ser in m:
-                #     if "message_in" in ser.keys():
-                #         try:
-                #             print "\t\t M_In: %s  -> M_Out: %s " % (ser["message_in"].name, ser["message_out"].name)
-                #         except:
-                #             print "\t\t M_In: %s  -> M_Out: [NOTHING] " % (ser["message_in"].name)
 
                 # print "Registers len: %i" %len(register_consumer_msg)
                 doBefore = False
@@ -475,8 +414,7 @@ class Simulation:
                             logger.debug("(App:%s#DES:%i#%s)\tModule - Sink Message:\t%s" % (app_name, process_id, module, msg.name))
                             continue
                         else:
-                            if register["dist"](**register["param"]):  ### THRESHOLD DISTRIBUTION to Accept the message from source
-
+                            if random.random() <= register["probability"]:
                                 last_idDes = msg.last_idDes + [process_id]
                                 msg_out = register["message_out"].evolve(timestamp=self.env.now, id=msg.id, last_idDes=last_idDes)
 
@@ -604,7 +542,7 @@ class Simulation:
         self.alloc_DES[process_id] = id_node
         return process_id
 
-    def __deploy_module(self, app_name: str, module: str, id_node: int, register_consumer_msg: str) -> int:
+    def _deploy_module(self, app_name: str, module: str, id_node: int, register_consumer_msg: List[Dict]) -> int:
         """Add a DES process for deploy  modules
         This function its used by (:mod:`Population`) algorithm
 
@@ -612,10 +550,7 @@ class Simulation:
             app_name: application name
             id_node: entity.id of the topology who will create the messages
             module: module name
-            register_consumer_msg: message?
-
-        Kwargs:
-            param - the parameters of the *distribution* function  # TODO ???
+            register_consumer_msg: TODO
 
         Returns:
             Process id
