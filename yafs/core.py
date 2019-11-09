@@ -401,32 +401,21 @@ class Simulation:
                 if process in self.app_to_module_to_processes[app][module_name]:
                     self.app_to_module_to_processes[app][module_name].remove(process)
 
-    def deploy_app(self, app: Application, placement: Placement, population: Population, selection: Selection):
+    def deploy_app(self, app: Application, selection: Selection):
         """This process is responsible for linking the *application* to the different algorithms (placement, population, and service)"""
-        deployment = Deployment(application=app, placement=placement, population=population, selection=selection)
+        deployment = Deployment(application=app, selection=selection)
         self.deployments[app] = deployment
-
         self.app_to_module_to_processes[app] = {}
 
-        # Add Placement controls to the App
-        self._deploy_placement(placement)
-        self.placement_policy[placement.name]["apps"].append(app)
+    def deploy_placement(self, placement: Placement, applications: List[Application]):
+        self.placement_policy[placement.name] = {"placement_policy": placement, "apps": applications}
+        if placement.activation_dist is not None:
+            self.env.process(self._placement_process(placement))
 
-        # Add Population control to the App
-        self._deploy_population(population)
-        self.population_policy[population.name]["apps"].append(app)
-
-    def _deploy_placement(self, placement):
-        if placement.name not in list(self.placement_policy.keys()):  # First Time
-            self.placement_policy[placement.name] = {"placement_policy": placement, "apps": []}
-            if placement.activation_dist is not None:
-                self.env.process(self._placement_process(placement))
-
-    def _deploy_population(self, population):
-        if population.name not in list(self.population_policy.keys()):  # First Time
-            self.population_policy[population.name] = {"population_policy": population, "apps": []}
-            if population.activation_dist is not None:
-                self.env.process(self._population_process(population))
+    def deploy_population(self, population, applications: List[Application]):
+        self.population_policy[population.name] = {"population_policy": population, "apps": applications}
+        if population.activation_dist is not None:
+            self.env.process(self._population_process(population))
 
     def _placement_process(self, placement):
         """Controls the invocation of Placement.run"""
@@ -529,8 +518,6 @@ class Simulation:
 
 
 class Deployment:
-    def __init__(self, application: Application, placement: Placement, population: Population, selection: Selection):
+    def __init__(self, application: Application, selection: Selection):
         self.application = application
-        self.placement = placement
-        self.population = population
         self.selection = selection

@@ -1,6 +1,6 @@
 import logging
 from abc import abstractmethod, ABC
-from typing import Callable
+from typing import Callable, Iterator
 
 from yafs.application import Application
 
@@ -16,13 +16,10 @@ class Placement(ABC):
 
     Args:
         name: Placement name
-        activation_dist (function): a distribution function to active the *run* function in execution time  TODO What das function mean? Callable?
-
-    Kwargs:
-        param (dict): the parameters of the *activation_dist*  TODO ???
+        activation_dist: a distribution function to active the *run* function in execution time  TODO What das function mean? Callable?
     """
 
-    def __init__(self, name: str, activation_dist: Callable = None):  # TODO Remove logger
+    def __init__(self, name: str, activation_dist: Iterator = None):  # TODO Remove logger
         self.name = name  # TODO What do we need this for
         self.activation_dist = activation_dist
         self.scaleServices = {}  # TODO What does this do??

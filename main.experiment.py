@@ -71,8 +71,12 @@ def main(simulated_time):
     selection = ShortestPath()
 
     simulation = Simulation(t)
-    simulation.deploy_app(app1, placement=placement, population=population, selection=selection)
-    simulation.deploy_app(app2, placement=placement, population=population, selection=selection)
+    simulation.deploy_app(app1, selection=selection)
+    simulation.deploy_app(app2, selection=selection)
+
+    simulation.deploy_placement(placement, applications=[app1, app2])
+    simulation.deploy_population(population, applications=[app1, app2])
+
     simulation.run(until=simulated_time, results_path="results", progress_bar=False)
     utils.draw_topology(t, simulation.node_to_modules)
 
