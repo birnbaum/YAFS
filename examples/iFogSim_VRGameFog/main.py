@@ -19,7 +19,7 @@ from yafs.topology import Topology
 
 class CloudPlacementIFogSIM(Placement):
 
-    def initial_allocation(self, simulation, app_name):
+    def initial_allocation(self, simulation, application):
         # We find the ID-nodo/resource
         value = {"model": "Cluster"}
         id_cluster = simulation.topology.find_IDs(value)  # there is only ONE Cluster
@@ -27,22 +27,22 @@ class CloudPlacementIFogSIM(Placement):
         id_mobiles = simulation.topology.find_IDs(value)
 
         # Given an application we get its modules implemented
-        app = simulation.deployments[app_name].application
+        app = simulation.deployments[application].application
         for module_name in app.service_modules:
             module = next(m for m in app.modules if m.name == module_name)
             if "Coordinator" == module_name:
                 if "Coordinator" in list(self.scaleServices.keys()):
                     # print self.scaleServices["Coordinator"]
                     for rep in range(0, self.scaleServices["Coordinator"]):
-                        simulation.deploy_module(app_name, module.name, module.services, id_cluster)  # Deploy as many modules as elements in the array
+                        simulation.deploy_module(application, module.name, module.services, id_cluster)  # Deploy as many modules as elements in the array
 
             elif "Calculator" == module_name:
                 if "Calculator" in list(self.scaleServices.keys()):
                     for rep in range(0, self.scaleServices["Calculator"]):
-                        simulation.deploy_module(app_name, module.name, module.services, id_cluster)
+                        simulation.deploy_module(application, module.name, module.services, id_cluster)
 
             elif "Client" == module_name:
-                simulation.deploy_module(app_name, module.name, module.services, id_mobiles)
+                simulation.deploy_module(application, module.name, module.services, id_mobiles)
 
 
 class FogPlacementIFogSIM(Placement):
@@ -53,7 +53,7 @@ class FogPlacementIFogSIM(Placement):
 
     """
 
-    def initial_allocation(self, simulation, app_name):
+    def initial_allocation(self, simulation, application):
         # We find the ID-nodo/resource
         value = {"model": "Cluster"}
         id_cluster = simulation.topology.find_IDs(value)  # there is only ONE Cluster
@@ -65,18 +65,18 @@ class FogPlacementIFogSIM(Placement):
         id_mobiles = simulation.topology.find_IDs(value)
 
         # Given an application we get its modules implemented
-        app = simulation.deployments[app_name].application
+        app = simulation.deployments[application].application
         for module in list(app.services.keys()):
             if "Coordinator" == module:
                 if "Coordinator" in list(self.scaleServices.keys()):
                     for rep in range(0, self.scaleServices["Coordinator"]):
-                        simulation.deploy_module(app_name, module, app.services[module], id_cluster)  # Deploy as many modules as elements in the array
+                        simulation.deploy_module(application, module, app.services[module], id_cluster)  # Deploy as many modules as elements in the array
             elif "Calculator" == module:
                 if "Calculator" in list(self.scaleServices.keys()):
                     for rep in range(0, self.scaleServices["Calculator"]):
-                        simulation.deploy_module(app_name, module, app.services[module], id_proxies)
+                        simulation.deploy_module(application, module, app.services[module], id_proxies)
             elif "Client" == module:
-                simulation.deploy_module(app_name, module, app.services[module], id_mobiles)
+                simulation.deploy_module(application, module, app.services[module], id_mobiles)
 
 
 def create_application():

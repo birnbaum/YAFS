@@ -2,6 +2,7 @@ import logging
 from abc import abstractmethod, ABC
 from typing import Callable
 
+from yafs.application import Application
 
 logger = logging.getLogger(__name__)
 
@@ -37,7 +38,7 @@ class Placement(ABC):
         return next(self.activation_dist)  # TODO Data type?
 
     @abstractmethod
-    def initial_allocation(self, simulation: "Simulation", app_name: str):  # TODO Why does this know about the simulation?
+    def initial_allocation(self, simulation: "Simulation", application: Application):  # TODO Why does this know about the simulation?
         """Given an ecosystem, it starts the allocation of modules in the topology."""
 
     def run(self, simulation: "Simulation"):  # TODO Does this have to be implemented?  # TODO Why does this know about the simulation?
@@ -49,14 +50,14 @@ class JSONPlacement(Placement):  # TODO The placement should not care how it was
         super(JSONPlacement, self).__init__(**kwargs)
         self.data = json
 
-    def initial_allocation(self, simulation, app_name):
+    def initial_allocation(self, simulation, application):
         for item in self.data["initialAllocation"]:
-            if app_name == item["app"]:
-                app = simulation.deployments[app_name].application
+            if application == item["app"]:
+                app = simulation.deployments[application].application
                 module = next(m for m in app.modules if m.name == item["module_name"])
                 idtopo = item["id_resource"]
 
-                simulation.deploy_module(app_name, module.name, module.services, [idtopo])
+                simulation.deploy_module(application, module.name, module.services, [idtopo])
 
 
 class JSONPlacementOnlyCloud(Placement):  # TODO The placement should not care how it was instantiated
@@ -68,14 +69,14 @@ class JSONPlacementOnlyCloud(Placement):  # TODO The placement should not care h
         self.idcloud = idcloud
         logger.info(" Placement Initialization of %s in NodeCLOUD: %i" % (self.name, self.idcloud))
 
-    def initial_allocation(self, sim, app_name):
+    def initial_allocation(self, simulation, application):
         for item in self.data["initialAllocation"]:
             idtopo = item["id_resource"]
             print(idtopo)
             if idtopo == self.idcloud:
-                app = sim.apps[item["app"]]
+                app = simulation.apps[item["app"]]
                 module = next(m for m in app.modules if m.name == item["module_name"])
-                sim.deploy_module(app_name, module.name, module.services, [idtopo])
+                simulation.deploy_module(application, module.name, module.services, [idtopo])
 
 
 class CloudPlacement(Placement):
@@ -84,16 +85,16 @@ class CloudPlacement(Placement):
     It only runs once, in the initialization.
     """
 
-    def initial_allocation(self, simulation: "Simulation", app_name: str):  # TODO Why does the placement know about the simulation?
+    def initial_allocation(self, simulation: "Simulation", application: str):  # TODO Why does the placement know about the simulation?
         id_cluster = simulation.topology.find_IDs({"mytag": "cloud"})  # TODO These are very implicit assumptions about module naming...
-        app = simulation.deployments[app_name].application
+        app = simulation.deployments[application].application
         for module in app.service_modules:
             if module.name in self.scaleServices:
                 for rep in range(0, self.scaleServices[module.name]):
-                    simulation.deploy_module(app_name, module.name, module.services, id_cluster)
+                    simulation.deploy_module(application, module.name, module.services, id_cluster)
 
 
 class NoPlacementOfModules(Placement):
 
-    def initial_allocation(self, simulation, app_name):
+    def initial_allocation(self, simulation, application):
         pass

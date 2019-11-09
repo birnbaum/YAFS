@@ -42,11 +42,11 @@ class Simulation:
 
         self.deployments = {}  # TODO Should become a list?
 
-        self.placement_policy = {}  # for app.name the placement algorithm
-        self.population_policy = {}  # for app.name the population algorithm
+        self.placement_policy = {}  # for app the placement algorithm
+        self.population_policy = {}  # for app the population algorithm
 
         # Queues for each message
-        # <app_name>:<module_name> -> pipe
+        # <application>:<module_name> -> pipe
         self.consumer_pipes = {}
 
         """Relationship of pure source with topology entity
@@ -55,7 +55,7 @@ class Simulation:
 
           .. code-block:: python
 
-            alloc_source[34] = {"id":id_node,"app":app_name,"module":source module}
+            alloc_source[34] = {"id":id_node,"app":app,"module":source module}
         """
         self.alloc_source = {}
 
@@ -67,7 +67,7 @@ class Simulation:
 
         .. code-block:: python
 
-            {"EGG_GAME":{"Controller":[1,3,4],"Client":[4]}}
+            {Application(...):{"Controller":[1,3,4],"Client":[4]}}
         """
         self.app_to_module_to_processes = {}
 
@@ -91,16 +91,16 @@ class Simulation:
         """Returns a dictionary mapping from node ids to their deployed services"""
         result = {key: [] for key in self.topology.G.nodes}
         for src_deployed in self.alloc_source.values():
-            result[src_deployed["id"]].append(src_deployed["app"] + "#" + src_deployed["module"].name)
+            result[src_deployed["id"]].append(src_deployed["app"].name + "#" + src_deployed["module"].name)
         for app in self.app_to_module_to_processes:
             for module_name in self.app_to_module_to_processes[app]:
                 for process in self.app_to_module_to_processes[app][module_name]:
-                    result[self.process_to_node[process]].append(app + "#" + module_name)
+                    result[self.process_to_node[process]].append(app.name + "#" + module_name)
         return result
 
     # TODO This might have a bug
-    def process_from_module_in_node(self, node, app_name, module_name):
-        deployed = self.app_to_module_to_processes[app_name][module_name]
+    def process_from_module_in_node(self, node, application: Application, module_name):
+        deployed = self.app_to_module_to_processes[application][module_name]
         for des in deployed:
             if self.process_to_node[des] == node:
                 return des
@@ -119,16 +119,16 @@ class Simulation:
         self._message_id += 1
         return self._message_id
 
-    def _send_message(self, message: Message, app_name: str, src_node: int):
+    def _send_message(self, message: Message, application: Application, src_node: int):
         """Sends a message between modules and updates the metrics once the message reaches the destination module"""
-        selection = self.deployments[app_name].selection
-        dst_processes = self.app_to_module_to_processes[app_name][message.dst.name]
+        selection = self.deployments[application].selection
+        dst_processes = self.app_to_module_to_processes[application][message.dst.name]
         dst_nodes = [self.process_to_node[dev] for dev in dst_processes]
 
         paths = selection.get_paths(self.topology.G, message, src_node, dst_nodes)
         for path in paths:
-            logger.debug(f"Application {app_name} sending {message} via path {path}")
-            new_message = message.evolve(path=path, app_name=app_name)
+            logger.debug(f"Application {application} sending {message} via path {path}")
+            new_message = message.evolve(path=path, application=application)
             self.network_ctrl_pipe.put(new_message)
 
     def _network_process(self):
@@ -147,7 +147,7 @@ class Simulation:
                 # Timestamp reception message in the module
                 message.timestamp_rec = self.env.now
                 # The message is sent to the module.pipe
-                self.consumer_pipes[f"{message.app_name}:{message.dst.name}"].put(message)
+                self.consumer_pipes[f"{message.application.name}:{message.dst.name}"].put(message)
             else:
                 # The message is sent at first time or it sent more times.
                 if message.dst_int < 0:
@@ -171,7 +171,7 @@ class Simulation:
                 self.event_log.append_transmission(id=message.id,
                                                    src=link[0],
                                                    dst=link[1],
-                                                   app=message.app_name,
+                                                   app=message.application.name,
                                                    latency=latency_msg_link,
                                                    message=message.name,
                                                    ctime=self.env.now,
@@ -194,7 +194,7 @@ class Simulation:
                 #     # This fact is produced when a node or edge the topology is changed or disappeared
                 #     logger.warning("The initial path assigned is unreachabled. Link: (%i,%i). Routing a new one. %i" % (link[0], link[1], self.env.now))
                 #
-                #     paths, DES_dst = self.deployments[message.app_name].selection.get_path_from_failure(
+                #     paths, DES_dst = self.deployments[message.application].selection.get_path_from_failure(
                 #         self, message, link, self.alloc_DES, self.alloc_module, self.last_busy_time, self.env.now
                 #     )
                 #
@@ -213,9 +213,9 @@ class Simulation:
         self.network_pump -= 1
         self.network_ctrl_pipe.put(message)
 
-    def _compute_service_time(self, app_name, module, message, node_id, type_):
+    def _compute_service_time(self, application: Application, module, message, node_id, type_):
         """Computes the service time in processing a message and record this event"""
-        if module in self.deployments[app_name].application.sink_modules:  # module is a SINK
+        if module in self.deployments[application].application.sink_modules:  # module is a SINK
             time_service = 0
         else:
             att_node = self.topology.G.nodes[node_id]
@@ -223,7 +223,7 @@ class Simulation:
 
         self.event_log.append_event(id=message.id,
                                     type=type_,
-                                    app=app_name,
+                                    app=application.name,
                                     module=module,
                                     message=message.name,
                                     module_src=message.src,
@@ -254,17 +254,17 @@ class Simulation:
             for process in processes:
                 self.stop_process(process)
 
-    def _sink_module_process(self, node_id, app_name, module_name):
+    def _sink_module_process(self, node_id, application: Application, module_name):
         """Process associated to a SINK module"""
         logger.debug(f"Added_Process - Module Pure Sink: {module_name}")
         while True:
-            message = yield self.consumer_pipes[f"{app_name}:{module_name}"].get()
-            logger.debug("(App:%s#%s)\tModule Pure - Sink Message:\t%s" % (app_name, module_name, message.name))
-            service_time = self._compute_service_time(app_name, module_name, message, node_id, "SINK")
+            message = yield self.consumer_pipes[f"{application.name}:{module_name}"].get()
+            logger.debug("(App:%s#%s)\tModule Pure - Sink Message:\t%s" % (application, module_name, message.name))
+            service_time = self._compute_service_time(application, module_name, message, node_id, "SINK")
             yield self.env.timeout(service_time)  # service time is 0
 
-    def __add_consumer_service_pipe(self, app_name, module_name):
-        pipe_key = f"{app_name}:{module_name}"
+    def __add_consumer_service_pipe(self, application: Application, module_name):
+        pipe_key = f"{application.name}:{module_name}"
         logger.debug("Creating PIPE: " + pipe_key)
         self.consumer_pipes[pipe_key] = simpy.Store(self.env)
 
@@ -289,12 +289,12 @@ class Simulation:
             yield self.env.timeout(next(distribution))
             function(**param)
 
-    def deploy_source(self, app_name: str, node_id: int, message: Message, distribution: Distribution) -> int:
+    def deploy_source(self, application: Application, node_id: int, message: Message, distribution: Distribution) -> int:
         """Add a DES process for deploy pure source modules (sensors)
         This function its used by (:mod:`Population`) algorithm
 
         Args:
-            app_name: application name
+            application: application TODO
             node_id: entity.id of the topology who will create the messages
             message: TODO
             distribution (function): a temporary distribution function
@@ -305,27 +305,27 @@ class Simulation:
         Returns:
             Process id
         """
-        process = self.env.process(self._source_process(node_id, app_name, message, distribution))
+        process = self.env.process(self._source_process(node_id, application, message, distribution))
         self.process_to_node[process] = node_id
-        self.alloc_source[process] = {"id": node_id, "app": app_name, "module": message.src, "name": message.name}
+        self.alloc_source[process] = {"id": node_id, "app": application, "module": message.src, "name": message.name}
         return process
 
-    def _source_process(self, node_id: int, app_name: str, message: Message, distribution: Distribution):
+    def _source_process(self, node_id: int, application: Application, message: Message, distribution: Distribution):
         """Process who controls the invocation of several Pure Source Modules"""
         logger.debug("Added_Process - Module Pure Source")
         while True:
             yield self.env.timeout(next(distribution))
-            logger.debug(f"App '{app_name}'\tGenerating Message: {message.name} \t(T:{self.env.now})")
+            logger.debug(f"App '{application}'\tGenerating Message: {message.name} \t(T:{self.env.now})")
             new_message = message.evolve(timestamp=self.env.now, id=self._next_message_id())
-            self._send_message(new_message, app_name, node_id)
+            self._send_message(new_message, application, node_id)
 
     # TODO Rename
-    def _deploy_module(self, app_name: str, module: str, node_id: int, services: List[Service]) -> int:
+    def _deploy_module(self, application: Application, module: str, node_id: int, services: List[Service]) -> int:
         """Add a DES process for deploy  modules
         This function its used by (:mod:`Population`) algorithm
 
         Args:
-            app_name: application name
+            application: application TODO
             node_id: entity.id of the topology who will create the messages
             module: module name
             services: TODO
@@ -333,70 +333,70 @@ class Simulation:
         Returns:
             Process id
         """
-        process = self.env.process(self._consumer_process(node_id, app_name, module, services))
+        process = self.env.process(self._consumer_process(node_id, application, module, services))
         self.process_to_node[process] = node_id
 
         # To generate the QUEUE of a SERVICE module
-        self.__add_consumer_service_pipe(app_name, module)
+        self.__add_consumer_service_pipe(application, module)
 
-        if module not in self.app_to_module_to_processes[app_name]:  # TODO defaultdict
-            self.app_to_module_to_processes[app_name][module] = []
-        self.app_to_module_to_processes[app_name][module].append(process)
+        if module not in self.app_to_module_to_processes[application]:  # TODO defaultdict
+            self.app_to_module_to_processes[application][module] = []
+        self.app_to_module_to_processes[application][module].append(process)
         return process
 
-    def _consumer_process(self, node_id: int, app_name: str, module_name: str, services: List[Service]):
+    def _consumer_process(self, node_id: int, application: Application, module_name: str, services: List[Service]):
         """Process associated to a compute module"""
         logger.debug(f"Added_Process - Module Consumer: {module_name}")
         while True:
-            pipe_id = f"{app_name}:{module_name}"
+            pipe_id = f"{application.name}:{module_name}"
             message = yield self.consumer_pipes[pipe_id].get()
             accepting_services = [s for s in services if message.name == s.message_in.name]
 
             if accepting_services:
                 logger.debug(f"{pipe_id}\tRecording message\t{message.name}")
-                service_time = self._compute_service_time(app_name, module_name, message, node_id, "COMP")
+                service_time = self._compute_service_time(application, module_name, message, node_id, "COMP")
                 yield self.env.timeout(service_time)
 
             for service in accepting_services:  # Processing the message
                 if not service.message_out:
-                    logger.debug(f"{app_name}:{module_name}\tSink message\t{message.name}")
+                    logger.debug(f"{application}:{module_name}\tSink message\t{message.name}")
                     continue
 
                 if random.random() <= service.probability:
                     message_out = service.message_out.evolve(timestamp=self.env.now, id=message.id)
                     if not service.module_dst:
                         # it is not a broadcasting message
-                        logger.debug(f"{app_name}:{module_name}\tTransmit message\t{service.message_out.name}")
-                        self._send_message(message_out, app_name, node_id)
+                        logger.debug(f"{application}:{module_name}\tTransmit message\t{service.message_out.name}")
+                        self._send_message(message_out, application, node_id)
                     else:
                         # it is a broadcasting message
-                        logger.debug(f"{app_name}:{module_name}\tBroadcasting message\t{service.message_out.name}")
+                        logger.debug(f"{application}:{module_name}\tBroadcasting message\t{service.message_out.name}")
                         for idx, module_dst in enumerate(service.module_dst):
                             if random.random() <= service.p[idx]:
-                                self._send_message(message_out, app_name, node_id)
+                                self._send_message(message_out, application, node_id)
                 else:
-                    logger.debug(f"{app_name}:{module_name}\tDenied message\t{service.message_out.name}")
+                    logger.debug(f"{application}:{module_name}\tDenied message\t{service.message_out.name}")
 
-    def deploy_sink(self, app_name: str, node_id: int, module: str):
+    def deploy_sink(self, application: Application, node_id: int, module: str):
         """Add a DES process to deploy pure SINK modules (actuators).
 
         This function its used by the placement algorithm internally, there is no DES PROCESS for this type of behaviour
 
         Args:
-            app_name: application name
+            application: application TODO
             node_id: entity.id of the topology who will create the messages
             module: module
         """
-        process = self.env.process(self._sink_module_process(node_id, app_name, module))
+        process = self.env.process(self._sink_module_process(node_id, application, module))
         self.process_to_node[process] = node_id
 
-        self.__add_consumer_service_pipe(app_name, module)
+        self.__add_consumer_service_pipe(application, module)
 
         # Update the relathionships among module-entity
-        if app_name in self.app_to_module_to_processes:
-            if module not in self.app_to_module_to_processes[app_name]:
-                self.app_to_module_to_processes[app_name][module] = []
-        self.app_to_module_to_processes[app_name][module].append(process)
+        if application in self.app_to_module_to_processes:
+            if module not in self.app_to_module_to_processes[application]:
+                self.app_to_module_to_processes[application][module] = []
+        self.app_to_module_to_processes[application][module].append(process)
 
     def stop_process(self, process: Process):
         """TODO"""
@@ -410,17 +410,17 @@ class Simulation:
     def deploy_app(self, app: Application, placement: Placement, population: Population, selection: Selection):
         """This process is responsible for linking the *application* to the different algorithms (placement, population, and service)"""
         deployment = Deployment(application=app, placement=placement, population=population, selection=selection)
-        self.deployments[app.name] = deployment
+        self.deployments[app] = deployment
 
-        self.app_to_module_to_processes[app.name] = {}
+        self.app_to_module_to_processes[app] = {}
 
         # Add Placement controls to the App
         self._deploy_placement(placement)
-        self.placement_policy[placement.name]["apps"].append(app.name)
+        self.placement_policy[placement.name]["apps"].append(app)
 
         # Add Population control to the App
         self._deploy_population(population)
-        self.population_policy[population.name]["apps"].append(app.name)
+        self.population_policy[population.name]["apps"].append(app)
 
     def _deploy_placement(self, placement):
         if placement.name not in list(self.placement_policy.keys()):  # First Time
@@ -450,18 +450,19 @@ class Simulation:
             logger.debug("Run - Population Policy")
             population.run(self)
 
-    def deploy_module(self, app_name: str, module_name: str, services: List[Service], node_ids: List[int]):
+    def deploy_module(self, application: Application, module_name: str, services: List[Service], node_ids: List[int]):
         assert len(services) == len(node_ids)  # TODO Does this hold?
         if len(services) == 0:
             return []
         else:
-            return [self._deploy_module(app_name, module_name, node_id, services) for node_id in node_ids]
+            return [self._deploy_module(application, module_name, node_id, services) for node_id in node_ids]
 
-    def undeploy_module(self, app_name, service_name, idtopo):
+    def undeploy_module(self, application: Application, service_name, idtopo):  # TODO is this used?
         """Removes all modules deployed in a node
         modules with the same name = service_name
         from app_name
         deployed in id_topo
+        TODO
         """
         all_des = []
         for k, v in list(self.process_to_node.items()):
@@ -469,7 +470,7 @@ class Simulation:
                 all_des.append(k)
 
         # Clearing related structures
-        for process in self.app_to_module_to_processes[app_name][service_name]:
+        for process in self.app_to_module_to_processes[application][service_name]:
             if process in all_des:
                 self.stop_process(process)
 
@@ -518,13 +519,13 @@ class Simulation:
         """
         # Creating app.sources and deploy the sources in the topology
         for population in self.population_policy.values():
-            for app_name in population["apps"]:
-                population["population_policy"].initial_allocation(self, app_name)
+            for app in population["apps"]:
+                population["population_policy"].initial_allocation(self, app)
 
         # Creating initial deploy of services
         for placement in self.placement_policy.values():
-            for app_name in placement["apps"]:
-                placement["placement_policy"].initial_allocation(self, app_name)  # internally consideres the apps in charge
+            for app in placement["apps"]:
+                placement["placement_policy"].initial_allocation(self, app)  # internally consideres the apps in charge
 
         self.print_debug_assignaments()
 

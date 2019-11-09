@@ -67,7 +67,7 @@ class Message:
         self.timestamp = 0  # TODO Where is this used?
         self.path = []  # TODO Not sure this should be encoded in the message, only the routing can know this?
         self.dst_int = -1  # TODO Understand this
-        self.app_name = None  # TODO Remove this, Message should have no knowledge about application
+        self.application = None  # TODO Remove this, Message should have no knowledge about application
         self.timestamp_rec = 0  # TODO ??
 
         self.id = -1  # TODO ??

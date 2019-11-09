@@ -154,7 +154,7 @@ class DynamicPopulation(Population):
     In userOrderInputByInvocation, we create the user apparition sequence
     """
 
-    def initial_allocation(self, sim, app_name):
+    def initial_allocation(self, simulation, application):
         size = len(self.data)
         self.userOrderInputByInvocation = random.sample(list(range(size)), size)
 

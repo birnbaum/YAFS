@@ -5,6 +5,7 @@ from abc import ABC, abstractmethod
 import networkx as nx
 
 from yafs import distribution
+from yafs.application import Application
 from yafs.distribution import Distribution, ExponentialDistribution
 
 logger = logging.getLogger(__name__)
@@ -47,9 +48,9 @@ class Population(ABC):
         self.src_control.append(values)
 
     @abstractmethod
-    def initial_allocation(self, sim: "Simulation", app_name: str):
+    def initial_allocation(self, simulation: "Simulation", application: Application):
         """Given an ecosystem and an application, it starts the allocation of pure sources in the topology."""
-        self.run(sim)
+        self.run(simulation)
 
     @abstractmethod
     def run(self, sim: "Simulation"):
@@ -59,10 +60,10 @@ class Population(ABC):
 class StaticPopulation(Population):
     """Statically assigns the generation of a source in a node of the topology. It is only invoked in the initialization."""
 
-    def initial_allocation(self, sim, app_name):
+    def initial_allocation(self, simulation, application):
         # Assignment of SINK and SOURCE pure modules
-        for id_entity in sim.topology.G.nodes:
-            entity = sim.topology.G.nodes[id_entity]
+        for id_entity in simulation.topology.G.nodes:
+            entity = simulation.topology.G.nodes[id_entity]
 
             for ctrl in self.sink_control:
                 # A node can have several sinks modules
@@ -70,7 +71,7 @@ class StaticPopulation(Population):
                     # In this node there is a sink
                     module = ctrl["module"]
                     for number in range(ctrl["number"]):
-                        sim.deploy_sink(app_name, node_id=id_entity, module=module)
+                        simulation.deploy_sink(application, node_id=id_entity, module=module)
 
             for ctrl in self.src_control:
                 # A node can have several source modules
@@ -78,7 +79,7 @@ class StaticPopulation(Population):
                     msg = ctrl["message"]
                     dst = ctrl["distribution"]
                     for number in range(ctrl["number"]):
-                        sim.deploy_source(app_name, node_id=id_entity, message=msg, distribution=dst)
+                        simulation.deploy_source(application, node_id=id_entity, message=msg, distribution=dst)
 
     def run(self, sim: "Simulation"):
         raise NotImplementedError()
@@ -91,16 +92,16 @@ class Evolutive(Population):
         self.number_generators = srcs
         super(Evolutive, self).__init__(**kwargs)
 
-    def initial_allocation(self, sim, app_name):
+    def initial_allocation(self, simulation, application):
         # ASSIGNAMENT of SOURCE - GENERATORS - ACTUATORS
-        id_nodes = list(sim.topology.G.nodes())
+        id_nodes = list(simulation.topology.G.nodes())
         for ctrl in self.src_control:
             msg = ctrl["message"]
             dst = ctrl["distribution"]
             for item in range(self.number_generators):
                 id = random.choice(id_nodes)
                 for number in range(ctrl["number"]):
-                    sim.deploy_source(app_name, node_id=id, message=msg, distribution=dst)
+                    simulation.deploy_source(application, node_id=id, message=msg, distribution=dst)
 
         # ASSIGNAMENT of the first SINK
         fog_device = self.fog_devices[0][0]
@@ -108,7 +109,7 @@ class Evolutive(Population):
         for ctrl in self.sink_control:
             module = ctrl["module"]
             for number in range(ctrl["number"]):
-                sim.deploy_sink(app_name, node_id=fog_device, module=module)
+                simulation.deploy_sink(application, node_id=fog_device, module=module)
 
     def run(self, sim):
         if len(self.fog_devices) > 0:
@@ -128,22 +129,22 @@ class Statical(Population):
         self.number_generators = srcs
         super(Statical, self).__init__(**kwargs)
 
-    def initial_allocation(self, sim, app_name):
+    def initial_allocation(self, simulation, application):
         for ctrl in self.src_control:
             msg = ctrl["message"]
             dst = ctrl["distribution"]
             param = ctrl["param"]
             for item in range(self.number_generators):
-                id = random.choice(list(sim.topology.G.nodes()))
+                id = random.choice(list(simulation.topology.G.nodes()))
                 for number in range(ctrl["number"]):
-                    sim.deploy_source(app_name, node_id=id, message=msg, distribution=dst, param=param)
+                    simulation.deploy_source(application, node_id=id, message=msg, distribution=dst, param=param)
 
         # ASSIGNAMENT of the only one SINK
         for ctrl in self.sink_control:
             module = ctrl["module"]
             best_device = ctrl["id"]
             for number in range(ctrl["number"]):
-                sim.deploy_sink(app_name, node_id=best_device, module=module)
+                simulation.deploy_sink(application, node_id=best_device, module=module)
 
 
 # TODO Whats the difference to StaticPopulation?
@@ -154,7 +155,7 @@ class Statical2(Population):
     Extends: :mod: Population
     """
 
-    def initial_allocation(self, sim, app_name):
+    def initial_allocation(self, simulation, application):
         # Assignment of SINK and SOURCE pure modules
 
         for ctrl in self.src_control:
@@ -162,13 +163,13 @@ class Statical2(Population):
                 msg = ctrl["message"]
                 dst = ctrl["distribution"]
                 for idx in ctrl["id"]:
-                    sim.deploy_source(app_name, node_id=idx, message=msg, distribution=dst)
+                    simulation.deploy_source(application, node_id=idx, message=msg, distribution=dst)
 
         for ctrl in self.sink_control:
             if "id" in list(ctrl.keys()):
                 module = ctrl["module"]
                 for idx in ctrl["id"]:
-                    sim.deploy_sink(app_name, node_id=idx, module=module)
+                    simulation.deploy_sink(application, node_id=idx, module=module)
 
 
 class PopAndFailures(Population):
@@ -179,23 +180,23 @@ class PopAndFailures(Population):
         self.limit = 200
         super(PopAndFailures, self).__init__(**kwargs)
 
-    def initial_allocation(self, sim, app_name):
+    def initial_allocation(self, simulation, application):
         # ASSIGNAMENT of SOURCE - GENERATORS - ACTUATORS
-        id_nodes = list(sim.topology.G.nodes())
+        id_nodes = list(simulation.topology.G.nodes())
         for ctrl in self.src_control:
             msg = ctrl["message"]
             dst = ctrl["distribution"]
             for item in range(self.number_generators):
                 id = random.choice(id_nodes)
                 for number in range(ctrl["number"]):
-                    sim.deploy_source(app_name, node_id=id, message=msg, distribution=dst)
+                    simulation.deploy_source(application, node_id=id, message=msg, distribution=dst)
 
         for ctrl in self.sink_control:
             module = ctrl["module"]
             ids_coefficient = ctrl["ids"]
             for id in ids_coefficient:
                 for number in range(ctrl["number"]):
-                    sim.deploy_sink(app_name, node_id=id[0], module=module)
+                    simulation.deploy_sink(application, node_id=id[0], module=module)
 
     def getProcessFromThatNode(self, sim, node_to_remove):
         if node_to_remove in list(sim.alloc_DES.values()):
@@ -257,22 +258,22 @@ class PopulationMove(Population):
         self.activation = 0
         super(PopulationMove, self).__init__(**kwargs)
 
-    def initial_allocation(self, sim, app_name):
+    def initial_allocation(self, simulation, application):
         # ASSIGNAMENT of SOURCE - GENERATORS - ACTUATORS
-        id_nodes = list(sim.topology.G.nodes())
+        id_nodes = list(simulation.topology.G.nodes())
         for ctrl in self.src_control:
             msg = ctrl["message"]
             dst = ctrl["distribution"]
             for item in range(self.number_generators):
                 id = random.choice(id_nodes)
                 for number in range(ctrl["number"]):
-                    sim.deploy_source(app_name, node_id=id, message=msg, distribution=dst)
+                    simulation.deploy_source(application, node_id=id, message=msg, distribution=dst)
 
         for ctrl in self.sink_control:
             module = ctrl["module"]
             best_device = ctrl["id"]
             for number in range(ctrl["number"]):
-                sim.deploy_sink(app_name, node_id=best_device, module=module)
+                simulation.deploy_sink(application, node_id=best_device, module=module)
 
     def run(self, sim):
         import matplotlib.pyplot as plt
@@ -353,7 +354,7 @@ class JSONPopulation(Population):
         self.data = json
         self.it = iteration
 
-    def initial_allocation(self, sim, app_name):
+    def initial_allocation(self, simulation, application):
         # for item in self.data["sinks"]:
         #     app_name = item["app"]
         #     module = item["module_name"]
@@ -361,16 +362,16 @@ class JSONPopulation(Population):
         #     sim.deploy_sink(app_name, node=idtopo, module=module)
 
         for item in self.data["sources"]:
-            if item["app"] == app_name:
-                app_name = item["app"]
+            if item["app"] == application:
+                application = item["app"]
                 idtopo = item["id_resource"]
                 lambd = item["lambda"]
-                app = sim.apps[app_name]
+                app = simulation.apps[application]
                 msg = app.messages[item["message"]]
 
                 dDistribution = ExponentialDistribution(name="Exp", lambd=lambd, seed=self.it)
 
-                sim.deploy_source(app_name, node_id=idtopo, message=msg, distribution=dDistribution)
+                simulation.deploy_source(application, node_id=idtopo, message=msg, distribution=dDistribution)
 
 
 class JSONPopulation2(Population):
@@ -379,7 +380,7 @@ class JSONPopulation2(Population):
         self.data = json
         self.it = it
 
-    def initial_allocation(self, sim, app_name):
+    def initial_allocation(self, simulation, application):
         for idx, behaviour in enumerate(self.data["sources"]):
             # Creating the type of the distribution
             # behaviour["args"] should have the same attributes of the used distribution
@@ -391,8 +392,8 @@ class JSONPopulation2(Population):
                 instance_distribution = class_(name="h%i" % idx, **behaviour["args"])
 
             # Getting information from the APP
-            app_name = behaviour["app"]
-            app = sim.apps[app_name]
+            application = behaviour["app"]
+            app = simulation.apps[application]
             msg = app.messages[behaviour["message"]]
 
             # TODO Include a more flexible constructor
@@ -402,7 +403,7 @@ class JSONPopulation2(Population):
             #         sim.deploy_source(app_name, id_node=int(entity), msg=msg, distribution=instance_distribution)
             # else:
 
-            sim.deploy_source(app_name, node_id=behaviour["entity"], message=msg, distribution=instance_distribution)
+            simulation.deploy_source(application, node_id=behaviour["entity"], message=msg, distribution=instance_distribution)
 
 
 class DynamicPopulation(Population):
@@ -421,7 +422,7 @@ class DynamicPopulation(Population):
     In userOrderInputByInvocation, we create the user apparition sequence
     """
 
-    def initial_allocation(self, sim, app_name):
+    def initial_allocation(self, simulation, application):
         size = len(self.data)
         self.userOrderInputByInvocation = random.sample(list(range(size)), size)
 
@@ -457,17 +458,17 @@ class SimpleDynamicChanges(Population):
         self.run_times = run_times  # TODO Reimplement
         super(SimpleDynamicChanges, self).__init__(**kwargs)
 
-    def initial_allocation(self, sim, app_name):
+    def initial_allocation(self, simulation, application):
         # Assignment of SINK and SOURCE pure modules
-        for id_entity in sim.topology.G.nodes:
-            entity = sim.topology.G.nodes[id_entity]
+        for id_entity in simulation.topology.G.nodes:
+            entity = simulation.topology.G.nodes[id_entity]
             for ctrl in self.sink_control:
                 # A node can have several sinks modules
                 if entity["model"] == ctrl["model"]:
                     # In this node there is a sink
                     module = ctrl["module"]
                     for number in range(ctrl["number"]):
-                        sim.deploy_sink(app_name, node_id=id_entity, module=module)
+                        simulation.deploy_sink(application, node_id=id_entity, module=module)
 
             for ctrl in self.src_control:
                 # A node can have several source modules
@@ -475,4 +476,4 @@ class SimpleDynamicChanges(Population):
                     msg = ctrl["message"]
                     dst = ctrl["distribution"]
                     for number in range(ctrl["number"]):
-                        sim.deploy_source(app_name, node_id=id_entity, message=msg, distribution=dst)
+                        simulation.deploy_source(application, node_id=id_entity, message=msg, distribution=dst)

@@ -209,18 +209,18 @@ where:
 
     class CloudPlacement(Placement):
 
-        def initial_allocation(self, sim, app_name):
+        def initial_allocation(self, simulation, app_name):
             #We find the ID-nodo/resource
             value = {"mytag": "cloud"} # or whatever tag
 
-            id_cluster = sim.topology.find_IDs(value)
-            app = sim.apps[app_name]
+            id_cluster = simulation.topology.find_IDs(value)
+            app = simulation.apps[app_name]
             services = app.services
 
             for module in services:
                 if module in self.scaleServices:
                     for rep in range(0, self.scaleServices[module]):
-                        process = sim.deploy_module(app_name,module,services[module],id_cluster)
+                        process = simulation.deploy_module(app_name,module,services[module],id_cluster)
 
 ---------------------
 Running the simulator
