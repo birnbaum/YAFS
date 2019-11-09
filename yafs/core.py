@@ -1,6 +1,7 @@
 """This module unifies the event-discrete simulation environment with the rest of modules: placement, topology, selection, population, utils and metrics."""
 
 import logging
+import random
 from collections import Callable
 from typing import Optional, List, Dict
 
@@ -9,7 +10,7 @@ from simpy import Process
 from tqdm import tqdm
 
 from yafs.application import Application, Message, Service
-from yafs.distribution import *
+from yafs.distribution import Distribution
 from yafs.placement import Placement
 from yafs.population import Population
 from yafs.selection import Selection
@@ -35,7 +36,6 @@ class Simulation:
         self.env.process(self._network_process())
         self.network_ctrl_pipe = simpy.Store(self.env)
 
-        self._message_id = 0  # Unique identifier for each message
         self.network_pump = 0  # Shared resource that controls the exchange of messages in the topology
 
         self.event_log = EventLog()
@@ -115,10 +115,6 @@ class Simulation:
                     full_assignation[des] = {"DES": self.process_to_node[des], "module": module}
         return full_assignation
 
-    def _next_message_id(self):
-        self._message_id += 1
-        return self._message_id
-
     def _send_message(self, message: Message, application: Application, src_node: int):
         """Sends a message between modules and updates the metrics once the message reaches the destination module"""
         selection = self.deployments[application].selection
@@ -127,7 +123,7 @@ class Simulation:
 
         paths = selection.get_paths(self.topology.G, message, src_node, dst_nodes)
         for path in paths:
-            logger.debug(f"Application {application} sending {message} via path {path}")
+            logger.debug(f"Application {application.name} sending {message} via path {path}")
             new_message = message.evolve(path=path, application=application)
             self.network_ctrl_pipe.put(new_message)
 
@@ -168,8 +164,7 @@ class Simulation:
                 latency_msg_link = transmit + propagation
                 logger.debug(f"Link: {link}; Latency: {latency_msg_link}")
 
-                self.event_log.append_transmission(id=message.id,
-                                                   src=link[0],
+                self.event_log.append_transmission(src=link[0],
                                                    dst=link[1],
                                                    app=message.application.name,
                                                    latency=latency_msg_link,
@@ -221,8 +216,7 @@ class Simulation:
             att_node = self.topology.G.nodes[node_id]
             time_service = message.instructions / float(att_node["IPT"])
 
-        self.event_log.append_event(id=message.id,
-                                    type=type_,
+        self.event_log.append_event(type=type_,
                                     app=application.name,
                                     module=module,
                                     message=message.name,
@@ -259,7 +253,7 @@ class Simulation:
         logger.debug(f"Added_Process - Module Pure Sink: {module_name}")
         while True:
             message = yield self.consumer_pipes[f"{application.name}:{module_name}"].get()
-            logger.debug("(App:%s#%s)\tModule Pure - Sink Message:\t%s" % (application, module_name, message.name))
+            logger.debug("(App:%s#%s)\tModule Pure - Sink Message:\t%s" % (application.name, module_name, message.name))
             service_time = self._compute_service_time(application, module_name, message, node_id, "SINK")
             yield self.env.timeout(service_time)  # service time is 0
 
@@ -315,8 +309,8 @@ class Simulation:
         logger.debug("Added_Process - Module Pure Source")
         while True:
             yield self.env.timeout(next(distribution))
-            logger.debug(f"App '{application}'\tGenerating Message: {message.name} \t(T:{self.env.now})")
-            new_message = message.evolve(timestamp=self.env.now, id=self._next_message_id())
+            logger.debug(f"App '{application.name}'\tGenerating Message: {message.name} \t(T:{self.env.now})")
+            new_message = message.evolve(timestamp=self.env.now)
             self._send_message(new_message, application, node_id)
 
     # TODO Rename
@@ -359,23 +353,23 @@ class Simulation:
 
             for service in accepting_services:  # Processing the message
                 if not service.message_out:
-                    logger.debug(f"{application}:{module_name}\tSink message\t{message.name}")
+                    logger.debug(f"{application.name}:{module_name}\tSink message\t{message.name}")
                     continue
 
                 if random.random() <= service.probability:
-                    message_out = service.message_out.evolve(timestamp=self.env.now, id=message.id)
+                    message_out = service.message_out.evolve(timestamp=self.env.now)
                     if not service.module_dst:
                         # it is not a broadcasting message
-                        logger.debug(f"{application}:{module_name}\tTransmit message\t{service.message_out.name}")
+                        logger.debug(f"{application.name}:{module_name}\tTransmit message\t{service.message_out.name}")
                         self._send_message(message_out, application, node_id)
                     else:
                         # it is a broadcasting message
-                        logger.debug(f"{application}:{module_name}\tBroadcasting message\t{service.message_out.name}")
+                        logger.debug(f"{application.name}:{module_name}\tBroadcasting message\t{service.message_out.name}")
                         for idx, module_dst in enumerate(service.module_dst):
                             if random.random() <= service.p[idx]:
                                 self._send_message(message_out, application, node_id)
                 else:
-                    logger.debug(f"{application}:{module_name}\tDenied message\t{service.message_out.name}")
+                    logger.debug(f"{application.name}:{module_name}\tDenied message\t{service.message_out.name}")
 
     def deploy_sink(self, application: Application, node_id: int, module: str):
         """Add a DES process to deploy pure SINK modules (actuators).
@@ -495,14 +489,12 @@ class Simulation:
                     fullAssignation[des] = {"ID": self.process_to_node[des], "Module": module}  # DES process are unique for each module/element
 
         print("-" * 40)
-        print("DES\t| TOPO \t| Src.Mod \t| Modules")
+        print("TOPO \t| Src.Mod \t| Modules")
         print("-" * 40)
         for k in self.process_to_node:
             print(
-                k,
-                "\t|",
                 self.process_to_node[k],
-                "\t|",
+                "\t\t|",
                 self.alloc_source[k]["name"] if k in list(self.alloc_source.keys()) else "--",
                 "\t\t|",
                 fullAssignation[k]["Module"] if k in list(fullAssignation.keys()) else "--",

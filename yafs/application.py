@@ -70,10 +70,8 @@ class Message:
         self.application = None  # TODO Remove this, Message should have no knowledge about application
         self.timestamp_rec = 0  # TODO ??
 
-        self.id = -1  # TODO ??
-
     def __str__(self):
-        return f"Message<name=\"{self.name}\", id=\"{self.id}\", src=\"{self.src.name}\", dst=\"{self.dst.name}\">"
+        return f"Message<name=\"{self.name}\", src=\"{self.src.name}\", dst=\"{self.dst.name}\">"
 
     def evolve(self, **kwargs) -> "Message":
         message = copy(self)
