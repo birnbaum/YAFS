@@ -38,9 +38,9 @@ class Simulation:
         self._message_id = 0  # Unique identifier for each message
         self.network_pump = 0  # Shared resource that controls the exchange of messages in the topology
 
-        self.applications = {}
-
         self.event_log = EventLog()
+
+        self.deployments = {}  # TODO Should become a list?
 
         self.placement_policy = {}  # for app.name the placement algorithm
         self.population_policy = {}  # for app.name the population algorithm
@@ -77,10 +77,6 @@ class Simulation:
         1.N. DES process -> 1. topology.node
         """
         self.process_to_node = {}
-
-        # Store for each app.name the selection policy
-        # app.name -> Selector
-        self.selector_path = {}
 
         # This variable control the lag of each busy network links. It avoids the generation of a DES-process for each link
         # edge -> last_use_channel (float) = Simulation time
@@ -125,7 +121,7 @@ class Simulation:
 
     def _send_message(self, message: Message, app_name: str, src_node: int):
         """Sends a message between modules and updates the metrics once the message reaches the destination module"""
-        selection = self.selector_path[app_name]
+        selection = self.deployments[app_name].selection
         dst_processes = self.app_to_module_to_processes[app_name][message.dst.name]
         dst_nodes = [self.process_to_node[dev] for dev in dst_processes]
 
@@ -198,7 +194,7 @@ class Simulation:
                 #     # This fact is produced when a node or edge the topology is changed or disappeared
                 #     logger.warning("The initial path assigned is unreachabled. Link: (%i,%i). Routing a new one. %i" % (link[0], link[1], self.env.now))
                 #
-                #     paths, DES_dst = self.selector_path[message.app_name].get_path_from_failure(
+                #     paths, DES_dst = self.deployments[message.app_name].selection.get_path_from_failure(
                 #         self, message, link, self.alloc_DES, self.alloc_module, self.last_busy_time, self.env.now
                 #     )
                 #
@@ -217,9 +213,9 @@ class Simulation:
         self.network_pump -= 1
         self.network_ctrl_pipe.put(message)
 
-    def _compute_service_time(self, app, module, message, node_id, type_):
+    def _compute_service_time(self, app_name, module, message, node_id, type_):
         """Computes the service time in processing a message and record this event"""
-        if module in self.applications[app].sink_modules:  # module is a SINK
+        if module in self.deployments[app_name].application.sink_modules:  # module is a SINK
             time_service = 0
         else:
             att_node = self.topology.G.nodes[node_id]
@@ -227,7 +223,7 @@ class Simulation:
 
         self.event_log.append_event(id=message.id,
                                     type=type_,
-                                    app=app,
+                                    app=app_name,
                                     module=module,
                                     message=message.name,
                                     module_src=message.src,
@@ -413,7 +409,9 @@ class Simulation:
 
     def deploy_app(self, app: Application, placement: Placement, population: Population, selection: Selection):
         """This process is responsible for linking the *application* to the different algorithms (placement, population, and service)"""
-        self.applications[app.name] = app
+        deployment = Deployment(application=app, placement=placement, population=population, selection=selection)
+        self.deployments[app.name] = deployment
+
         self.app_to_module_to_processes[app.name] = {}
 
         # Add Placement controls to the App
@@ -423,9 +421,6 @@ class Simulation:
         # Add Population control to the App
         self._deploy_population(population)
         self.population_policy[population.name]["apps"].append(app.name)
-
-        # Add Selection control to the App
-        self.selector_path[app.name] = selection
 
     def _deploy_placement(self, placement):
         if placement.name not in list(self.placement_policy.keys()):  # First Time
@@ -538,3 +533,11 @@ class Simulation:
 
         if results_path:
             self.event_log.write(results_path)
+
+
+class Deployment:
+    def __init__(self, application: Application, placement: Placement, population: Population, selection: Selection):
+        self.application = application
+        self.placement = placement
+        self.population = population
+        self.selection = selection

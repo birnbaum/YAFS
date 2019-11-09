@@ -52,7 +52,7 @@ class JSONPlacement(Placement):  # TODO The placement should not care how it was
     def initial_allocation(self, simulation, app_name):
         for item in self.data["initialAllocation"]:
             if app_name == item["app"]:
-                app = simulation.applications[app_name]
+                app = simulation.deployments[app_name].application
                 module = next(m for m in app.modules if m.name == item["module_name"])
                 idtopo = item["id_resource"]
 
@@ -86,7 +86,7 @@ class CloudPlacement(Placement):
 
     def initial_allocation(self, simulation: "Simulation", app_name: str):  # TODO Why does the placement know about the simulation?
         id_cluster = simulation.topology.find_IDs({"mytag": "cloud"})  # TODO These are very implicit assumptions about module naming...
-        app = simulation.applications[app_name]
+        app = simulation.deployments[app_name].application
         for module in app.service_modules:
             if module.name in self.scaleServices:
                 for rep in range(0, self.scaleServices[module.name]):

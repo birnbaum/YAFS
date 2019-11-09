@@ -118,3 +118,5 @@ class Application:
         # Defining which messages will be dynamically generated # the generation is controlled by Population algorithm
         # TODO Check
         self.messages[message.name] = message
+
+

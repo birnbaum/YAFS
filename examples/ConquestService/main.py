@@ -28,7 +28,7 @@ class CustomStrategy:
 
     def deploy_module(self, sim, service, idtopo):
         app_name = service[0 : service.index("_")]
-        app = sim.applications[app_name]
+        app = sim.deployments[app_name].application
         services = app.services
         sim.deploy_module(app_name, service, services[service], [idtopo])
 
@@ -173,7 +173,7 @@ class DynamicPopulation(Population):
 
             logger.info("Launching user %i (app: %s), in node: %i, at time: %i " % (item["id_resource"], app_name, idtopo, sim.env.now))
 
-            app = sim.applications[app_name]
+            app = sim.deployments[app_name].application
             msg = app.messages[item["message"]]
 
             # A basic creation of the seed: unique for each user and different in each simulation repetition

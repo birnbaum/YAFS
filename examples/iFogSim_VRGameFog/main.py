@@ -27,7 +27,7 @@ class CloudPlacementIFogSIM(Placement):
         id_mobiles = simulation.topology.find_IDs(value)
 
         # Given an application we get its modules implemented
-        app = simulation.applications[app_name]
+        app = simulation.deployments[app_name].application
         for module_name in app.service_modules:
             module = next(m for m in app.modules if m.name == module_name)
             if "Coordinator" == module_name:
@@ -65,7 +65,7 @@ class FogPlacementIFogSIM(Placement):
         id_mobiles = simulation.topology.find_IDs(value)
 
         # Given an application we get its modules implemented
-        app = simulation.applications[app_name]
+        app = simulation.deployments[app_name].application
         for module in list(app.services.keys()):
             if "Coordinator" == module:
                 if "Coordinator" in list(self.scaleServices.keys()):
