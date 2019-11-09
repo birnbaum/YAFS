@@ -26,7 +26,7 @@ def create_application():
     message_b = Message("M.B", src="ServiceA", dst="Actuator", instructions=30 * 10 ^ 6, size=500)
 
     # Defining which messages will be dynamically generated # the generation is controlled by Population algorithm
-    a.add_source_messages(message_a)
+    a.add_source_message(message_a)
 
     # MODULES/SERVICES: Definition of Generators and Consumers (AppEdges and TupleMappings in iFogSim)
     a.add_service_module("ServiceA", message_a, message_b)

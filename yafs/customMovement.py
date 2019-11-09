@@ -30,7 +30,7 @@ class MovementUpdate:
         app_name = service[0 : service.index("_")]
         app = sim.apps[app_name]
         services = app.services
-        process_id = sim.deploy_module(app_name, service, services[service], [idtopo])
+        sim.deploy_module(app_name, service, services[service], [idtopo])
 
     def get_last_points(self, df, step):
 

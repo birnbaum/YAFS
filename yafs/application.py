@@ -113,8 +113,8 @@ class Application:
     def sink_modules(self):
         return [module for module in self.modules if module.is_sink]
 
-    def add_source_messages(self, msg):
+    def add_source_message(self, message):
         """Adds messages that come from pure sources (sensors).  This distinction allows them to be controlled by the (:mod:`Population`) algorithm."""
         # Defining which messages will be dynamically generated # the generation is controlled by Population algorithm
         # TODO Check
-        self.messages[msg.name] = msg
+        self.messages[message.name] = message

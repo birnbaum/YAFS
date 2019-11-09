@@ -35,7 +35,7 @@ def create_application():
     """
     Defining which messages will be dynamically generated # the generation is controlled by Population algorithm
     """
-    a.add_source_messages(m_a)
+    a.add_source_message(m_a)
 
     """
     MODULES/SERVICES: Definition of Generators and Consumers (AppEdges and TupleMappings in iFogSim)

@@ -107,19 +107,19 @@ class CloudPathRR(Selection):  # TODO Refactor to use new interface
 
     def get_path(self, sim, app_name, message, topology_src, alloc_DES, alloc_module):
         node_src = topology_src
-        DES_dst = alloc_module[app_name][message.dst]  # returns an array with all DES process serving
+        processes = alloc_module[app_name][message.dst]  # returns an array with all DES process serving
 
         if message.dst not in list(self.rr.keys()):
             self.rr[message.dst] = 0
-        logger.debug(f"Searching path for node {node_src}. Request service: {message.dst} (process_id={DES_dst})")
+        logger.debug(f"Searching path for node {node_src}. Request service: {message.dst}.")
 
-        next_DES_dst = DES_dst[self.rr[message.dst]]
+        next_DES_dst = processes[self.rr[message.dst]]
         dst_node = alloc_DES[next_DES_dst]
 
         path = list(nx.shortest_path(sim.topology.G, source=node_src, target=dst_node))
         bestPath = [path]
         bestDES = [next_DES_dst]
-        self.rr[message.dst] = (self.rr[message.dst] + 1) % len(DES_dst)
+        self.rr[message.dst] = (self.rr[message.dst] + 1) % len(processes)
         return bestPath, bestDES
 
 
@@ -197,16 +197,16 @@ class MinPathRoundRobin(Selection):  # TODO Refactor to use new interface
         Return the path and the identifier of the module deployed in the last element of that path
         """
         node_src = topology_src
-        DES_dst = alloc_module[app_name][message.dst]  # returns an array with all DES process serving
+        processes = alloc_module[app_name][message.dst]  # returns an array with all DES process serving
 
         if message.dst not in list(self.rr.keys()):
             self.rr[message.dst] = 0
-        logger.debug(f"Searching path for node {node_src}. Request service: {message.dst} (process_id={DES_dst})")
+        logger.debug(f"Searching path for node {node_src}. Request service: {message.dst}.")
 
         bestPath = []
         bestDES = []
 
-        for ix, des in enumerate(DES_dst):
+        for ix, des in enumerate(processes):
             if message.name == "M.A":
                 if self.rr[message.dst] == ix:
                     dst_node = alloc_DES[des]
@@ -216,7 +216,7 @@ class MinPathRoundRobin(Selection):  # TODO Refactor to use new interface
                     bestPath = [path]
                     bestDES = [des]
 
-                    self.rr[message.dst] = (self.rr[message.dst] + 1) % len(DES_dst)
+                    self.rr[message.dst] = (self.rr[message.dst] + 1) % len(processes)
                     break
             else:  # message.name == "M.B"
 

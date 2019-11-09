@@ -220,7 +220,7 @@ where:
             for module in services:
                 if module in self.scaleServices:
                     for rep in range(0, self.scaleServices[module]):
-                        process_id = sim.deploy_module(app_name,module,services[module],id_cluster)
+                        process = sim.deploy_module(app_name,module,services[module],id_cluster)
 
 ---------------------
 Running the simulator

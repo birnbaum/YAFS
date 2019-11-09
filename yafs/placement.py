@@ -75,7 +75,7 @@ class JSONPlacementOnlyCloud(Placement):  # TODO The placement should not care h
             if idtopo == self.idcloud:
                 app = sim.apps[item["app"]]
                 module = next(m for m in app.modules if m.name == item["module_name"])
-                process_id = sim.deploy_module(app_name, module.name, module.services, [idtopo])
+                sim.deploy_module(app_name, module.name, module.services, [idtopo])
 
 
 class CloudPlacement(Placement):

@@ -34,15 +34,15 @@ class CloudPlacementIFogSIM(Placement):
                 if "Coordinator" in list(self.scaleServices.keys()):
                     # print self.scaleServices["Coordinator"]
                     for rep in range(0, self.scaleServices["Coordinator"]):
-                        process_id = simulation.deploy_module(app_name, module.name, module.services, id_cluster)  # Deploy as many modules as elements in the array
+                        simulation.deploy_module(app_name, module.name, module.services, id_cluster)  # Deploy as many modules as elements in the array
 
             elif "Calculator" == module_name:
                 if "Calculator" in list(self.scaleServices.keys()):
                     for rep in range(0, self.scaleServices["Calculator"]):
-                        process_id = simulation.deploy_module(app_name, module.name, module.services, id_cluster)
+                        simulation.deploy_module(app_name, module.name, module.services, id_cluster)
 
             elif "Client" == module_name:
-                process_id = simulation.deploy_module(app_name, module.name, module.services, id_mobiles)
+                simulation.deploy_module(app_name, module.name, module.services, id_mobiles)
 
 
 class FogPlacementIFogSIM(Placement):
@@ -70,13 +70,13 @@ class FogPlacementIFogSIM(Placement):
             if "Coordinator" == module:
                 if "Coordinator" in list(self.scaleServices.keys()):
                     for rep in range(0, self.scaleServices["Coordinator"]):
-                        process_id = simulation.deploy_module(app_name, module, app.services[module], id_cluster)  # Deploy as many modules as elements in the array
+                        simulation.deploy_module(app_name, module, app.services[module], id_cluster)  # Deploy as many modules as elements in the array
             elif "Calculator" == module:
                 if "Calculator" in list(self.scaleServices.keys()):
                     for rep in range(0, self.scaleServices["Calculator"]):
-                        process_id = simulation.deploy_module(app_name, module, app.services[module], id_proxies)
+                        simulation.deploy_module(app_name, module, app.services[module], id_proxies)
             elif "Client" == module:
-                process_id = simulation.deploy_module(app_name, module, app.services[module], id_mobiles)
+                simulation.deploy_module(app_name, module, app.services[module], id_mobiles)
 
 
 def create_application():
@@ -104,7 +104,7 @@ def create_application():
     """
     Defining which messages will be dynamically generated # the generation is controlled by Population algorithm
     """
-    a.add_source_messages(m_egg)
+    a.add_source_message(m_egg)
 
     """
     MODULES/SERVICES: Definition of Generators and Consumers (AppEdges and TupleMappings in iFogSim)

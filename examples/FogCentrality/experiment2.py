@@ -24,7 +24,7 @@ def create_application(workload_type):
     """
     Defining which messages will be dynamically generated # the generation is controlled by Population algorithm
     """
-    a.add_source_messages(m_data)
+    a.add_source_message(m_data)
     return a
 
 

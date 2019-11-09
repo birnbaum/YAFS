@@ -30,7 +30,7 @@ class CustomStrategy:
         app_name = service[0 : service.index("_")]
         app = sim.applications[app_name]
         services = app.services
-        process_id = sim.deploy_module(app_name, service, services[service], [idtopo])
+        sim.deploy_module(app_name, service, services[service], [idtopo])
 
     def is_already_deployed(self, sim, service_name, idtopo):
         app_name = service_name[0 : service_name.index("_")]
@@ -280,7 +280,7 @@ def create_applications_from_json(data):
             # print "Creando mensaje: %s" %message["name"]
             ms[message["name"]] = Message(message["name"], message["s"], message["d"], instructions=message["instructions"], size=message["bytes"])
             if message["s"] == "None":
-                a.add_source_messages(ms[message["name"]])
+                a.add_source_message(ms[message["name"]])
 
         # print "Total mensajes creados %i" %len(ms.keys())
         for idx, message in enumerate(app["transmission"]):

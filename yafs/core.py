@@ -24,12 +24,7 @@ class Simulation:
 
     Args:
         topology: Associated topology of the environment.
-        default_results_path  # TODO ???
     """
-
-    NODE_METRIC = "COMP_M"
-    SINK_METRIC = "SINK_M"
-    LINK_METRIC = "LINK"
 
     def __init__(self, topology: Topology):
         # TODO Refactor this class. Way too many fields, no clear separation of concerns.
@@ -49,10 +44,6 @@ class Simulation:
 
         self.placement_policy = {}  # for app.name the placement algorithm
         self.population_policy = {}  # for app.name the population algorithm
-
-        # key: app.name
-        # value: des process
-        self.des_control_process = {}
 
         # Queues for each message
         # <app_name>:<module_name> -> pipe
@@ -107,11 +98,11 @@ class Simulation:
             result[src_deployed["id"]].append(src_deployed["app"] + "#" + src_deployed["module"].name)
         for app in self.app_to_module_to_processes:
             for module_name in self.app_to_module_to_processes[app]:
-                for process_id in self.app_to_module_to_processes[app][module_name]:
-                    result[self.process_to_node[process_id]].append(app + "#" + module_name)
+                for process in self.app_to_module_to_processes[app][module_name]:
+                    result[self.process_to_node[process]].append(app + "#" + module_name)
         return result
 
-    # TODO This miht have a bug
+    # TODO This might have a bug
     def process_from_module_in_node(self, node, app_name, module_name):
         deployed = self.app_to_module_to_processes[app_name][module_name]
         for des in deployed:
@@ -216,7 +207,6 @@ class Simulation:
                 #         logger.debug("\t No path given. Message is lost")
                 #     else:
                 #         message.path = copy.copy(paths[0])
-                #         message.process_id = DES_dst[0]
                 #         logger.debug("(\t New path given. Message is enrouting again.")
                 #         self.network_ctrl_pipe.put(message)
 
@@ -272,9 +262,9 @@ class Simulation:
         """Process associated to a SINK module"""
         logger.debug(f"Added_Process - Module Pure Sink: {module_name}")
         while True:
-            msg = yield self.consumer_pipes[f"{app_name}:{module_name}"].get()
-            logger.debug("(App:%s#%s)\tModule Pure - Sink Message:\t%s" % (app_name, module_name, msg.name))
-            service_time = self._compute_service_time(app_name, module_name, msg, node_id, "SINK")
+            message = yield self.consumer_pipes[f"{app_name}:{module_name}"].get()
+            logger.debug("(App:%s#%s)\tModule Pure - Sink Message:\t%s" % (app_name, module_name, message.name))
+            service_time = self._compute_service_time(app_name, module_name, message, node_id, "SINK")
             yield self.env.timeout(service_time)  # service time is 0
 
     def __add_consumer_service_pipe(self, app_name, module_name):
@@ -377,17 +367,17 @@ class Simulation:
                     continue
 
                 if random.random() <= service.probability:
-                    msg_out = service.message_out.evolve(timestamp=self.env.now, id=message.id)
+                    message_out = service.message_out.evolve(timestamp=self.env.now, id=message.id)
                     if not service.module_dst:
                         # it is not a broadcasting message
                         logger.debug(f"{app_name}:{module_name}\tTransmit message\t{service.message_out.name}")
-                        self._send_message(msg_out, app_name, node_id)
+                        self._send_message(message_out, app_name, node_id)
                     else:
                         # it is a broadcasting message
                         logger.debug(f"{app_name}:{module_name}\tBroadcasting message\t{service.message_out.name}")
                         for idx, module_dst in enumerate(service.module_dst):
                             if random.random() <= service.p[idx]:
-                                self._send_message(msg_out, app_name, node_id)
+                                self._send_message(message_out, app_name, node_id)
                 else:
                     logger.debug(f"{app_name}:{module_name}\tDenied message\t{service.message_out.name}")
 
@@ -441,15 +431,13 @@ class Simulation:
         if placement.name not in list(self.placement_policy.keys()):  # First Time
             self.placement_policy[placement.name] = {"placement_policy": placement, "apps": []}
             if placement.activation_dist is not None:
-                process = self.env.process(self._placement_process(placement))
-                self.des_control_process[placement.name] = process
+                self.env.process(self._placement_process(placement))
 
     def _deploy_population(self, population):
         if population.name not in list(self.population_policy.keys()):  # First Time
             self.population_policy[population.name] = {"population_policy": population, "apps": []}
             if population.activation_dist is not None:
-                process = self.env.process(self._population_process(population))
-                self.des_control_process[population.name] = process
+                self.env.process(self._population_process(population))
 
     def _placement_process(self, placement):
         """Controls the invocation of Placement.run"""

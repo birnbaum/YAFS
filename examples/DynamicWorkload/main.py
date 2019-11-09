@@ -32,7 +32,7 @@ def create_application(name):
     a.set_modules([{"Generator": {"Type": Application.TYPE_SOURCE}}, {"Actuator": {"Type": Application.TYPE_SINK}}])
 
     m_egg = Message("M.Action", "Generator", "Actuator", instructions=100, size=10)
-    a.add_source_messages(m_egg)
+    a.add_source_message(m_egg)
     return a
 
 
