@@ -10,10 +10,7 @@ from abc import ABC, abstractmethod
 import numpy as np
 
 
-class Distribution(ABC):  # TODO This interface defines nothing??´
-
-    def __init__(self, name):
-        self.name = name
+class Distribution(ABC):
 
     def __iter__(self):
         return self
@@ -24,12 +21,20 @@ class Distribution(ABC):  # TODO This interface defines nothing??´
 
 
 class DeterministicDistribution(Distribution):
-    def __init__(self, time, **kwargs):
+    def __init__(self, time):
         self.time = time
-        super(DeterministicDistribution, self).__init__(**kwargs)
 
     def __next__(self):
         return self.time
+
+
+class UniformDistribution(Distribution):
+    def __init__(self, min, max):
+        self.min = min
+        self.max = max
+
+    def __next__(self):
+        return random.randint(self.min, self.max)
 
 
 class DeterministicDistributionStartPoint(Distribution):
@@ -73,13 +78,3 @@ class ExponentialDistributionStartPoint(Distribution):
             return self.start
         else:
             return int(np.random.exponential(self.lambd, size=1)[0])
-
-
-class UniformDistribution(Distribution):
-    def __init__(self, min, max, **kwargs):
-        self.min = min
-        self.max = max
-        super(UniformDistribution, self).__init__(**kwargs)
-
-    def __next__(self):
-        return random.randint(self.min, self.max)

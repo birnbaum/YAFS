@@ -17,7 +17,21 @@ from yafs.selection import Selection
 from yafs.stats import Stats, EventLog
 from yafs.topology import Topology
 
+
+class SimulationTimeFilter(logging.Filter):
+
+    def __init__(self, env):
+        self.env = env
+
+    def filter(self, record):
+        record.simulation_time = self.env.now
+        return True
+
+
 logger = logging.getLogger(__name__)
+logger.propagate = False
+ch = logging.StreamHandler()
+ch.setFormatter(logging.Formatter('%(simulation_time).4f - %(name)s - %(levelname)s - %(message)s'))
 
 
 class Simulation:
@@ -33,6 +47,9 @@ class Simulation:
         self.topology = topology
 
         self.env = simpy.Environment()  # discrete-event simulator (aka DES)
+        logger.addFilter(SimulationTimeFilter(self.env))
+        logger.addHandler(ch)
+
         self.env.process(self._network_process())
         self.network_ctrl_pipe = simpy.Store(self.env)
 
@@ -133,8 +150,6 @@ class Simulation:
         Performs the simulation of packages within the path between src and dst entities decided by the selection algorithm.
         In this way, the message has a transmission latency.
         """
-        self.last_busy_time = {}  # dict(zip(edges, [0.0] * len(edges)))
-
         while True:
             message = yield self.network_ctrl_pipe.get()
 
@@ -211,10 +226,10 @@ class Simulation:
     def _compute_service_time(self, application: Application, module, message, node_id, type_):
         """Computes the service time in processing a message and record this event"""
         if module in self.deployments[application].application.sink_modules:  # module is a SINK
-            time_service = 0
+            service_time = 0
         else:
             att_node = self.topology.G.nodes[node_id]
-            time_service = message.instructions / float(att_node["IPT"])
+            service_time = message.instructions / float(att_node["IPT"])
 
         self.event_log.append_event(type=type_,
                                     app=application.name,
@@ -223,13 +238,13 @@ class Simulation:
                                     module_src=message.src,
                                     TOPO_src=message.path[0],
                                     TOPO_dst=node_id,
-                                    service=time_service,
+                                    service=service_time,
                                     time_in=self.env.now,
-                                    time_out=time_service + self.env.now,
+                                    time_out=service_time + self.env.now,
                                     time_emit=float(message.timestamp),
                                     time_reception=float(message.timestamp_rec))
 
-        return time_service
+        return service_time
 
     def deploy_node_failure_generator(self, nodes: List[int], distribution: Distribution, logfile: Optional[str] = None) -> None:
         self.env.process(self._node_failure_generator(nodes, distribution, logfile))

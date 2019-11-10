@@ -11,7 +11,7 @@ from yafs.population import StaticPopulation
 from yafs.selection import ShortestPath
 from yafs.topology import Topology, load_yafs_json
 
-from yafs.distribution import DeterministicDistribution
+from yafs.distribution import DeterministicDistribution, UniformDistribution
 import time
 import numpy as np
 
@@ -54,7 +54,7 @@ def main(simulated_time):
     placement = CloudPlacement("onCloud")  # it defines the deployed rules: module-device
     placement.scaleService({"service_a": 1})
 
-    distribution = DeterministicDistribution(name="Deterministic", time=100)
+    distribution = UniformDistribution(min=10, max=100)
     # TODO Sink hardcoded
     population = StaticPopulation("Statical")
     population.set_sink_control({"model": "actuator-device",  # identifies the device or devices where the sink is linked
@@ -77,14 +77,13 @@ def main(simulated_time):
     simulation.deploy_placement(placement, applications=[app1, app2])
     simulation.deploy_population(population, applications=[app1, app2])
 
-    simulation.run(until=simulated_time, results_path="results", progress_bar=False)
+    simulation.run(until=simulated_time, progress_bar=False)
+    simulation.stats.print_report(simulated_time)
     utils.draw_topology(t, simulation.node_to_modules)
-
-    simulation.stats.print_report(1000, topology=t, time_loops=[["M.A", "M.B"]])
 
 
 if __name__ == "__main__":
-    logging.basicConfig(format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.DEBUG)
+    logging.basicConfig(format="%(name)s - %(levelname)s - %(message)s", level=logging.DEBUG)
     logging.getLogger("matplotlib").setLevel(logging.WARNING)
     start_time = time.time()
     main(simulated_time=1000)
