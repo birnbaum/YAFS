@@ -116,7 +116,7 @@ def main(path, path_results, number_simulation_steps, tracks, topology, case, it
     """
     # Each user/mobile entity has an unique population politic
     wl = json.load(open(path + "workload.json"))  # workload behaviour
-    pop = JSONPopulation2(name="Statical", json=wl, it=it)
+    pop = JSONPopulation2(name="Statical", json=wl, it=it)  # TODO Writer mapper
 
     """
     Deploying application with specific distribution in the simulator
@@ -124,7 +124,7 @@ def main(path, path_results, number_simulation_steps, tracks, topology, case, it
     """
     for aName in list(apps.keys()):
         # print "Deploying app: ",aName
-        pop_app = JSONPopulation2(name="Statical_%s" % aName, json={}, it=it)
+        pop_app = JSONPopulation2(name="Statical_%s" % aName, json={}, it=it)  # TODO Writer mapper
         data = []
         for element in pop.data["sources"]:
             if element["app"] == aName:

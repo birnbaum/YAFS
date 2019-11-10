@@ -42,6 +42,20 @@ class Placement(ABC):
         """This method will be invoked during the simulation to change the assignment of the modules to the topology."""
 
 
+class CloudPlacement(Placement):
+    """Locates the services of the application in the cheapest cloud regardless of where the sources or sinks are located.  # TODO Docstring wrong?
+
+    It only runs once, in the initialization.
+    """
+
+    def initial_allocation(self, simulation: "Simulation", application: str):
+        for app in self.apps:
+        cloud_node_id, _ = max(simulation.topology.G.nodes(data=True), key=lambda node: node[1]["IPT"])
+        app = simulation.deployments[application].application
+        for module in app.service_modules:
+            simulation.deploy_module(application, module.name, module.services, node_ids=[cloud_node_id])
+
+
 class JSONPlacement(Placement):  # TODO The placement should not care how it was instantiated
     def __init__(self, json, **kwargs):
         super(JSONPlacement, self).__init__(**kwargs)
@@ -64,7 +78,6 @@ class JSONPlacementOnlyCloud(Placement):  # TODO The placement should not care h
         super(JSONPlacementOnlyCloud, self).__init__(**kwargs)
         self.data = json
         self.idcloud = idcloud
-        logger.info(" Placement Initialization of %s in NodeCLOUD: %i" % (self.name, self.idcloud))
 
     def initial_allocation(self, simulation, application):
         for item in self.data["initialAllocation"]:
@@ -74,21 +87,6 @@ class JSONPlacementOnlyCloud(Placement):  # TODO The placement should not care h
                 app = simulation.apps[item["app"]]
                 module = next(m for m in app.modules if m.name == item["module_name"])
                 simulation.deploy_module(application, module.name, module.services, [idtopo])
-
-
-class CloudPlacement(Placement):
-    """Locates the services of the application in the cheapest cloud regardless of where the sources or sinks are located.  # TODO Docstring wrong?
-
-    It only runs once, in the initialization.
-    """
-
-    def initial_allocation(self, simulation: "Simulation", application: str):  # TODO Why does the placement know about the simulation?
-        id_cluster = simulation.topology.find_IDs({"mytag": "cloud"})  # TODO These are very implicit assumptions about module naming...
-        app = simulation.deployments[application].application
-        for module in app.service_modules:
-            if module.name in self.scaleServices:
-                for rep in range(0, self.scaleServices[module.name]):
-                    simulation.deploy_module(application, module.name, module.services, id_cluster)
 
 
 class NoPlacementOfModules(Placement):

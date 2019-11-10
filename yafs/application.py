@@ -22,11 +22,9 @@ class Service:
 
 
 class Module:
-    def __init__(self, name: str, is_source: bool = False, is_sink: bool = False, data: Optional[Dict] = None):
+    def __init__(self, name: str, data: Optional[Dict] = None):
         self.name = name
         self.services = []  # can deal with different messages, "tuppleMapping (iFogSim)"
-        self.is_source = is_source
-        self.is_sink = is_sink
         self.data = data if data else {}  # TODO find better name
 
     def add_service(self, message_in: "Message", message_out: "Message", probability: float = 1.0, p: Optional[List] = None,
@@ -34,9 +32,7 @@ class Module:
         self.services.append(Service(message_in, message_out, probability, p, module_dst))
 
     def __str__(self):
-        is_source = ", is_source=True" if self.is_source else ""
-        is_sink = ", is_sink=True" if self.is_sink else ""
-        return f"Module<name=\"{self.name}\"{is_source}{is_sink}>"
+        return f"Module<name=\"{self.name}\">"
 
 
 class Message:
@@ -100,16 +96,8 @@ class Application:
         return result
 
     @property
-    def src_modules(self):
-        return [module for module in self.modules if module.is_source]
-
-    @property
     def service_modules(self):
         return [module for module in self.modules if module.services]
-
-    @property
-    def sink_modules(self):
-        return [module for module in self.modules if module.is_sink]
 
     def add_source_message(self, message):
         """Adds messages that come from pure sources (sensors).  This distinction allows them to be controlled by the (:mod:`Population`) algorithm."""

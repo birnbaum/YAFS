@@ -32,12 +32,12 @@ class Population(ABC):
     def __init__(self, name: str, activation_dist: Distribution = None):
         self.name = name
         self.activation_dist = activation_dist
-        self.src_control = []  # TODO Private or document  # TODO Make this a class
-        self.sink_control = []  # TODO Private or document  # TODO Make this a class
+        self._src_control = []  # TODO Make this a class?
+        self._sink_control = []  # TODO Make this a class?
 
     def set_sink_control(self, values):
         """Localization of sink modules"""
-        self.sink_control.append(values)
+        self._sink_control.append(values)
 
     def get_next_activation(self):
         """Returns the next time to be activated in the simulation"""
@@ -45,7 +45,7 @@ class Population(ABC):
 
     def set_src_control(self, values):
         """Stores the drivers of each message generator."""
-        self.src_control.append(values)
+        self._src_control.append(values)
 
     @abstractmethod
     def initial_allocation(self, simulation: "Simulation", application: Application):
@@ -63,22 +63,18 @@ class StaticPopulation(Population):
         # Assignment of SINK and SOURCE pure modules
         for node_id, node_data in simulation.topology.G.nodes(data=True):
 
-            for ctrl in self.src_control:
-                # A node can have several source modules
+            for ctrl in self._src_control:  # A node can have several source modules
                 if node_data["model"] == ctrl["model"]:
                     msg = ctrl["message"]
                     dst = ctrl["distribution"]
-                    for number in range(ctrl["number"]):
+                    for _ in range(ctrl["number"]):
                         simulation.deploy_source(application, node_id=node_id, message=msg, distribution=dst)
 
-            for ctrl in self.sink_control:
-                # A node can have several sinks modules
-                if node_data["model"] == ctrl["model"]:
-                    # In this node there is a sink
-                    module = ctrl["module"]
-                    for number in range(ctrl["number"]):
-                        simulation.deploy_sink(application, node_id=node_id, module=module)
-
+            for ctrl in self._sink_control:  # A node can have several sinks modules
+                if node_data["model"] == ctrl["model"]:  # In this node there is a sink
+                    module_name = ctrl["module"]
+                    for _ in range(ctrl["number"]):
+                        simulation.deploy_sink(application, node_id=node_id, module_name=module_name)
 
     def run(self, sim: "Simulation"):
         raise NotImplementedError()
@@ -86,15 +82,14 @@ class StaticPopulation(Population):
 
 class Evolutive(Population):
     def __init__(self, fog, srcs, **kwargs):
-        # TODO arreglar en otros casos
+        super().__init__(**kwargs)
         self.fog_devices = fog
         self.number_generators = srcs
-        super(Evolutive, self).__init__(**kwargs)
 
     def initial_allocation(self, simulation, application):
         # ASSIGNAMENT of SOURCE - GENERATORS - ACTUATORS
         id_nodes = list(simulation.topology.G.nodes())
-        for ctrl in self.src_control:
+        for ctrl in self._src_control:
             msg = ctrl["message"]
             dst = ctrl["distribution"]
             for item in range(self.number_generators):
@@ -105,21 +100,21 @@ class Evolutive(Population):
         # ASSIGNAMENT of the first SINK
         fog_device = self.fog_devices[0][0]
         del self.fog_devices[0]
-        for ctrl in self.sink_control:
+        for ctrl in self._sink_control:
             module = ctrl["module"]
             for number in range(ctrl["number"]):
-                simulation.deploy_sink(application, node_id=fog_device, module=module)
+                simulation.deploy_sink(application, node_id=fog_device, module_name=module)
 
     def run(self, sim):
         if len(self.fog_devices) > 0:
             fog_device = self.fog_devices[0][0]
             del self.fog_devices[0]
             logger.debug("Activiting - RUN - Evolutive - Deploying a new actuator at position: %i" % fog_device)
-            for ctrl in self.sink_control:
+            for ctrl in self._sink_control:
                 module = ctrl["module"]
                 app_name = ctrl["app"]
                 for number in range(ctrl["number"]):
-                    sim.deploy_sink(app_name, node_id=fog_device, module=module)
+                    sim.deploy_sink(app_name, node_id=fog_device, module_name=module)
 
 
 # TODO Whats the difference to StaticPopulation?
@@ -129,7 +124,7 @@ class Statical(Population):
         super(Statical, self).__init__(**kwargs)
 
     def initial_allocation(self, simulation, application):
-        for ctrl in self.src_control:
+        for ctrl in self._src_control:
             msg = ctrl["message"]
             dst = ctrl["distribution"]
             param = ctrl["param"]
@@ -139,36 +134,11 @@ class Statical(Population):
                     simulation.deploy_source(application, node_id=id, message=msg, distribution=dst, param=param)
 
         # ASSIGNAMENT of the only one SINK
-        for ctrl in self.sink_control:
+        for ctrl in self._sink_control:
             module = ctrl["module"]
             best_device = ctrl["id"]
             for number in range(ctrl["number"]):
-                simulation.deploy_sink(application, node_id=best_device, module=module)
-
-
-# TODO Whats the difference to StaticPopulation?
-class Statical2(Population):
-    """
-    This implementation of a population algorithm statically assigns the generation of a source in a node of the topology. It is only invoked in the initialization.
-
-    Extends: :mod: Population
-    """
-
-    def initial_allocation(self, simulation, application):
-        # Assignment of SINK and SOURCE pure modules
-
-        for ctrl in self.src_control:
-            if "id" in list(ctrl.keys()):
-                msg = ctrl["message"]
-                dst = ctrl["distribution"]
-                for idx in ctrl["id"]:
-                    simulation.deploy_source(application, node_id=idx, message=msg, distribution=dst)
-
-        for ctrl in self.sink_control:
-            if "id" in list(ctrl.keys()):
-                module = ctrl["module"]
-                for idx in ctrl["id"]:
-                    simulation.deploy_sink(application, node_id=idx, module=module)
+                simulation.deploy_sink(application, node_id=best_device, module_name=module)
 
 
 class PopAndFailures(Population):
@@ -182,7 +152,7 @@ class PopAndFailures(Population):
     def initial_allocation(self, simulation, application):
         # ASSIGNAMENT of SOURCE - GENERATORS - ACTUATORS
         id_nodes = list(simulation.topology.G.nodes())
-        for ctrl in self.src_control:
+        for ctrl in self._src_control:
             msg = ctrl["message"]
             dst = ctrl["distribution"]
             for item in range(self.number_generators):
@@ -190,14 +160,35 @@ class PopAndFailures(Population):
                 for number in range(ctrl["number"]):
                     simulation.deploy_source(application, node_id=id, message=msg, distribution=dst)
 
-        for ctrl in self.sink_control:
+        for ctrl in self._sink_control:
             module = ctrl["module"]
             ids_coefficient = ctrl["ids"]
             for id in ids_coefficient:
                 for number in range(ctrl["number"]):
-                    simulation.deploy_sink(application, node_id=id[0], module=module)
+                    simulation.deploy_sink(application, node_id=id[0], module_name=module)
 
-    def getProcessFromThatNode(self, sim, node_to_remove):
+    def run(self, sim):
+        logger.debug("Activiting - Failure -  Removing a topology nodo == a network element, including edges")
+        if self.limit > 0:
+            nodes = list(sim.topology.G.nodes())
+            # print sim.alloc_DES
+            is_removable = False
+            node_to_remove = -1
+            someModuleDeployed = False
+            while not is_removable:  ## WARNING: In this case there is a possibility of an infinite loop
+                node_to_remove = random.choice(nodes)
+                is_removable, keys_DES, someModuleDeployed = self._get_process_from_node(sim, node_to_remove)
+
+            logger.debug("Removing node: %i, Total nodes: %i" % (node_to_remove, len(nodes)))
+            print("\tStopping some DES processes: %s" % keys_DES)
+
+            self.nodes_removed.append({"id": node_to_remove, "module": someModuleDeployed, "time": sim.env.now})
+
+            sim.remove_node(node_to_remove)
+
+            self.limit -= 1
+
+    def _get_process_from_node(self, sim, node_to_remove):
         if node_to_remove in list(sim.alloc_DES.values()):
             someModuleDeployed = False
             keys = []
@@ -227,27 +218,6 @@ class PopAndFailures(Population):
         else:
             return True, [], False
 
-    def run(self, sim):
-        logger.debug("Activiting - Failure -  Removing a topology nodo == a network element, including edges")
-        if self.limit > 0:
-            nodes = list(sim.topology.G.nodes())
-            # print sim.alloc_DES
-            is_removable = False
-            node_to_remove = -1
-            someModuleDeployed = False
-            while not is_removable:  ## WARNING: In this case there is a possibility of an infinite loop
-                node_to_remove = random.choice(nodes)
-                is_removable, keys_DES, someModuleDeployed = self.getProcessFromThatNode(sim, node_to_remove)
-
-            logger.debug("Removing node: %i, Total nodes: %i" % (node_to_remove, len(nodes)))
-            print("\tStopping some DES processes: %s" % keys_DES)
-
-            self.nodes_removed.append({"id": node_to_remove, "module": someModuleDeployed, "time": sim.env.now})
-
-            sim.remove_node(node_to_remove)
-
-            self.limit -= 1
-
 
 class PopulationMove(Population):
     def __init__(self, srcs, node_dst, **kwargs):
@@ -260,7 +230,7 @@ class PopulationMove(Population):
     def initial_allocation(self, simulation, application):
         # ASSIGNAMENT of SOURCE - GENERATORS - ACTUATORS
         id_nodes = list(simulation.topology.G.nodes())
-        for ctrl in self.src_control:
+        for ctrl in self._src_control:
             msg = ctrl["message"]
             dst = ctrl["distribution"]
             for item in range(self.number_generators):
@@ -268,11 +238,11 @@ class PopulationMove(Population):
                 for number in range(ctrl["number"]):
                     simulation.deploy_source(application, node_id=id, message=msg, distribution=dst)
 
-        for ctrl in self.sink_control:
+        for ctrl in self._sink_control:
             module = ctrl["module"]
             best_device = ctrl["id"]
             for number in range(ctrl["number"]):
-                simulation.deploy_sink(application, node_id=best_device, module=module)
+                simulation.deploy_sink(application, node_id=best_device, module_name=module)
 
     def run(self, sim):
         import matplotlib.pyplot as plt
@@ -336,143 +306,26 @@ class PopulationMove(Population):
 
         self.activation += 1
 
-        # print "-" * 40
-        # print "DES\t| TOPO \t| Src.Mod \t| Modules"
-        # print "-" * 40
-        # for k in sim.alloc_DES:
-        #    print k, "\t|", self.alloc_DES[k], "\t|", self.alloc_source[k][
-        #        "module"] if k in self.alloc_source.keys() else "--", "\t\t|", fullAssignation[k][
-        #        "Module"] if k in fullAssignation.keys() else "--"
-        # print "-" * 40
-
 
 # TODO Remove this class, the population does not care how it got created
 class JSONPopulation(Population):
     def __init__(self, json, iteration, **kwargs):
-        super(JSONPopulation, self).__init__(**kwargs)
-        self.data = json
-        self.it = iteration
-
-    def initial_allocation(self, simulation, application):
-        # for item in self.data["sinks"]:
-        #     app_name = item["app"]
-        #     module = item["module_name"]
-        #     idtopo = item["id_resource"]
-        #     sim.deploy_sink(app_name, node=idtopo, module=module)
-
-        for item in self.data["sources"]:
-            if item["app"] == application:
-                application = item["app"]
-                idtopo = item["id_resource"]
-                lambd = item["lambda"]
-                app = simulation.apps[application]
-                msg = app.messages[item["message"]]
-
-                dDistribution = ExponentialDistribution(name="Exp", lambd=lambd, seed=self.it)
-
-                simulation.deploy_source(application, node_id=idtopo, message=msg, distribution=dDistribution)
-
-
-class JSONPopulation2(Population):
-    def __init__(self, json, it, **kwargs):
         super().__init__(**kwargs)
         self.data = json
-        self.it = it
-
-    def initial_allocation(self, simulation, application):
-        for idx, behaviour in enumerate(self.data["sources"]):
-            # Creating the type of the distribution
-            # behaviour["args"] should have the same attributes of the used distribution
-            class_ = getattr(distribution, behaviour["distribution"])
-            if "seed" not in list(behaviour["args"].keys()):
-                seed = idx + self.it
-                instance_distribution = class_(name="h%i" % idx, seed=seed, **behaviour["args"])
-            else:
-                instance_distribution = class_(name="h%i" % idx, **behaviour["args"])
-
-            # Getting information from the APP
-            application = behaviour["app"]
-            app = simulation.apps[application]
-            msg = app.messages[behaviour["message"]]
-
-            # TODO Include a more flexible constructor
-            # if behaviour["entity"] == "all":
-            #     for entity in sim.mobile_fog_entities:
-            #         print entity
-            #         sim.deploy_source(app_name, id_node=int(entity), msg=msg, distribution=instance_distribution)
-            # else:
-
-            simulation.deploy_source(application, node_id=behaviour["entity"], message=msg, distribution=instance_distribution)
-
-
-class DynamicPopulation(Population):
-    """
-    We launch one user by invocation
-    """
-
-    def __init__(self, data, iteration, **kwargs):
-        super(DynamicPopulation, self).__init__(**kwargs)
-        self.data = data
         self.it = iteration
-        self.userOrderInputByInvocation = []
-        logger.info(" Initializating dynamic population: %s" % self.name)
-
-    """
-    In userOrderInputByInvocation, we create the user apparition sequence
-    """
 
     def initial_allocation(self, simulation, application):
-        size = len(self.data)
-        self.userOrderInputByInvocation = random.sample(list(range(size)), size)
-
-    """
-    In each invocation, we launch one user
-    """
-
-    def run(self, sim):
-        if len(self.userOrderInputByInvocation) > 0:
-            idx = self.userOrderInputByInvocation.pop(0)
-            item = self.data[idx]
-
+        for item in self.data["sinks"]:
             app_name = item["app"]
-            idtopo = item["id_resource"]
-            lambd = item["lambda"]
+            if app_name != application.name:
+                continue
+            simulation.deploy_sink(app_name, node=item["id_resource"], module_name=item["module_name"])
 
-            logger.info("Launching user %i (app: %s), in node: %i, at time: %i " % (item["id_resource"], app_name, idtopo, sim.env.now))
-
-            app = sim.apps[app_name]
-            msg = app.get_message[item["message"]]
-
-            # A basic creation of the seed: unique for each user and different in each simulation repetition
-            seed = item["id_resource"] * 1000 + item["lambda"] + self.it
-
-            dDistribution = ExponentialDistribution(name="Exp", lambd=lambd, seed=seed)
-            sim.deploy_source(app_name, node_id=idtopo, message=msg, distribution=dDistribution)
-
-
-class SimpleDynamicChanges(Population):
-    """Statically assigns the generation of a source in a node of the topology. It is only invoked in the initialization."""
-
-    def __init__(self, run_times, **kwargs):
-        self.run_times = run_times  # TODO Reimplement
-        super(SimpleDynamicChanges, self).__init__(**kwargs)
-
-    def initial_allocation(self, simulation, application):
-        # Assignment of SINK and SOURCE pure modules
-        for id_entity in simulation.topology.G.nodes:
-            entity = simulation.topology.G.nodes[id_entity]
-            for ctrl in self.sink_control:
-                # A node can have several sinks modules
-                if entity["model"] == ctrl["model"]:
-                    # In this node there is a sink
-                    module = ctrl["module"]
-                    for number in range(ctrl["number"]):
-                        simulation.deploy_sink(application, node_id=id_entity, module=module)
-
-            for ctrl in self.src_control:
-                # A node can have several source modules
-                if entity["model"] == ctrl["model"]:
-                    msg = ctrl["message"]
-                    dst = ctrl["distribution"]
-                    for number in range(ctrl["number"]):
-                        simulation.deploy_source(application, node_id=id_entity, message=msg, distribution=dst)
+        for item in self.data["sources"]:
+            app_name = item["app"]
+            if app_name != application.name:
+                continue
+            app = simulation.apps[application]
+            msg = app.messages[item["message"]]
+            dDistribution = ExponentialDistribution(name="Exp", lambd=item["lambda"], seed=self.it)
+            simulation.deploy_source(application, node_id=item["id_resource"], message=msg, distribution=dDistribution)

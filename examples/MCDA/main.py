@@ -14,10 +14,50 @@ import numpy as np
 from examples.MCDA.MCDAPathSelectionNPlacement import MCDARoutingAndDeploying
 from examples.MCDA.WAPathSelectionNPlacement import WARoutingAndDeploying
 from yafs.application import Application, Message
-from yafs.core import Simulation, ExponentialDistribution
+from yafs.core import Simulation
+from yafs.distribution import ExponentialDistribution
 from yafs.placement import JSONPlacement, JSONPlacementOnlyCloud
-from yafs.population import DynamicPopulation
+from yafs.population import Population
 from yafs.topology import Topology
+
+logger = logging.getLogger(__name__)
+
+
+class DynamicPopulation(Population):
+    """We launch one user by invocation"""
+
+    def __init__(self, data, iteration, **kwargs):
+        super(DynamicPopulation, self).__init__(**kwargs)
+        self.data = data
+        self.it = iteration
+        self.userOrderInputByInvocation = []
+        logger.info(" Initializating dynamic population: %s" % self.name)
+
+    """In userOrderInputByInvocation, we create the user apparition sequence"""
+    def initial_allocation(self, simulation, application):
+        size = len(self.data)
+        self.userOrderInputByInvocation = random.sample(list(range(size)), size)
+
+    """In each invocation, we launch one user"""
+    def run(self, sim):
+        if len(self.userOrderInputByInvocation) > 0:
+            idx = self.userOrderInputByInvocation.pop(0)
+            item = self.data[idx]
+
+            app_name = item["app"]
+            idtopo = item["id_resource"]
+            lambd = item["lambda"]
+
+            logger.info("Launching user %i (app: %s), in node: %i, at time: %i " % (item["id_resource"], app_name, idtopo, sim.env.now))
+
+            app = sim.apps[app_name]
+            msg = app.get_message[item["message"]]
+
+            # A basic creation of the seed: unique for each user and different in each simulation repetition
+            seed = item["id_resource"] * 1000 + item["lambda"] + self.it
+
+            dDistribution = ExponentialDistribution(name="Exp", lambd=lambd, seed=seed)
+            sim.deploy_source(app_name, node_id=idtopo, message=msg, distribution=dDistribution)
 
 
 def create_applications_from_json(data):

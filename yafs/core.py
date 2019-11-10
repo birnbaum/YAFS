@@ -225,11 +225,12 @@ class Simulation:
 
     def _compute_service_time(self, application: Application, module, message, node_id, type_):
         """Computes the service time in processing a message and record this event"""
-        if module in self.deployments[application].application.sink_modules:  # module is a SINK
-            service_time = 0
-        else:
-            att_node = self.topology.G.nodes[node_id]
-            service_time = message.instructions / float(att_node["IPT"])
+        # TODO Why do sinks don't have a service time?
+        #if module in self.deployments[application].application.sink_modules:  # module is a SINK
+        #    service_time = 0
+        #else:
+        att_node = self.topology.G.nodes[node_id]
+        service_time = message.instructions / float(att_node["IPT"])
 
         self.event_log.append_event(type=type_,
                                     app=application.name,
@@ -362,21 +363,21 @@ class Simulation:
                 else:
                     logger.debug(f"{application.name}:{module_name}\tDenied message\t{service.message_out.name}")
 
-    def deploy_sink(self, application: Application, node_id: int, module: str):
+    def deploy_sink(self, application: Application, node_id: int, module_name: str):
         """Add a DES process to deploy pure SINK modules (actuators).
 
         This function its used by the placement algorithm internally, there is no DES PROCESS for this type of behaviour
         """
-        process = self.env.process(self._sink_module_process(node_id, application, module))
+        process = self.env.process(self._sink_module_process(node_id, application, module_name))
         self.process_to_node[process] = node_id
 
-        self._add_consumer_service_pipe(application, module)
+        self._add_consumer_service_pipe(application, module_name)
 
         # Update the relathionships among module-entity
         if application in self.app_to_module_to_processes:
-            if module not in self.app_to_module_to_processes[application]:
-                self.app_to_module_to_processes[application][module] = []
-        self.app_to_module_to_processes[application][module].append(process)
+            if module_name not in self.app_to_module_to_processes[application]:
+                self.app_to_module_to_processes[application][module_name] = []
+        self.app_to_module_to_processes[application][module_name].append(process)
 
     def _sink_module_process(self, node_id, application: Application, module_name):
         """Process associated to a SINK module"""
@@ -414,10 +415,10 @@ class Simulation:
 
     def _placement_process(self, placement):
         """Controls the invocation of Placement.run"""
-        logger.debug("Added_Process - Placement Algorithm")
+        logger.debug(f"Added_Process - Placement Algorithm {placement}")
         while True:
             yield self.env.timeout(placement.get_next_activation())
-            logger.debug("Run - Placement Policy")
+            logger.debug(f"Run - Placement Algorithm {placement}")
             placement.run(self)
 
     def _population_process(self, population):

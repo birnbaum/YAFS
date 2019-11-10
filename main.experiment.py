@@ -19,9 +19,9 @@ RANDOM_SEED = 1
 
 
 def create_application(name: str = "SimpleApp") -> Tuple[Application, List[Message]]:
-    sensor = Module("sensor", is_source=True)
-    service_a = Module("service_a", is_source=True)
-    actuator = Module("actuator", is_source=True)
+    sensor = Module("sensor")
+    service_a = Module("service_a")
+    actuator = Module("actuator")
     message_a = Message("M.A", src=sensor, dst=service_a, instructions=20 * 10 ^ 6, size=1000)
     message_b = Message("M.B", src=service_a, dst=actuator, instructions=30 * 10 ^ 6, size=500)
     service_a.add_service(message_a, message_b)  # TODO Weird back-referencing objects
@@ -30,14 +30,13 @@ def create_application(name: str = "SimpleApp") -> Tuple[Application, List[Messa
     return application, [message_a]
 
 
-# @profile
 def main(simulated_time):
     random.seed(RANDOM_SEED)
     np.random.seed(RANDOM_SEED)
 
     G = load_yafs_json({
         "entity": [
-            {"id": 0, "model": "cloud", "mytag": "cloud", "IPT": 5000 * 10 ^ 6, "RAM": 40000, "COST": 3, "WATT": 20.0},
+            {"id": 0, "model": "cloud", "IPT": 5000 * 10 ^ 6, "RAM": 40000, "COST": 3, "WATT": 20.0},
             {"id": 1, "model": "sensor-device", "IPT": 100 * 10 ^ 6, "RAM": 4000, "COST": 3, "WATT": 40.0},
             {"id": 2, "model": "actuator-device", "IPT": 100 * 10 ^ 6, "RAM": 4000, "COST": 3, "WATT": 40.0},
         ],
@@ -51,8 +50,7 @@ def main(simulated_time):
     app1, source_messages1 = create_application("App1")
     app2, source_messages2 = create_application("App2")
 
-    placement = CloudPlacement("onCloud")  # it defines the deployed rules: module-device
-    placement.scaleService({"service_a": 1})
+    placement = CloudPlacement()  # it defines the deployed rules: module-device
 
     distribution = UniformDistribution(min=10, max=100)
     # TODO Sink hardcoded

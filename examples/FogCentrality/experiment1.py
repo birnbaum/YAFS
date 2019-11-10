@@ -7,7 +7,7 @@ from yafs.application import Application, Message
 from yafs.core import Simulation
 from yafs.distribution import DeterministicDistribution
 from yafs.placement import NoPlacementOfModules
-from yafs.population import Statical2
+from yafs.population import StaticPopulation
 from yafs.selection import ShortestPath
 from yafs.topology import Topology
 
@@ -170,7 +170,7 @@ def main():
     pops = []
     for idx in range(0, len(sensor_workload_types)):
         apps.append(create_application(idx))
-        pops.append(Statical2("Statical-%i" % idx))
+        pops.append(StaticPopulation("Statical-%i" % idx))
 
     """
     PLACEMENT algorithm
@@ -200,7 +200,7 @@ def main():
         """
         pops = []
         for idx in range(0, len(sensor_workload_types)):
-            pops.append(Statical2("Statical-%i" % idx))
+            pops.append(StaticPopulation("Statical-%i" % idx))
         # print "-"*20
         # print "Function: %s" %f
         # print "-"*20

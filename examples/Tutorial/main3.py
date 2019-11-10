@@ -6,7 +6,7 @@ from yafs.application import Application, Message
 from yafs.core import Simulation
 from yafs.distribution import DeterministicDistribution
 from yafs.placement import CloudPlacement
-from yafs.population import SimpleDynamicChanges
+from yafs.population import StaticPopulation
 from yafs.selection import MinPathRoundRobin
 from yafs.stats import Stats
 from yafs.topology import Topology
@@ -108,7 +108,7 @@ def main(simulated_time):
     # In ifogsim, during the creation of the application, the Sensors are assigned to the topology, in this case no. As mentioned, YAFS differentiates the adaptive sensors and their topological assignment.
     # In its case, they use a statical assignment.
     dDistribution = DeterministicDistribution(name="Deterministic", time=100)
-    pop = SimpleDynamicChanges(2, name="Dynamic", activation_dist=dDistribution)
+    pop = StaticPopulation(2, name="Dynamic", activation_dist=dDistribution)
 
     # , activation_dist = deterministicDistribution, time_shift = 100.0)
     # For each type of sink modules we set a deployment on some type of devices
