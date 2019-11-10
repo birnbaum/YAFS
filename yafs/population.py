@@ -50,7 +50,6 @@ class Population(ABC):
     @abstractmethod
     def initial_allocation(self, simulation: "Simulation", application: Application):
         """Given an ecosystem and an application, it starts the allocation of pure sources in the topology."""
-        self.run(simulation)
 
     @abstractmethod
     def run(self, sim: "Simulation"):
@@ -62,24 +61,24 @@ class StaticPopulation(Population):
 
     def initial_allocation(self, simulation, application):
         # Assignment of SINK and SOURCE pure modules
-        for id_entity in simulation.topology.G.nodes:
-            entity = simulation.topology.G.nodes[id_entity]
-
-            for ctrl in self.sink_control:
-                # A node can have several sinks modules
-                if entity["model"] == ctrl["model"]:
-                    # In this node there is a sink
-                    module = ctrl["module"]
-                    for number in range(ctrl["number"]):
-                        simulation.deploy_sink(application, node_id=id_entity, module=module)
+        for node_id, node_data in simulation.topology.G.nodes(data=True):
 
             for ctrl in self.src_control:
                 # A node can have several source modules
-                if entity["model"] == ctrl["model"]:
+                if node_data["model"] == ctrl["model"]:
                     msg = ctrl["message"]
                     dst = ctrl["distribution"]
                     for number in range(ctrl["number"]):
-                        simulation.deploy_source(application, node_id=id_entity, message=msg, distribution=dst)
+                        simulation.deploy_source(application, node_id=node_id, message=msg, distribution=dst)
+
+            for ctrl in self.sink_control:
+                # A node can have several sinks modules
+                if node_data["model"] == ctrl["model"]:
+                    # In this node there is a sink
+                    module = ctrl["module"]
+                    for number in range(ctrl["number"]):
+                        simulation.deploy_sink(application, node_id=node_id, module=module)
+
 
     def run(self, sim: "Simulation"):
         raise NotImplementedError()
