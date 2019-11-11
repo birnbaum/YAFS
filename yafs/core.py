@@ -51,9 +51,6 @@ class Simulation:
         logger.addHandler(ch)
 
         self.env.process(self._network_process())
-        self.network_ctrl_pipe = simpy.Store(self.env)
-
-        self.network_pump = 0  # Shared resource that controls the exchange of messages in the topology
 
         self.event_log = EventLog()
 
@@ -61,9 +58,9 @@ class Simulation:
 
         self.populations = {}
 
-        # Queues for each message
-        # <application>:<module_name> -> pipe
-        self.consumer_pipes = {}
+        self.network_ctrl_pipe = simpy.Store(self.env)
+        self.consumer_pipes = {}  # Queues for each message <application>:<module_name> -> pipe
+        self.network_pump = 0  # Shared resource that controls the exchange of messages in the topology
 
         """Relationship of pure source with topology entity
 

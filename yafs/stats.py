@@ -91,7 +91,7 @@ class Stats:
             nodes = self.messages.groupby("TOPO.dst").agg({"time_service": "sum"})
             for id_node in nodes.index:
                 results[id_node] = {
-                    "model": topology.G.nodes[id_node]["model"],
+                    "id": topology.G.nodes[id_node]["id"],
                     "type": topology.G.nodes[id_node]["type"],
                     "watt": nodes.loc[id_node].time_service * topology.G.nodes[id_node]["WATT"],
                 }
@@ -102,7 +102,7 @@ class Stats:
                 start = topology.G.nodes[node_key]["uptime"][0]
                 uptime = end - start  # TODO end may be undefined
                 results[node_key] = {
-                    "model": topology.G.nodes[node_key]["model"],
+                    "id": topology.G.nodes[node_key]["id"],
                     "type": topology.G.nodes[node_key]["type"],
                     "watt": uptime * topology.G.nodes[node_key]["WATT"],
                     "uptime": uptime,
@@ -119,7 +119,7 @@ class Stats:
         for id_node in nodes.index:
             if nodeInfo[id_node]["type"] == Entity.ENTITY_CLOUD:  # TODO Entity does not exist
                 results[id_node] = {
-                    "model": nodeInfo[id_node]["model"],
+                    "id": nodeInfo[id_node]["id"],
                     "type": nodeInfo[id_node]["type"],
                     "watt": nodes.loc[id_node].time_service * nodeInfo[id_node]["WATT"],
                 }

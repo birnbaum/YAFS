@@ -70,34 +70,22 @@ def draw_topology(topology, alloc_entity):
     import matplotlib.pyplot as plt
 
     G = copy.copy(topology.G)
-
-    lastID = len(G.nodes())
-    labels = dict(list(zip(list(range(len(topology.G))), list(range(len(topology.G))))))
-
-    nodesM = []
-    edgesM = []
-    # Generate new edges (and nodes) of each deployed module (pure or not)
-    # labels are assigned by module allocated name
-    for entity in alloc_entity:
-        for value in alloc_entity[entity]:
-            G.add_edge(entity, lastID)
-            nodesM.append(lastID)
-            labels[lastID] = value
-            edgesM.append((entity, lastID))
-            lastID += 1
+    for node, modules in alloc_entity.items():
+        for module in modules:
+            G.add_node(module, module=True)
+            G.add_edge(node, module, module=True)
 
     pos = nx.spring_layout(G)
 
-    # Change the labels by model names
-    # for key in topology.G.nodes:
-    #     labels[key]=topology.G.nodes[key]["model"]
+    module_nodes = nx.subgraph_view(G, filter_node=lambda n: "module" in G.nodes[n]).nodes()
+    module_edges = nx.subgraph_view(G, filter_edge=lambda s, d: "module" in G.edges[s, d]).edges()
 
     fig, ax = plt.subplots()
-    nx.draw_networkx_nodes(G, nodelist=G.nodes() - nodesM, node_shape="s", pos=pos, ax=ax)
-    nx.draw_networkx_nodes(G, nodelist=nodesM, node_shape="o", pos=pos, linewidths=0.2, node_color="pink", alpha=0.4, ax=ax)
-    nx.draw_networkx_labels(G, pos, labels, font_size=6, ax=ax)
-    nx.draw_networkx_edges(G, edgelist=edgesM, pos=pos, style="dashed", width=0.8, ax=ax)
-    nx.draw_networkx_edges(G, edgelist=G.edges() - edgesM, pos=pos, width=1.2, ax=ax)
+    nx.draw_networkx_nodes(G, nodelist=G.nodes() - module_nodes, node_shape="s", pos=pos, ax=ax)
+    nx.draw_networkx_nodes(G, nodelist=module_nodes, node_shape="o", pos=pos, linewidths=0.2, node_color="pink", alpha=0.4, ax=ax)
+    nx.draw_networkx_edges(G, edgelist=G.edges() - module_edges, pos=pos, width=1.2, ax=ax)
+    nx.draw_networkx_edges(G, edgelist=module_edges, pos=pos, style="dashed", width=0.8, ax=ax)
+    nx.draw_networkx_labels(G, pos, font_size=6, ax=ax)
     plt.axis("off")
 
     plt.ion()

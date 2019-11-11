@@ -64,14 +64,14 @@ class StaticPopulation(Population):
         for node_id, node_data in simulation.topology.G.nodes(data=True):
 
             for ctrl in self._src_control:  # A node can have several source modules
-                if node_data["model"] == ctrl["model"]:
+                if node_id == ctrl["id"]:
                     msg = ctrl["message"]
                     dst = ctrl["distribution"]
                     for _ in range(ctrl["number"]):
                         simulation.deploy_source(application, node_id=node_id, message=msg, distribution=dst)
 
             for ctrl in self._sink_control:  # A node can have several sinks modules
-                if node_data["model"] == ctrl["model"]:  # In this node there is a sink
+                if node_id == ctrl["id"]:  # In this node there is a sink
                     module_name = ctrl["module"]
                     for _ in range(ctrl["number"]):
                         simulation.deploy_sink(application, node_id=node_id, module_name=module_name)
