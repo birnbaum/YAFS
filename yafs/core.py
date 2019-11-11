@@ -59,7 +59,6 @@ class Simulation:
 
         self.deployments = {}  # TODO Should become a list?
 
-        self.placements = {}
         self.populations = {}
 
         # Queues for each message
@@ -305,64 +304,6 @@ class Simulation:
             new_message = message.evolve(timestamp=self.env.now)
             self._send_message(new_message, application, node_id)
 
-    # TODO Rename
-    def _deploy_module(self, application: Application, module: str, node_id: int, services: List[Service]) -> int:
-        """Add a DES process for deploy  modules
-        This function its used by (:mod:`Population`) algorithm
-
-        Args:
-            application: application TODO
-            node_id: entity.id of the topology who will create the messages
-            module: module name
-            services: TODO
-
-        Returns:
-            Process id
-        """
-        process = self.env.process(self._consumer_process(node_id, application, module, services))
-        self.process_to_node[process] = node_id
-
-        # To generate the QUEUE of a SERVICE module
-        self._add_consumer_service_pipe(application, module)
-
-        if module not in self.app_to_module_to_processes[application]:  # TODO defaultdict
-            self.app_to_module_to_processes[application][module] = []
-        self.app_to_module_to_processes[application][module].append(process)
-        return process
-
-    def _consumer_process(self, node_id: int, application: Application, module_name: str, services: List[Service]):
-        """Process associated to a compute module"""
-        logger.debug(f"Added_Process - Module Consumer: {module_name}")
-        while True:
-            pipe_id = f"{application.name}:{module_name}"
-            message = yield self.consumer_pipes[pipe_id].get()
-            accepting_services = [s for s in services if message.name == s.message_in.name]
-
-            if accepting_services:
-                logger.debug(f"{pipe_id}\tRecording message\t{message.name}")
-                service_time = self._compute_service_time(application, module_name, message, node_id, "COMP")
-                yield self.env.timeout(service_time)
-
-            for service in accepting_services:  # Processing the message
-                if not service.message_out:
-                    logger.debug(f"{application.name}:{module_name}\tSink message\t{message.name}")
-                    continue
-
-                if random.random() <= service.probability:
-                    message_out = service.message_out.evolve(timestamp=self.env.now)
-                    if not service.module_dst:
-                        # it is not a broadcasting message
-                        logger.debug(f"{application.name}:{module_name}\tTransmit message\t{service.message_out.name}")
-                        self._send_message(message_out, application, node_id)
-                    else:
-                        # it is a broadcasting message
-                        logger.debug(f"{application.name}:{module_name}\tBroadcasting message\t{service.message_out.name}")
-                        for idx, module_dst in enumerate(service.module_dst):
-                            if random.random() <= service.p[idx]:
-                                self._send_message(message_out, application, node_id)
-                else:
-                    logger.debug(f"{application.name}:{module_name}\tDenied message\t{service.message_out.name}")
-
     def deploy_sink(self, application: Application, node_id: int, module_name: str):
         """Add a DES process to deploy pure SINK modules (actuators).
 
@@ -403,23 +344,13 @@ class Simulation:
         self.deployments[app] = deployment
         self.app_to_module_to_processes[app] = {}
 
-    def deploy_placement(self, placement: Placement, applications: List[Application]):
-        self.placements[placement] = applications
-        if placement.activation_dist is not None:
-            self.env.process(self._placement_process(placement))
+    def deploy_placement(self, placement: Placement) -> Process:
+        return self.env.process(placement.run(self))
 
     def deploy_population(self, population, applications: List[Application]):
         self.populations[population] = applications
         if population.activation_dist is not None:
             self.env.process(self._population_process(population))
-
-    def _placement_process(self, placement):
-        """Controls the invocation of Placement.run"""
-        logger.debug(f"Added_Process - Placement Algorithm {placement}")
-        while True:
-            yield self.env.timeout(placement.get_next_activation())
-            logger.debug(f"Run - Placement Algorithm {placement}")
-            placement.run(self)
 
     def _population_process(self, population):
         """Controls the invocation of Population.run"""
@@ -430,11 +361,51 @@ class Simulation:
             population.run(self)
 
     def deploy_module(self, application: Application, module_name: str, services: List[Service], node_ids: List[int]):
+        """Add a DES process for deploy  modules. This function its used by (:mod:`Population`) algorithm."""
         assert len(services) == len(node_ids)  # TODO Does this hold?
-        if len(services) == 0:
-            return []
-        else:
-            return [self._deploy_module(application, module_name, node_id, services) for node_id in node_ids]
+        for node_id in node_ids:
+            process = self.env.process(self._consumer_process(node_id, application, module_name, services))
+            self.process_to_node[process] = node_id
+
+            # To generate the QUEUE of a SERVICE module
+            self._add_consumer_service_pipe(application, module_name)
+
+            if module_name not in self.app_to_module_to_processes[application]:  # TODO defaultdict
+                self.app_to_module_to_processes[application][module_name] = []
+            self.app_to_module_to_processes[application][module_name].append(process)
+
+    def _consumer_process(self, node_id: int, application: Application, module_name: str, services: List[Service]):
+        """Process associated to a compute module"""
+        logger.debug(f"Added_Process - Module Consumer: {module_name}")
+        while True:
+            pipe_id = f"{application.name}:{module_name}"
+            message = yield self.consumer_pipes[pipe_id].get()
+            accepting_services = [s for s in services if message.name == s.message_in.name]
+
+            if accepting_services:
+                logger.debug(f"{pipe_id}\tRecording message\t{message.name}")
+                service_time = self._compute_service_time(application, module_name, message, node_id, "COMP")
+                yield self.env.timeout(service_time)
+
+            for service in accepting_services:  # Processing the message
+                if not service.message_out:
+                    logger.debug(f"{application.name}:{module_name}\tSink message\t{message.name}")
+                    continue
+
+                if random.random() <= service.probability:
+                    message_out = service.message_out.evolve(timestamp=self.env.now)
+                    if not service.module_dst:
+                        # it is not a broadcasting message
+                        logger.debug(f"{application.name}:{module_name}\tTransmit message\t{service.message_out.name}")
+                        self._send_message(message_out, application, node_id)
+                    else:
+                        # it is a broadcasting message
+                        logger.debug(f"{application.name}:{module_name}\tBroadcasting message\t{service.message_out.name}")
+                        for idx, module_dst in enumerate(service.module_dst):
+                            if random.random() <= service.p[idx]:
+                                self._send_message(message_out, application, node_id)
+                else:
+                    logger.debug(f"{application.name}:{module_name}\tDenied message\t{service.message_out.name}")
 
     def remove_node(self, node):
         # TODO Remove
@@ -483,12 +454,7 @@ class Simulation:
             for app in apps:
                 population.initial_allocation(self, app)
 
-        # Creating initial deploy of services
-        for placement, apps in self.placements.items():
-            for app in apps:
-                placement.initial_allocation(self, app)
-
-        self.print_debug_assignaments()
+        # self.print_debug_assignaments()
 
         for i in tqdm(range(1, until), total=until, disable=(not progress_bar)):
             self.env.run(until=i)

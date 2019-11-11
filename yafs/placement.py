@@ -1,14 +1,15 @@
 import logging
 from abc import abstractmethod, ABC
-from typing import Callable, Iterator
+from typing import Iterator, List
 
 from yafs.application import Application
 
 logger = logging.getLogger(__name__)
 
 
-class Placement(ABC):
-    """A placement (or allocation) algorithm controls where to locate the service modules and their replicas in the different nodes of the topology, according to load criteria or other objectives.
+class Placement(ABC):  # TODO Logger
+    """A placement (or allocation) algorithm controls where to locate the service modules and their replicas in the different nodes of the topology,
+    according to load criteria or other objectives.
 
     A placement consists out of two functions:
     - *initial_allocation*: Invoked at the start of the simulation
@@ -16,29 +17,32 @@ class Placement(ABC):
 
     Args:
         name: Placement name
-        activation_dist: a distribution function to active the *run* function in execution time  TODO What das function mean? Callable?
+        activation_dist: a distribution function to active the *run* function in execution time
     """
 
-    def __init__(self, name: str, activation_dist: Iterator = None):  # TODO Remove logger
-        self.name = name  # TODO What do we need this for
+    def __init__(self, apps: List[Application], activation_dist: Iterator = None):
+        self.apps = apps
         self.activation_dist = activation_dist
-        self.scaleServices = {}  # TODO What does this do??
 
-    def scaleService(self, scale):  # TODO Refactor, this is not pythonic
-        self.scaleServices = scale
+    def run(self, simulation: "Simulation"):
+        """This method will be invoked during the simulation to change the assignment of the modules to the topology."""
+        self._initial_allocation(simulation)
+        if self.activation_dist:
+            while True:
+                try:
+                    next_activation = next(self.activation_dist)
+                except StopIteration:
+                    break
+                else:
+                    yield simulation.env.timeout(next_activation)
+                    self._run(simulation)
 
-    def get_next_activation(self):
-        """
-        Returns:
-            the next time to be activated
-        """
-        return next(self.activation_dist)  # TODO Data type?
+    def _initial_allocation(self, simulation: "Simulation"):  # TODO Why does this know about the simulation?
+        """Given an ecosystem, it starts the allocation of modules in the topology."""
+        self._run(simulation)
 
     @abstractmethod
-    def initial_allocation(self, simulation: "Simulation", application: Application):  # TODO Why does this know about the simulation?
-        """Given an ecosystem, it starts the allocation of modules in the topology."""
-
-    def run(self, simulation: "Simulation"):  # TODO Does this have to be implemented?  # TODO Why does this know about the simulation?
+    def _run(self, simulation: "Simulation"):  # TODO Does this have to be implemented?  # TODO Why does this know about the simulation?
         """This method will be invoked during the simulation to change the assignment of the modules to the topology."""
 
 
@@ -48,12 +52,11 @@ class CloudPlacement(Placement):
     It only runs once, in the initialization.
     """
 
-    def initial_allocation(self, simulation: "Simulation", application: str):
+    def _run(self, simulation: "Simulation"):
         for app in self.apps:
-        cloud_node_id, _ = max(simulation.topology.G.nodes(data=True), key=lambda node: node[1]["IPT"])
-        app = simulation.deployments[application].application
-        for module in app.service_modules:
-            simulation.deploy_module(application, module.name, module.services, node_ids=[cloud_node_id])
+            cloud_node_id, _ = max(simulation.topology.G.nodes(data=True), key=lambda node: node[1]["IPT"])
+            for module in app.service_modules:
+                simulation.deploy_module(app, module.name, module.services, node_ids=[cloud_node_id])
 
 
 class JSONPlacement(Placement):  # TODO The placement should not care how it was instantiated

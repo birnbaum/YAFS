@@ -50,7 +50,6 @@ def main(simulated_time):
     app1, source_messages1 = create_application("App1")
     app2, source_messages2 = create_application("App2")
 
-    placement = CloudPlacement()  # it defines the deployed rules: module-device
 
     distribution = UniformDistribution(min=10, max=100)
     # TODO Sink hardcoded
@@ -70,10 +69,10 @@ def main(simulated_time):
 
     simulation = Simulation(t)
     simulation.deploy_app(app1, selection=selection)
-    simulation.deploy_app(app2, selection=selection)
+    # simulation.deploy_app(app2, selection=selection)
 
-    simulation.deploy_placement(placement, applications=[app1, app2])
-    simulation.deploy_population(population, applications=[app1, app2])
+    simulation.deploy_placement(CloudPlacement(apps=[app1]))
+    simulation.deploy_population(population, applications=[app1])
 
     simulation.run(until=simulated_time, progress_bar=False)
     simulation.stats.print_report(simulated_time)
