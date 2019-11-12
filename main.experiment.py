@@ -66,12 +66,12 @@ def main(simulated_time):
 
     message_a = Message("M.A", instructions=20 * 10 ^ 6, size=1000)
     message_b = Message("M.B", instructions=30 * 10 ^ 6, size=500)
-    sensor = Source("sensor", node="sensor1", message=message_a, distribution=distribution)
-    service_a = Operator("service_a", message_a, message_b)
+    sensor = Source("sensor", node="sensor1", message_out=message_a, distribution=distribution)
+    service_a = Operator("service_a", message_in=message_a, message_out=message_b)
     actuator = Sink("actuator", node="actuator1")
-    app1 = Application(name="App1", source=sensor, operators=[service_a], sink=actuator)
+    app1 = Application(name="App1", source=sensor, operators=[service_a], sink=actuator, selection=ShortestPath())
 
-    simulation.deploy_app(app1, selection=ShortestPath())
+    simulation.deploy_app(app1)
 
     simulation.deploy_placement(CloudPlacement(apps=[app1]))
 

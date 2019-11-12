@@ -53,8 +53,6 @@ class Simulation:
 
         self.event_log = EventLog()
 
-        self.deployments = {}  # TODO Should become a list?
-
         self.network_ctrl_pipe = simpy.Store(self.env)
         self.consumer_pipes = {}  # Queues for each message <application>:<module_name> -> pipe
         self.network_pump = 0  # Shared resource that controls the exchange of messages in the topology
@@ -125,16 +123,15 @@ class Simulation:
                     full_assignation[des] = {"DES": self.process_to_node[des], "module": module}
         return full_assignation
 
-    def _send_message(self, message: Message, application: Application, src_node: int):
+    def _send_message(self, message: Message, app: Application, src_node: int):
         """Sends a message between modules and updates the metrics once the message reaches the destination module"""
-        selection = self.deployments[application].selection
-        dst_processes = self.app_to_module_to_processes[application][application.sink.name]
+        dst_processes = self.app_to_module_to_processes[app][app.sink.name]
         dst_nodes = [self.process_to_node[dev] for dev in dst_processes]
 
-        paths = selection.get_paths(self.topology.G, message, src_node, dst_nodes)
+        paths = app.selection.get_paths(self.topology.G, message, src_node, dst_nodes)
         for path in paths:
-            logger.debug(f"Application {application.name} sending {message} via path {path}")
-            new_message = message.evolve(path=path, application=application)
+            logger.debug(f"Application {app.name} sending {message} via path {path}")
+            new_message = message.evolve(path=path, application=app)
             self.network_ctrl_pipe.put(new_message)
 
     def _network_process(self):
@@ -292,10 +289,8 @@ class Simulation:
                 if process in self.app_to_module_to_processes[app][module_name]:
                     self.app_to_module_to_processes[app][module_name].remove(process)
 
-    def deploy_app(self, app: Application, selection: Selection):
+    def deploy_app(self, app: Application):
         """This process is responsible for linking the *application* to the different algorithms (placement, population, and service)"""
-        deployment = Deployment(application=app, selection=selection)
-        self.deployments[app] = deployment
         self.app_to_module_to_processes[app] = {}
         self._deploy_source(app)
         self._deploy_sink(app)
@@ -304,7 +299,7 @@ class Simulation:
         """Add a DES process for deploy pure source modules (sensors). This function its used by (:mod:`Population`) algorithm"""
         process = self.env.process(application.source.run(self, application))
         self.process_to_node[process] = application.source.node
-        self.alloc_source[process] = {"id": application.source.node, "app": application, "module": application.source, "name": application.source.message.name}
+        self.alloc_source[process] = {"id": application.source.node, "app": application, "module": application.source, "name": application.source.message_out.name}
 
     def _deploy_sink(self, application: Application):
         """Add a DES process to deploy pure SINK modules (actuators).
@@ -406,9 +401,3 @@ class Simulation:
 
         if results_path:
             self.event_log.write(results_path)
-
-
-class Deployment:
-    def __init__(self, application: Application, selection: Selection):
-        self.application = application
-        self.selection = selection

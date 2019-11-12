@@ -6,7 +6,6 @@ import logging
 
 from yafs.distribution import Distribution
 
-
 logger = logging.getLogger(__name__)
 
 
@@ -17,18 +16,18 @@ class Module(ABC):
 
 
 class Source(Module):
-    def __init__(self, name: str, node: Any, message: "Message", distribution: Distribution, data: Optional[Dict] = None):
+    def __init__(self, name: str, node: Any, message_out: "Message", distribution: Distribution, data: Optional[Dict] = None):
         super().__init__(name, data)
         self.node = node
-        self.message = message
+        self.message_out = message_out
         self.distribution = distribution
 
     def run(self, simulation: "Simulation", application: "Application"):
         logger.debug("Added_Process - Module Pure Source")
         while True:
             yield simulation.env.timeout(next(self.distribution))
-            logger.debug(f"{application.name}:{self.name}\tGenerating Message: {self.message.name} \t(T:{simulation.env.now})")
-            new_message = self.message.evolve(timestamp=simulation.env.now)
+            logger.debug(f"{application.name}:{self.name}\tGenerating Message: {self.message_out.name} \t(T:{simulation.env.now})")
+            new_message = self.message_out.evolve(timestamp=simulation.env.now)
             simulation._send_message(new_message, application, self.node)
 
 
@@ -50,6 +49,7 @@ class Operator(Module):
 
 
 class Sink(Module):
+    # TODO Missing message in??
     def __init__(self, name: str, node: Any, data: Optional[Dict] = None):
         super().__init__(name, data)
         self.node = node
@@ -108,8 +108,9 @@ class Application:
         name: Application name, unique within the same topology.
     """
 
-    def __init__(self, name: str, source: Source, operators: List[Operator], sink: Sink):
+    def __init__(self, name: str, source: Source, operators: List[Operator], sink: Sink, selection: "Selection"):
         self.name = name
         self.source = source
         self.operators = operators
         self.sink = sink
+        self.selection = selection
