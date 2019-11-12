@@ -1,13 +1,11 @@
 import logging
 import random
 from abc import ABC, abstractmethod
-from collections import defaultdict
 from typing import Tuple, List, Optional
 
 import networkx as nx
 
 from yafs.application import Message
-from yafs.topology import Topology
 
 logger = logging.getLogger(__name__)
 

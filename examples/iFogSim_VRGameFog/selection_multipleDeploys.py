@@ -22,7 +22,7 @@ class CloudPath_RR(Selection):
             next_DES_dst = DES_dst[self.rr[message.dst]]
             dst_node = alloc_DES[next_DES_dst]
 
-            path = list(nx.shortest_path(sim.topology.G, source=node_src, target=dst_node))
+            path = list(nx.shortest_path(sim.G, source=node_src, target=dst_node))
             bestPath = [path]
             bestDES = [next_DES_dst]
             self.rr[message.dst] = (self.rr[message.dst] + 1) % len(DES_dst)
@@ -36,7 +36,7 @@ class CloudPath_RR(Selection):
         min_path = float("inf")
         for des in DES_dst:
             dst_node = alloc_DES[des]
-            path = list(nx.shortest_path(sim.topology.G, source=node_src, target=dst_node))  ###
+            path = list(nx.shortest_path(sim.G, source=node_src, target=dst_node))  ###
             if message.broadcasting:
                 best_path.append(path)
                 best_DES.append(des)
@@ -70,7 +70,7 @@ class BroadPath(Selection):
         minLenPath = float("inf")
         minPath = []
         for dev in topoDST:
-            path = list(nx.shortest_path(sim.topology.G, source=node_src, target=dev))
+            path = list(nx.shortest_path(sim.G, source=node_src, target=dev))
             if len(path) < minLenPath:
                 minLenPath = len(path)
                 minPath = path
@@ -126,7 +126,7 @@ class BroadPath(Selection):
                 for ix, des in enumerate(DES_dst):
                     if self.rr[message.dst] == ix:
                         dst_node = alloc_DES[des]
-                        path = list(nx.shortest_path(sim.topology.G, source=node_src, target=dst_node))
+                        path = list(nx.shortest_path(sim.G, source=node_src, target=dst_node))
                         bestPath = [path]
                         bestDES = [des]
                         self.rr[message.dst] = (self.rr[message.dst] + 1) % len(DES_dst)
@@ -140,7 +140,7 @@ class BroadPath(Selection):
         min_path = float("inf")
         for des in DES_dst:
             dst_node = alloc_DES[des]
-            path = list(nx.shortest_path(sim.topology.G, source=node_src, target=dst_node))  ###
+            path = list(nx.shortest_path(sim.G, source=node_src, target=dst_node))  ###
             if message.broadcasting:
                 best_path.append(path)
                 best_DES.append(des)

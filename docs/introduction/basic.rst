@@ -180,7 +180,7 @@ where internally this function is customized by the user. Mandatory returns are 
                 dst_node = alloc_DES[des]
                 print "\t\t Looking the path to id_node: %i" %dst_node
 
-                path = list(nx.shortest_path(sim.topology.G, source=node_src, target=dst_node))
+                path = list(nx.shortest_path(sim.G, source=node_src, target=dst_node))
 
                 bestPath = [path]
                 bestDES = [des]

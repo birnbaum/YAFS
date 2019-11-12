@@ -24,7 +24,7 @@ def generate_animation(user_tracks: DFTrack, output_file: str, topology: Topolog
     map_ = _load_map(user_tracks)
     map_.img.save(output_file + "_map_background.png")
     animation = AnimationTrack(self, dpi=100, bg_map=True, aspect="equal")
-    animation.make_video(output_file=output_file, framerate=10, linewidth=1.0, G=topology.G)
+    animation.make_video(output_file=output_file, framerate=10, linewidth=1.0, G=G)
 
 
 def set_coverage_class(user_tracks: DFTrack, topology: Topology, class_name, **kwargs):
@@ -34,9 +34,9 @@ def set_coverage_class(user_tracks: DFTrack, topology: Topology, class_name, **k
 
 
 def _endpoints(topology):
-    level = nx.get_node_attributes(topology.G, "level")
-    lat = nx.get_node_attributes(topology.G, "lat")
-    lng = nx.get_node_attributes(topology.G, "lng")
+    level = nx.get_node_attributes(G, "level")
+    lat = nx.get_node_attributes(G, "lat")
+    lng = nx.get_node_attributes(G, "lng")
     endpoints = np.array([[lat[n], lng[n]] for n in level if level[n] == 0])  # TODO Better a Tuple?
     counter = itertools.count(0)
     name_endpoints = {next(counter): n for n in level if level[n] == 0}
@@ -59,7 +59,7 @@ def _endpoints(topology):
 # ### MOBILE ADAPTATION SECTION
 # def update_service_coverage(self):
 #     if self.street_network is not None:
-#         points = utils.create_points(self.topology.G)
+#         points = utils.create_points(self.G)
 #         point_streets = utils.create_points(self.street_network)
 #
 #         tree = scipy.spatial.KDTree(points.values())

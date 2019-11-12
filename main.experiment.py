@@ -1,16 +1,14 @@
 import logging
 import random
-from typing import Tuple, List
 
 import networkx as nx
 
 from yafs import utils
 from yafs.core import Simulation
-from yafs.application import Application, Message, Module, Sink, Source, Operator
+from yafs.application import Application, Message, Sink, Source, Operator
 from yafs.placement import CloudPlacement
 
 from yafs.selection import ShortestPath
-from yafs.topology import Topology
 
 from yafs.distribution import UniformDistribution
 import time
@@ -57,9 +55,6 @@ def main(simulated_time):
             {"source": "cloud", "target": "actuator2", "BW": 5, "PR": 10},
         ]
     })
-    t = Topology(G)
-    utils.draw_topology(t)
-
     distribution = UniformDistribution(min=1, max=100)
 
     # Application Graph
@@ -69,7 +64,7 @@ def main(simulated_time):
     message_a = Message("M.A", dst=service_a, instructions=20 * 10 ^ 6, size=1000)
     sensor = Source("sensor", node="sensor1", message_out=message_a, distribution=distribution)
 
-    simulation = Simulation(t, selection=ShortestPath())
+    simulation = Simulation(G, selection=ShortestPath())
 
     app1 = Application(name="App1", source=sensor, operators=[service_a], sink=actuator)
 
@@ -79,7 +74,7 @@ def main(simulated_time):
 
     simulation.run(until=simulated_time, results_path="results", progress_bar=False)
     simulation.stats.print_report(simulated_time)
-    utils.draw_topology(t, simulation.node_to_modules)
+    utils.draw_topology(G, simulation.node_to_modules)
 
 
 if __name__ == "__main__":

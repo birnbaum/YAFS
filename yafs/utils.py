@@ -61,7 +61,7 @@ def get_shortest_random_path(G):
             counter += 1
 
 
-def draw_topology(topology, alloc_entity=None):
+def draw_topology(G, alloc_entity=None):
     """
     Draw the modeled topology
 
@@ -69,7 +69,7 @@ def draw_topology(topology, alloc_entity=None):
     """
     import matplotlib.pyplot as plt
 
-    G = copy.copy(topology.G)
+    G = copy.copy(G)
     if alloc_entity is not None:
         for node, modules in alloc_entity.items():
             for module in modules:

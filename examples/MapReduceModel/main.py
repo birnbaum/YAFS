@@ -144,7 +144,7 @@ def main(simulated_time, experimento, file, study, it):
     # failurefilelog.close()
 
     # #CHECKS
-    # print s.topology.G.nodes
+    # print s.G.nodes
     # s.print_debug_assignaments()
 
 

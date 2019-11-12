@@ -200,7 +200,7 @@ class DeviceSpeedAwareRouting(Selection):
         for dev in DES_dst:
             node_dst = alloc_DES[dev]
             try:
-                path = list(nx.shortest_path(sim.topology.G, source=node_src, target=node_dst))
+                path = list(nx.shortest_path(sim.G, source=node_src, target=node_dst))
             except (nx.NetworkXNoPath, nx.NodeNotFound):
                 logger.warning("There is no path between two nodes: %s - %s " % (node_src, node_dst))
                 break
@@ -354,10 +354,10 @@ def main(simulated_time, path, results_path, case, run_id):
             elif "_" in service:
                 modules_entities[k] += 1  # [u'3#3_22', u'2#2_19']
 
-    nx.set_node_attributes(s.topology.G, values=src_entities, name="SRC")
-    nx.set_node_attributes(s.topology.G, values=modules_entities, name="MOD")
+    nx.set_node_attributes(s.G, values=src_entities, name="SRC")
+    nx.set_node_attributes(s.G, values=modules_entities, name="MOD")
 
-    nx.write_gexf(s.topology.G, os.path.join(results_path, "network.gexf"))
+    nx.write_gexf(s.G, os.path.join(results_path, "network.gexf"))
 
     # controlServices = selectorPath.controlServices
     # f = open(pathResults + "/file_assignments_%s_%i_%i.pkl" % (case, simulated_time, it), "wb")

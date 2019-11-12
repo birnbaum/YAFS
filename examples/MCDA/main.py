@@ -162,7 +162,7 @@ def main(simulated_time, path, pathResults, case, failuresON, it, idcloud):
     # if failuresON:
     #     failurefilelog.close()
     # #CHECKS
-    # print s.topology.G.nodes
+    # print s.G.nodes
     s.print_debug_assignaments()
 
     # Genera un fichero GEPHI donde se marcan los nodos con usuarios (userposition) y los nodos con servicios desplegados (services)
@@ -182,9 +182,9 @@ def main(simulated_time, path, pathResults, case, failuresON, it, idcloud):
         deploymentservices[k] = cd
         userposition[k] = cu
 
-    nx.set_node_attributes(s.topology.G, values=deploymentservices, name="services")
-    nx.set_node_attributes(s.topology.G, values=userposition, name="userposition")
-    # nx.write_gexf(s.topology.G, "network_assignments.gexf")
+    nx.set_node_attributes(s.G, values=deploymentservices, name="services")
+    nx.set_node_attributes(s.G, values=userposition, name="userposition")
+    # nx.write_gexf(s.G, "network_assignments.gexf")
 
     print(selectorPath.dname)
     f = open(selectorPath.dname + "/file_alloc_entities_%s_%i_%i.pkl" % (case, stop_time, it), "wb")
@@ -204,9 +204,9 @@ def main(simulated_time, path, pathResults, case, failuresON, it, idcloud):
     dl = {}
     for item in attEdges:
         dl[item] = {"W": attEdges[item]}
-    nx.set_edge_attributes(s.topology.G, values=dl)
+    nx.set_edge_attributes(s.G, values=dl)
 
-    nx.write_gexf(s.topology.G, selectorPath.dname + "/network_assignments_%s_%i_%i.gexf" % (case, stop_time, it))
+    nx.write_gexf(s.G, selectorPath.dname + "/network_assignments_%s_%i_%i.gexf" % (case, stop_time, it))
 
     f = open(selectorPath.dname + "/file_assignments_%s_%i_%i.pkl" % (case, stop_time, it), "wb")
     pickle.dump(controlServices, f)

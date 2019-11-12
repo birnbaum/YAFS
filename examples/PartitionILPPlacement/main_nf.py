@@ -114,7 +114,7 @@ def main(simulated_time, experimento, ilpPath, it):
     # failurefilelog.close()
 
     # #CHECKS
-    # print s.topology.G.nodes
+    # print s.G.nodes
     # s.print_debug_assignaments()
 
 

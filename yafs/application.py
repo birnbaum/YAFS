@@ -86,7 +86,7 @@ class Operator(Module):
 
     def enter(self, message: "Message", simulation):
         logger.debug(f"{message} arrived in operator {self.name}.")
-        service_time = message.instructions / float(simulation.topology.G.nodes[self.node]["IPT"])
+        service_time = message.instructions / float(simulation.G.nodes[self.node]["IPT"])
 
         simulation.event_log.append_event(type="COMP",
                                           app=message.application.name,

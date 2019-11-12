@@ -69,7 +69,7 @@ class WARoutingAndDeploying(Selection):
                 # print "DES :",dev
                 node_dst = alloc_DES[dev]
                 try:
-                    nodes.append(self.get_the_path(sim.topology.G, node_src, node_dst))
+                    nodes.append(self.get_the_path(sim.G, node_src, node_dst))
 
                 except (nx.NetworkXNoPath, nx.NodeNotFound) as e:
                     logger.warning("No path between two nodes: %s - %s " % (node_src, node_dst))
@@ -85,7 +85,7 @@ class WARoutingAndDeploying(Selection):
     #     try:
     #         print "COMPUTING LAT. node_src: %i to node_dst: %i" % (node_src, node_dst)
     #
-    #         path = list(nx.shortest_path(sim.topology.G, source=node_src, target=node_dst))
+    #         path = list(nx.shortest_path(sim.G, source=node_src, target=node_dst))
     #         print "PATH ", path
     #
     #         totalTimelatency = 0
@@ -93,11 +93,11 @@ class WARoutingAndDeploying(Selection):
     #             link = (path[i], path[i + 1])
     #             print "LINK : ", link
     #             # print " BYTES :", message.bytes
-    #             totalTimelatency += sim.topology.G.edges[link][Topology.LINK_PR] + (
-    #                 message.bytes / sim.topology.G.edges[link][Topology.LINK_BW])
-    #             # print sim.topology.G.edges[link][Topology.LINK_BW]
+    #             totalTimelatency += sim.G.edges[link][Topology.LINK_PR] + (
+    #                 message.bytes / sim.G.edges[link][Topology.LINK_BW])
+    #             # print sim.G.edges[link][Topology.LINK_BW]
     #
-    #         att_node = sim.topology.G.nodes[path[-1]]
+    #         att_node = sim.G.nodes[path[-1]]
     #         time_service = message.instructions / float(att_node["IPT"])
     #         totalTimelatency += time_service  # HW - computation of last node
     #         print totalTimelatency
@@ -109,11 +109,11 @@ class WARoutingAndDeploying(Selection):
 
     def compute_Latency(self, sim, node_src, node_dst):
         try:
-            path = list(nx.shortest_path(sim.topology.G, source=node_src, target=node_dst))
+            path = list(nx.shortest_path(sim.G, source=node_src, target=node_dst))
             totalTimelatency = 0
             for i in range(len(path) - 1):
                 link = (path[i], path[i + 1])
-                totalTimelatency += sim.topology.G.edges[link][Topology.LINK_PR]
+                totalTimelatency += sim.G.edges[link][Topology.LINK_PR]
             return totalTimelatency
 
         except (nx.NetworkXNoPath, nx.NodeNotFound) as e:
@@ -128,16 +128,16 @@ class WARoutingAndDeploying(Selection):
     #         for dev in DES_dst:
     #             #print "DES :",dev
     #             node_dst = alloc_DES[dev]
-    #             path = list(nx.shortest_path(sim.topology.G, source=node_src, target=node_dst))
+    #             path = list(nx.shortest_path(sim.G, source=node_src, target=node_dst))
     #             speed = 0
     #             for i in range(len(path) - 1):
     #                 link = (path[i], path[i + 1])
     #                # print "LINK : ",link
     #                # print " BYTES :", message.bytes
-    #                 speed += sim.topology.G.edges[link][Topology.LINK_PR] + (message.bytes/sim.topology.G.edges[link][Topology.LINK_BW])
-    #                 #print sim.topology.G.edges[link][Topology.LINK_BW]
+    #                 speed += sim.G.edges[link][Topology.LINK_PR] + (message.bytes/sim.G.edges[link][Topology.LINK_BW])
+    #                 #print sim.G.edges[link][Topology.LINK_BW]
     #
-    #             att_node = sim.topology.G.nodes[path[-1]]
+    #             att_node = sim.G.nodes[path[-1]]
     #             #TODO ISAAC
     #             # if att_node["id"]==100:
     #             #     print "\t last cloud"
@@ -205,9 +205,9 @@ class WARoutingAndDeploying(Selection):
     def get_power(self, sim, nodes):
         power = []
 
-        for i in sim.topology.G.nodes():
+        for i in sim.G.nodes():
             if i in nodes:
-                power.append((sim.topology.G.nodes[i]["POWERmin"] + sim.topology.G.nodes[i]["POWERmax"]) / 2.0)
+                power.append((sim.G.nodes[i]["POWERmin"] + sim.G.nodes[i]["POWERmax"]) / 2.0)
 
         return power
 
@@ -232,7 +232,7 @@ class WARoutingAndDeploying(Selection):
         # 1 CRITERIA: min : hop count
         values = []
         for node in nodes:
-            values.append(len(self.get_the_path(sim.topology.G, node_src, node)))
+            values.append(len(self.get_the_path(sim.G, node_src, node)))
         df["hopcount"] = values
         # criteriaMinMax += "min"
 
@@ -268,7 +268,7 @@ class WARoutingAndDeploying(Selection):
         df["cost"] = values
 
         # if sim.get_DES_from_Service_In_Node(node, app_name, service) == []:
-        #     values.append(20 * sim.topology.G.nodes[node]["IPT"])
+        #     values.append(20 * sim.G.nodes[node]["IPT"])
         # else:
 
         # criteriaMinMax += ",min"
@@ -369,7 +369,7 @@ class WARoutingAndDeploying(Selection):
             # mergednodes = np.unique(mergednodes)
 
             # OPTION B: all nodes
-            mergednodes = sim.topology.G.nodes
+            mergednodes = sim.G.nodes
 
             # logging.info("\t Candidate list: "+str(mergednodes))
 
@@ -394,14 +394,14 @@ class WARoutingAndDeploying(Selection):
 
             # TODO gestionar best_node action
 
-            path = self.get_the_path(sim.topology.G, node_src, best_node)
+            path = self.get_the_path(sim.G, node_src, best_node)
             self.controlServices[(node_src, service)] = (path, des)
 
         path, des = self.controlServices[(node_src, service)]
         # print path, des
         # print "---"*20
         # The number of nodes control the updating of the cache. If the number of nodes changes, the cache is totally cleaned.
-        # currentNodes = len(sim.topology.G.nodes)
+        # currentNodes = len(sim.G.nodes)
         # if not self.invalid_cache_value == currentNodes:
         #     self.invalid_cache_value = currentNodes
         #     self.cache = {}

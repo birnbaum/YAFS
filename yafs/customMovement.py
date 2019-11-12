@@ -69,31 +69,31 @@ class MovementUpdate:
         att = {"BW": 10, "PR": 10}
         try:
             existNode = False
-            edges_to_remove = [e for e in sim.topology.G.edges() if int(code) in e]
+            edges_to_remove = [e for e in sim.G.edges() if int(code) in e]
             for edge in edges_to_remove:
-                att = sim.topology.G[edge[0]][edge[1]]
-                sim.topology.G.remove_edge(*edge)
+                att = sim.G[edge[0]][edge[1]]
+                sim.G.remove_edge(*edge)
                 existNode = True
 
             if len(edges_to_remove) == 0 and id_node != None:
                 if code in sim.mobile_fog_entities:
-                    sim.topology.G.add_node(int(code), level=-1, **sim.mobile_fog_entities[code]["node_attributes"])
+                    sim.G.add_node(int(code), level=-1, **sim.mobile_fog_entities[code]["node_attributes"])
                 else:
-                    sim.topology.G.add_node(int(code), level=-1)
+                    sim.G.add_node(int(code), level=-1)
         except nx.NetworkXError:
             # The edge was not established, first time:
             # print "Does not exist: %s"%code
             None
-            # sim.topology.G.add_node(code,level=-1)
+            # sim.G.add_node(code,level=-1)
 
         # 2 - add new edge
         # print "a new link between nodes: %s -> %s"%(code,id_node)
         if id_node != None:
             if type(id_node) == list:
                 for id_n in id_node:
-                    sim.topology.G.add_edge(int(code), int(id_n), **att)
+                    sim.G.add_edge(int(code), int(id_n), **att)
             else:
-                sim.topology.G.add_edge(int(code), int(id_node), **att)
+                sim.G.add_edge(int(code), int(id_node), **att)
 
         # 3 we can interact with other own classes:
         routing.invalid_cache_value = True  # we can invalid the cache of routing packages
@@ -227,7 +227,7 @@ class MovementUpdate:
         # This is an expensive task (optional)
         if self.doExecutionVideo:
             # sim.topology.draw_png(self.path_results + "network_%i" % self.current_step)
-            self.animation.make_snap(self.current_step, self.path_results + "snap_%05d" % self.current_step, G=sim.topology.G, draw_connection_line=False)
+            self.animation.make_snap(self.current_step, self.path_results + "snap_%05d" % self.current_step, G=sim.G, draw_connection_line=False)
 
         logger.info("\texecution time of movement (#%i): %s" % (self.current_step, (time.time() - start_time)))
         # we prepare the next execution of this function

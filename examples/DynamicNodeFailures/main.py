@@ -109,11 +109,11 @@ def main(simulated_time):
 
     s.run(simulated_time, progress_bar=False)
     # s.draw_allocated_topology() # for debugging
-    print("Total nodes available in the  toopology %i" % len(s.topology.G.nodes()))
-    print("Total edges available in the  toopology %i" % len(s.topology.G.edges()))
+    print("Total nodes available in the  toopology %i" % len(s.G.nodes()))
+    print("Total edges available in the  toopology %i" % len(s.G.edges()))
 
     print(pop.nodes_removed)
-    nx.write_graphml_lxml(s.topology.G, "final_network.graphml")
+    nx.write_graphml_lxml(s.G, "final_network.graphml")
 
 
 if __name__ == "__main__":

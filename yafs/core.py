@@ -1,21 +1,19 @@
 """This module unifies the event-discrete simulation environment with the rest of modules: placement, topology, selection, population, utils and metrics."""
 
 import logging
-import random
 from collections import Callable
-from typing import Optional, List, Dict, Any, Union
+from typing import Optional, List, Dict, Any
 
 import simpy
-from networkx.utils import pairwise
+from networkx.utils import pairwise, nx
 from simpy import Process
 from tqdm import tqdm
 
-from yafs.application import Application, Message, Operator, Sink, Module
+from yafs.application import Application, Message, Operator
 from yafs.distribution import Distribution
 from yafs.placement import Placement
 from yafs.selection import Selection
 from yafs.stats import Stats, EventLog
-from yafs.topology import Topology
 
 
 class SimulationTimeFilter(logging.Filter):
@@ -41,13 +39,13 @@ class Simulation:
         topology: Associated topology of the environment.
     """
 
-    def __init__(self, topology: Topology, selection: Selection):
+    def __init__(self, G: nx.Graph, selection: Selection):
         # TODO Refactor this class. Way too many fields, no clear separation of concerns.
 
-        self.topology = topology
+        self.G = G
         self.selection = selection
+        self.env = simpy.Environment()
 
-        self.env = simpy.Environment()  # discrete-event simulator (aka DES)
         logger.addFilter(SimulationTimeFilter(self.env))
         logger.addHandler(ch)
 
@@ -89,9 +87,9 @@ class Simulation:
         self.last_busy_time = {}  # must be updated with up/down node
 
     def transmission_process(self, message: Message, src_node):
-        paths = self.selection.get_paths(self.topology.G, message, src_node, [message.dst.node])
+        paths = self.selection.get_paths(self.G, message, src_node, [message.dst.node])
         for path in paths:
-            latencies = [self.topology.G.edges[x, y]["PR"] for x, y in pairwise(path)]
+            latencies = [self.G.edges[x, y]["PR"] for x, y in pairwise(path)]
             total_latency = sum(latencies)
             logger.debug(f"Sending {message} via path {path}. Latency: {total_latency}({latencies})")
             yield self.env.timeout(total_latency)
@@ -112,7 +110,7 @@ class Simulation:
     @property
     def node_to_modules(self) -> Dict[int, List]:  # Only used in drawing
         """Returns a dictionary mapping from node ids to their deployed services"""
-        result = {key: [] for key in self.topology.G.nodes}
+        result = {key: [] for key in self.G.nodes}
         for src_deployed in self.alloc_source.values():
             result[src_deployed["id"]].append(src_deployed["app"].name + "#" + src_deployed["module"].name)
         for app in self.app_to_module_to_process:
@@ -151,8 +149,8 @@ class Simulation:
                 last_used = self.last_busy_time.get(link, 0)
 
                 # Computing message latency
-                transmit = message.size / (self.topology.G.edges[link][Topology.LINK_BW] * 1000000.0)  # MBITS!
-                propagation = self.topology.G.edges[link][Topology.LINK_PR]
+                transmit = message.size / (self.G.edges[link][Topology.LINK_BW] * 1000000.0)  # MBITS!
+                propagation = self.G.edges[link][Topology.LINK_PR]
                 latency_msg_link = transmit + propagation
                 logger.debug(f"Link: {link}; Latency: {latency_msg_link}")
 
@@ -195,7 +193,7 @@ class Simulation:
             if logfile:
                 with open(logfile, "a") as stream:
                     stream.write("%i,%s,%d\n" % (node, len(processes), self.env.now))
-            logger.debug("\n\nRemoving node: %i, Total nodes: %i" % (node, len(self.topology.G)))
+            logger.debug("\n\nRemoving node: %i, Total nodes: %i" % (node, len(self.G)))
             self.remove_node(node)
             for process in processes:
                 self.stop_process(process)
@@ -272,7 +270,7 @@ class Simulation:
                     self.stop_process(process)
 
         # Finally removing node from topology
-        self.topology.G.remove_node(node)
+        self.G.remove_node(node)
 
     def print_debug_assignaments(self):
         """Prints debug information about the assignment of DES process - Topology ID - Source Module or Modules"""

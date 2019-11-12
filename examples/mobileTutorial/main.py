@@ -169,10 +169,10 @@ def main(path, path_results, number_simulation_steps, tracks, topology, case, it
     #             modules_entities[k]+=1 #[u'3#3_22', u'2#2_19']
     #
     #
-    # nx.set_node_attributes(s.topology.G, values=src_entities,name="SRC")
-    # nx.set_node_attributes(s.topology.G, values=modules_entities,name="MOD")
+    # nx.set_node_attributes(s.G, values=src_entities,name="SRC")
+    # nx.set_node_attributes(s.G, values=modules_entities,name="MOD")
     #
-    # nx.write_gexf(s.topology.G, pathResults + "/network_assignments_%s_%i_%i.gexf" % (case, stop_time, it))
+    # nx.write_gexf(s.G, pathResults + "/network_assignments_%s_%i_%i.gexf" % (case, stop_time, it))
 
     # controlServices = selectorPath.controlServices
     # f = open(pathResults + "/file_assignments_%s_%i_%i.pkl" % (case, stop_time, it), "wb")

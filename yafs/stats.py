@@ -45,6 +45,7 @@ class EventLog:
 
     def append_transmission(self, **kwargs) -> None:
         columns = set(kwargs.keys())
+
         expected_columns = {"src", "dst", "app", "latency", "message", "ctime", "size", "buffer"}
         if columns != expected_columns:
             raise ValueError(f"Cannot append metrics transmission:\nExpected columns: {expected_columns}\nGot: {columns}")
@@ -90,20 +91,20 @@ class Stats:
             nodes = self.messages.groupby("TOPO.dst").agg({"time_service": "sum"})
             for id_node in nodes.index:
                 results[id_node] = {
-                    "id": topology.G.nodes[id_node]["id"],
-                    "type": topology.G.nodes[id_node]["type"],
-                    "watt": nodes.loc[id_node].time_service * topology.G.nodes[id_node]["WATT"],
+                    "id": G.nodes[id_node]["id"],
+                    "type": G.nodes[id_node]["type"],
+                    "watt": nodes.loc[id_node].time_service * G.nodes[id_node]["WATT"],
                 }
         else:
-            for node_key in topology.G.nodes:
-                if not topology.G.nodes[node_key]["uptime"][1]:
+            for node_key in G.nodes:
+                if not G.nodes[node_key]["uptime"][1]:
                     end = totaltime
-                start = topology.G.nodes[node_key]["uptime"][0]
+                start = G.nodes[node_key]["uptime"][0]
                 uptime = end - start  # TODO end may be undefined
                 results[node_key] = {
-                    "id": topology.G.nodes[node_key]["id"],
-                    "type": topology.G.nodes[node_key]["type"],
-                    "watt": uptime * topology.G.nodes[node_key]["WATT"],
+                    "id": G.nodes[node_key]["id"],
+                    "type": G.nodes[node_key]["type"],
+                    "watt": uptime * G.nodes[node_key]["WATT"],
                     "uptime": uptime,
                 }
 
@@ -111,7 +112,7 @@ class Stats:
 
     def get_cost_cloud(self, topology):
         cost = 0.0
-        nodeInfo = topology.G.nodes
+        nodeInfo = G.nodes
         results = {}
         nodes = self.messages.groupby("TOPO.dst").agg({"time_service": "sum"})
 

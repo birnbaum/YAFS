@@ -128,7 +128,7 @@ def main(simulated_time, experiment_path, ilpPath, it):
     # print selectorPath.cache.values()
 
     # #CHECKS
-    # print s.topology.G.nodes
+    # print s.G.nodes
     # s.print_debug_assignaments()
 
 
