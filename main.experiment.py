@@ -6,7 +6,7 @@ import networkx as nx
 
 from yafs import utils
 from yafs.core import Simulation
-from yafs.application import Application, Message, Module
+from yafs.application import Application, Message, Module, Sink, Source, Operator
 from yafs.placement import CloudPlacement
 
 from yafs.selection import ShortestPath
@@ -20,13 +20,13 @@ RANDOM_SEED = 1
 
 
 def create_application(name: str = "SimpleApp") -> Tuple[Application, List[Message]]:
-    sensor = Module("sensor")
-    service_a = Module("service_a")
-    actuator = Module("actuator")
+    sensor = Source("sensor")
+    service_a = Operator("service_a")
+    actuator = Sink("actuator")
     message_a = Message("M.A", src=sensor, dst=service_a, instructions=20 * 10 ^ 6, size=1000)
     message_b = Message("M.B", src=service_a, dst=actuator, instructions=30 * 10 ^ 6, size=500)
     service_a.add_service(message_a, message_b)  # TODO Weird back-referencing objects
-    application = Application(name=name, modules=[sensor, service_a, actuator])
+    application = Application(name=name, source=sensor, operators=[service_a], sink=actuator)
 
     return application, [message_a]
 

@@ -80,7 +80,7 @@ class FogPlacementIFogSIM(Placement):
 
 
 def create_application():
-    a = Application(name="EGG_GAME", modules=[
+    a = Application(name="EGG_GAME", operators=[
         Module("EGG", is_source=True),
         Module("Display", is_sink=True),
         Module("Client", data={"RAM": 10}),

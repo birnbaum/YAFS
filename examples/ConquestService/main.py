@@ -273,7 +273,7 @@ def create_applications_from_json(data):
         modules = [Module("None", is_source=True)]
         for module in app["module"]:
             modules.append(Module(module["name"], data={"RAM": module["RAM"]}))
-        a = Application(name=app["name"], modules=modules)
+        a = Application(name=app["name"], operators=modules)
 
         ms = {}
         for message in app["message"]:

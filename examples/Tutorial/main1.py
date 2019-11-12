@@ -15,7 +15,7 @@ RANDOM_SEED = 1
 
 
 def create_application():
-    a = Application(name="SimpleApp", modules=[  # (S) --> (ServiceA) --> (A)
+    a = Application(name="SimpleApp", operators=[  # (S) --> (ServiceA) --> (A)
         Module("Sensor", is_source=True),
         Module("ServiceA", data={"RAM": 10}),
         Module("Actuator", is_sink=True),

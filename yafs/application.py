@@ -1,3 +1,4 @@
+from abc import ABC
 from copy import copy
 from typing import List, Optional, Dict
 
@@ -20,18 +21,28 @@ class Service:
         self.module_dst = module_dst if module_dst else []
 
 
-class Module:
+class Module(ABC):
     def __init__(self, name: str, data: Optional[Dict] = None):
         self.name = name
-        self.services = []  # can deal with different messages, "tuppleMapping (iFogSim)"
         self.data = data if data else {}  # TODO find better name
+
+
+class Source(Module):
+    pass
+
+
+class Operator(Module):
+    def __init__(self, name: str, data: Optional[Dict] = None):
+        super().__init__(name, data)
+        self.services = []  # can deal with different messages, "tuppleMapping (iFogSim)"
 
     def add_service(self, message_in: "Message", message_out: "Message", probability: float = 1.0, p: Optional[List] = None,
                     module_dst: Optional[List] = None):
         self.services.append(Service(message_in, message_out, probability, p, module_dst))
 
-    def __str__(self):
-        return f"Module<name=\"{self.name}\">"
+
+class Sink(Module):
+    pass
 
 
 class Message:
@@ -81,26 +92,12 @@ class Application:
         name: Application name, unique within the same topology.
     """
 
-    def __init__(self, name: str, modules: List[Module]):
+    def __init__(self, name: str, source: Source, operators: List[Operator], sink: Sink):
         self.name = name
-        self.modules = modules
-        self.messages = {}  # TODO Only used in Population, should probably be removed
-
-    def __str__(self):  # TODO Refactor this
-        result = f"---- APP: \"{self.name}\"\n"
-        result += "\n- ".join([str(m) for m in self.modules])
-        result += "----"
-        result += "\n- ".join([str(m) for m in self.messages])
-        return result
+        self.source = source
+        self.modules = operators
+        self.sink = sink
 
     @property
     def service_modules(self):
-        return [module for module in self.modules if module.services]
-
-    def add_source_message(self, message):
-        """Adds messages that come from pure sources (sensors).  This distinction allows them to be controlled by the (:mod:`Population`) algorithm."""
-        # Defining which messages will be dynamically generated # the generation is controlled by Population algorithm
-        # TODO Check
-        self.messages[message.name] = message
-
-
+        return self.modules
