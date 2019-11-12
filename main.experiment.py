@@ -25,7 +25,7 @@ def create_application(name: str = "SimpleApp") -> Tuple[Application, List[Messa
     actuator = Sink("actuator")
     message_a = Message("M.A", src=sensor, dst=service_a, instructions=20 * 10 ^ 6, size=1000)
     message_b = Message("M.B", src=service_a, dst=actuator, instructions=30 * 10 ^ 6, size=500)
-    service_a.add_service(message_a, message_b)  # TODO Weird back-referencing objects
+    service_a.set_messages(message_a, message_b)  # TODO Weird back-referencing objects
     application = Application(name=name, source=sensor, operators=[service_a], sink=actuator)
 
     return application, [message_a]

@@ -3,13 +3,13 @@
 import logging
 import random
 from collections import Callable
-from typing import Optional, List, Dict
+from typing import Optional, List, Dict, Any
 
 import simpy
 from simpy import Process
 from tqdm import tqdm
 
-from yafs.application import Application, Message, Service
+from yafs.application import Application, Message, Operator
 from yafs.distribution import Distribution
 from yafs.placement import Placement
 from yafs.selection import Selection
@@ -341,44 +341,40 @@ class Simulation:
     def deploy_placement(self, placement: Placement) -> Process:
         return self.env.process(placement.run(self))
 
-    def deploy_module(self, application: Application, module_name: str, services: List[Service], node_ids: List[int]):
+    def deploy_operator(self, application: Application, operator: Operator, node: Any):
         """Add a DES process for deploy  modules. This function its used by (:mod:`Population`) algorithm."""
-        assert len(services) == len(node_ids)  # TODO Does this hold?
-        for node_id in node_ids:
-            process = self.env.process(self._consumer_process(node_id, application, module_name, services))
-            self.process_to_node[process] = node_id
+        process = self.env.process(self._consumer_process(node, application, operator))
+        self.process_to_node[process] = node
 
-            # To generate the QUEUE of a SERVICE module
-            self._add_consumer_service_pipe(application, module_name)
+        # To generate the QUEUE of a SERVICE module
+        self._add_consumer_service_pipe(application, operator.name)
 
-            if module_name not in self.app_to_module_to_processes[application]:  # TODO defaultdict
-                self.app_to_module_to_processes[application][module_name] = []
-            self.app_to_module_to_processes[application][module_name].append(process)
+        if operator.name not in self.app_to_module_to_processes[application]:  # TODO defaultdict
+            self.app_to_module_to_processes[application][operator.name] = []
+        self.app_to_module_to_processes[application][operator.name].append(process)
 
-    def _consumer_process(self, node_id: int, application: Application, module_name: str, services: List[Service]):
+    def _consumer_process(self, node_id: int, application: Application, operator: Operator):
         """Process associated to a compute module"""
-        logger.debug(f"Added_Process - Module Consumer: {module_name}")
+        logger.debug(f"Added_Process - Operator: {operator.name}")
         while True:
-            pipe_id = f"{application.name}:{module_name}"
+            pipe_id = f"{application.name}:{operator.name}"
             message = yield self.consumer_pipes[pipe_id].get()
-            accepting_services = [s for s in services if message.name == s.message_in.name]
 
-            if accepting_services:
+            if message.name == operator.message_in.name:
                 logger.debug(f"{pipe_id}\tRecording message\t{message.name}")
-                service_time = self._compute_service_time(application, module_name, message, node_id, "COMP")
+                service_time = self._compute_service_time(application, operator.name, message, node_id, "COMP")
                 yield self.env.timeout(service_time)
 
-            for service in accepting_services:  # Processing the message
-                if not service.message_out:
-                    logger.debug(f"{application.name}:{module_name}\tSink message\t{message.name}")
+                if not operator.message_out:
+                    logger.debug(f"{application.name}:{operator.name}\tSink message\t{message.name}")
                     continue
 
-                if random.random() <= service.probability:
-                    message_out = service.message_out.evolve(timestamp=self.env.now)
-                    logger.debug(f"{application.name}:{module_name}\tTransmit message\t{service.message_out.name}")
+                if random.random() <= operator.probability:
+                    message_out = operator.message_out.evolve(timestamp=self.env.now)
+                    logger.debug(f"{application.name}:{operator.name}\tTransmit message\t{operator.message_out.name}")
                     self._send_message(message_out, application, node_id)
                 else:
-                    logger.debug(f"{application.name}:{module_name}\tDenied message\t{service.message_out.name}")
+                    logger.debug(f"{application.name}:{operator.name}\tDenied message\t{operator.message_out.name}")
 
     def remove_node(self, node):
         # TODO Remove

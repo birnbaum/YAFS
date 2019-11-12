@@ -30,7 +30,7 @@ class CustomStrategy:
         app_name = service[0 : service.index("_")]
         app = sim.deployments[app_name].application
         services = app.services
-        sim.deploy_module(app_name, service, services[service], [idtopo])
+        sim.deploy_operator(app_name, service, services[service], [idtopo])
 
     def is_already_deployed(self, sim, service_name, idtopo):
         app_name = service_name[0 : service_name.index("_")]

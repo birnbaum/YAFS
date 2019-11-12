@@ -3,24 +3,6 @@ from copy import copy
 from typing import List, Optional, Dict
 
 
-class Service:
-    """Definition of Generators and Consumers (AppEdges and TupleMappings in iFogSim)
-
-    Args:
-        message_in: input message
-        message_out: Output message. If Empty the module is a sink
-        probability: Probability to process the message
-        p: a list of probabilities to send this message. Broadcasting  # TODO Understand and refactor
-        module_dst: a list of modules who can receive this message. Broadcasting.
-    """
-    def __init__(self, message_in: "Message", message_out: "Message", probability: float = 1.0, p: Optional[List] = None,
-                 module_dst: Optional[List] = None):
-        self.message_in = message_in
-        self.message_out = message_out
-        self.probability = probability
-        self.module_dst = module_dst if module_dst else []
-
-
 class Module(ABC):
     def __init__(self, name: str, data: Optional[Dict] = None):
         self.name = name
@@ -32,13 +14,24 @@ class Source(Module):
 
 
 class Operator(Module):
-    def __init__(self, name: str, data: Optional[Dict] = None):
-        super().__init__(name, data)
-        self.services = []  # can deal with different messages, "tuppleMapping (iFogSim)"
+    """Definition of Generators and Consumers (AppEdges and TupleMappings in iFogSim)
 
-    def add_service(self, message_in: "Message", message_out: "Message", probability: float = 1.0, p: Optional[List] = None,
-                    module_dst: Optional[List] = None):
-        self.services.append(Service(message_in, message_out, probability, p, module_dst))
+    Args:
+        message_in: input message
+        message_out: Output message. If Empty the module is a sink
+        probability: Probability to process the message
+        p: a list of probabilities to send this message. Broadcasting  # TODO Understand and refactor
+    """
+
+    def __init__(self, name: str, data: Optional[Dict] = None, probability: float = 1.0):
+        super().__init__(name, data)
+        self.probability = probability
+        self.message_in = None
+        self.message_out = None
+
+    def set_messages(self, message_in: "Message", message_out: "Message"):
+        self.message_in = message_in
+        self.message_out = message_out
 
 
 class Sink(Module):
@@ -95,9 +88,5 @@ class Application:
     def __init__(self, name: str, source: Source, operators: List[Operator], sink: Sink):
         self.name = name
         self.source = source
-        self.modules = operators
+        self.operators = operators
         self.sink = sink
-
-    @property
-    def service_modules(self):
-        return self.modules

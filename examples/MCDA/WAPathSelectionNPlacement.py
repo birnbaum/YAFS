@@ -316,7 +316,7 @@ class WARoutingAndDeploying(Selection):
     def doDeploy(self, sim, app_name, module, id_resource):
         app = sim.apps[app_name]
         services = app.services
-        return sim.deploy_module(app_name, module, services[module], [id_resource])
+        return sim.deploy_operator(app_name, module, services[module], [id_resource])
 
     def print_control_services(self):
         print("-" * 30)

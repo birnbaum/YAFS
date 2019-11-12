@@ -28,21 +28,21 @@ class CloudPlacementIFogSIM(Placement):
 
         # Given an application we get its modules implemented
         app = simulation.deployments[application].application
-        for module_name in app.service_modules:
+        for module_name in app.operator:
             module = next(m for m in app.modules if m.name == module_name)
             if "Coordinator" == module_name:
                 if "Coordinator" in list(self.scaleServices.keys()):
                     # print self.scaleServices["Coordinator"]
                     for rep in range(0, self.scaleServices["Coordinator"]):
-                        simulation.deploy_module(application, module.name, module.services, id_cluster)  # Deploy as many modules as elements in the array
+                        simulation.deploy_operator(application, module.name, module.services, id_cluster)  # Deploy as many modules as elements in the array
 
             elif "Calculator" == module_name:
                 if "Calculator" in list(self.scaleServices.keys()):
                     for rep in range(0, self.scaleServices["Calculator"]):
-                        simulation.deploy_module(application, module.name, module.services, id_cluster)
+                        simulation.deploy_operator(application, module.name, module.services, id_cluster)
 
             elif "Client" == module_name:
-                simulation.deploy_module(application, module.name, module.services, id_mobiles)
+                simulation.deploy_operator(application, module.name, module.services, id_mobiles)
 
 
 class FogPlacementIFogSIM(Placement):
@@ -70,13 +70,13 @@ class FogPlacementIFogSIM(Placement):
             if "Coordinator" == module:
                 if "Coordinator" in list(self.scaleServices.keys()):
                     for rep in range(0, self.scaleServices["Coordinator"]):
-                        simulation.deploy_module(application, module, app.services[module], id_cluster)  # Deploy as many modules as elements in the array
+                        simulation.deploy_operator(application, module, app.services[module], id_cluster)  # Deploy as many modules as elements in the array
             elif "Calculator" == module:
                 if "Calculator" in list(self.scaleServices.keys()):
                     for rep in range(0, self.scaleServices["Calculator"]):
-                        simulation.deploy_module(application, module, app.services[module], id_proxies)
+                        simulation.deploy_operator(application, module, app.services[module], id_proxies)
             elif "Client" == module:
-                simulation.deploy_module(application, module, app.services[module], id_mobiles)
+                simulation.deploy_operator(application, module, app.services[module], id_mobiles)
 
 
 def create_application():

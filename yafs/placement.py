@@ -55,5 +55,5 @@ class CloudPlacement(Placement):
     def _run(self, simulation: "Simulation"):
         for app in self.apps:
             cloud_node_id, _ = max(simulation.topology.G.nodes(data=True), key=lambda node: node[1]["IPT"])
-            for module in app.service_modules:
-                simulation.deploy_module(app, module.name, module.services, node_ids=[cloud_node_id])
+            for operator in app.operators:
+                simulation.deploy_operator(app, operator, node=cloud_node_id)
