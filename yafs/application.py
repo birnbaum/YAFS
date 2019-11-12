@@ -2,7 +2,12 @@ from abc import ABC
 from copy import copy
 from typing import List, Optional, Dict, Any
 
+import logging
+
 from yafs.distribution import Distribution
+
+
+logger = logging.getLogger(__name__)
 
 
 class Module(ABC):
@@ -17,6 +22,14 @@ class Source(Module):
         self.node = node
         self.message = message
         self.distribution = distribution
+
+    def run(self, simulation: "Simulation", application: "Application"):
+        logger.debug("Added_Process - Module Pure Source")
+        while True:
+            yield simulation.env.timeout(next(self.distribution))
+            logger.debug(f"{application.name}:{self.name}\tGenerating Message: {self.message.name} \t(T:{simulation.env.now})")
+            new_message = self.message.evolve(timestamp=simulation.env.now)
+            simulation._send_message(new_message, application, self.node)
 
 
 class Operator(Module):
@@ -40,6 +53,14 @@ class Sink(Module):
     def __init__(self, name: str, node: Any, data: Optional[Dict] = None):
         super().__init__(name, data)
         self.node = node
+
+    def run(self, simulation: "Simulation", application: "Application"):
+        logger.debug(f"Added_Process - Module Pure Sink: {self.name}")
+        while True:
+            message = yield simulation.consumer_pipes[f"{application.name}:{self.name}"].get()
+            logger.debug(f"{application.name}:{self.name}\tSink Message: {message.name} \t(T:{simulation.env.now})")
+            service_time = simulation._compute_service_time(application, self.name, message, self.node, "SINK")
+            yield simulation.env.timeout(service_time)  # service time is 0
 
 
 class Message:

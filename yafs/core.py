@@ -297,30 +297,21 @@ class Simulation:
         deployment = Deployment(application=app, selection=selection)
         self.deployments[app] = deployment
         self.app_to_module_to_processes[app] = {}
-        self.deploy_source(app)
-        self.deploy_sink(app)
+        self._deploy_source(app)
+        self._deploy_sink(app)
 
-    def deploy_source(self, application: Application):
+    def _deploy_source(self, application: Application):
         """Add a DES process for deploy pure source modules (sensors). This function its used by (:mod:`Population`) algorithm"""
-        process = self.env.process(self._source_process(application))
+        process = self.env.process(application.source.run(self, application))
         self.process_to_node[process] = application.source.node
         self.alloc_source[process] = {"id": application.source.node, "app": application, "module": application.source, "name": application.source.message.name}
 
-    def _source_process(self, application: Application):
-        """Process who controls the invocation of several Pure Source Modules"""
-        logger.debug("Added_Process - Module Pure Source")
-        while True:
-            yield self.env.timeout(next(application.source.distribution))
-            logger.debug(f"App '{application.name}'\tGenerating Message: {application.source.message.name} \t(T:{self.env.now})")
-            new_message = application.source.message.evolve(timestamp=self.env.now)
-            self._send_message(new_message, application, application.source.node)
-
-    def deploy_sink(self, application: Application):
+    def _deploy_sink(self, application: Application):
         """Add a DES process to deploy pure SINK modules (actuators).
 
         This function its used by the placement algorithm internally, there is no DES PROCESS for this type of behaviour
         """
-        process = self.env.process(self._sink_module_process(application))
+        process = self.env.process(application.sink.run(self, application))
         self.process_to_node[process] = application.sink.node
         self._add_consumer_service_pipe(application, application.sink.name)
 
@@ -329,15 +320,6 @@ class Simulation:
             if application.sink.name not in self.app_to_module_to_processes[application]:
                 self.app_to_module_to_processes[application][application.sink.name] = []
         self.app_to_module_to_processes[application][application.sink.name].append(process)
-
-    def _sink_module_process(self, application: Application):
-        """Process associated to a SINK module"""
-        logger.debug(f"Added_Process - Module Pure Sink: {application.sink.name}")
-        while True:
-            message = yield self.consumer_pipes[f"{application.name}:{application.sink.name}"].get()
-            logger.debug("(App:%s#%s)\tModule Pure - Sink Message:\t%s" % (application.name, application.sink.name, message.name))
-            service_time = self._compute_service_time(application, application.sink.name, message, application.sink.node, "SINK")
-            yield self.env.timeout(service_time)  # service time is 0
 
     def deploy_placement(self, placement: Placement) -> Process:
         return self.env.process(placement.run(self))
