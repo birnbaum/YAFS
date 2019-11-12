@@ -9,7 +9,7 @@ import simpy
 from simpy import Process
 from tqdm import tqdm
 
-from yafs.application import Application, Message, Operator
+from yafs.application import Application, Message, Operator, Sink
 from yafs.distribution import Distribution
 from yafs.placement import Placement
 from yafs.selection import Selection
@@ -57,6 +57,8 @@ class Simulation:
         self.consumer_pipes = {}  # Queues for each message <application>:<module_name> -> pipe
         self.network_pump = 0  # Shared resource that controls the exchange of messages in the topology
 
+        # self.message_transmissions = []
+
         """Relationship of pure source with topology entity
 
         id.source.process -> value: dict("id","app","module")
@@ -75,9 +77,9 @@ class Simulation:
 
         .. code-block:: python
 
-            {Application(...):{"Controller":[1,3,4],"Client":[4]}}
+            {Application(...):{"Controller": 1, "Client": 4}}
         """
-        self.app_to_module_to_processes = {}
+        self.app_to_module_to_process = {}
 
         """Relationship between DES process and topology.node.id
 
@@ -95,40 +97,23 @@ class Simulation:
         return Stats(self.event_log)
 
     @property
-    def node_to_modules(self) -> Dict[int, List]:
+    def node_to_modules(self) -> Dict[int, List]:  # Only used in drawing
         """Returns a dictionary mapping from node ids to their deployed services"""
         result = {key: [] for key in self.topology.G.nodes}
         for src_deployed in self.alloc_source.values():
             result[src_deployed["id"]].append(src_deployed["app"].name + "#" + src_deployed["module"].name)
-        for app in self.app_to_module_to_processes:
-            for module_name in self.app_to_module_to_processes[app]:
-                for process in self.app_to_module_to_processes[app][module_name]:
-                    result[self.process_to_node[process]].append(app.name + "#" + module_name)
+        for app in self.app_to_module_to_process:
+            for module_name in self.app_to_module_to_process[app]:
+                process = self.app_to_module_to_process[app][module_name]
+                result[self.process_to_node[process]].append(app.name + "#" + module_name)
         return result
-
-    # TODO This might have a bug
-    def process_from_module_in_node(self, node, application: Application, module_name):
-        deployed = self.app_to_module_to_processes[application][module_name]
-        for des in deployed:
-            if self.process_to_node[des] == node:
-                return des
-        return []
-
-    def assigned_structured_modules_from_process(self):  # TODO Remove as process dependant
-        full_assignation = {}
-        for app in self.app_to_module_to_processes:
-            for module in self.app_to_module_to_processes[app]:
-                deployed = self.app_to_module_to_processes[app][module]
-                for des in deployed:
-                    full_assignation[des] = {"DES": self.process_to_node[des], "module": module}
-        return full_assignation
 
     def _send_message(self, message: Message, app: Application, src_node: int):
         """Sends a message between modules and updates the metrics once the message reaches the destination module"""
-        dst_processes = self.app_to_module_to_processes[app][app.sink.name]
-        dst_nodes = [self.process_to_node[dev] for dev in dst_processes]
+        dst_process = self.app_to_module_to_process[app][app.sink.name]
+        dst_node = self.process_to_node[dst_process]
 
-        paths = app.selection.get_paths(self.topology.G, message, src_node, dst_nodes)
+        paths = app.selection.get_paths(self.topology.G, message, src_node, [dst_node])
         for path in paths:
             logger.debug(f"Application {app.name} sending {message} via path {path}")
             new_message = message.evolve(path=path, application=app)
@@ -189,23 +174,6 @@ class Simulation:
                 self.last_busy_time[link] = last_used
                 self.env.process(self.__wait_message(message, latency_msg_link, shift_time))
 
-                # TODO Temporarily commented out, needs refactoring
-                # except:  # TODO Too broad exception clause
-                #     # This fact is produced when a node or edge the topology is changed or disappeared
-                #     logger.warning("The initial path assigned is unreachabled. Link: (%i,%i). Routing a new one. %i" % (link[0], link[1], self.env.now))
-                #
-                #     paths, DES_dst = self.deployments[message.application].selection.get_path_from_failure(
-                #         self, message, link, self.alloc_DES, self.alloc_module, self.last_busy_time, self.env.now
-                #     )
-                #
-                #     if DES_dst == [] and paths == []:
-                #         # Message communication ending: The message have arrived to the destination node but it is unavailable.
-                #         logger.debug("\t No path given. Message is lost")
-                #     else:
-                #         message.path = copy.copy(paths[0])
-                #         logger.debug("(\t New path given. Message is enrouting again.")
-                #         self.network_ctrl_pipe.put(message)
-
     def __wait_message(self, message, latency, shift_time):
         """Simulates the transfer behavior of a message on a link"""
         self.network_pump += 1
@@ -216,11 +184,10 @@ class Simulation:
     def _compute_service_time(self, application: Application, module, message, node: Any, type_):
         """Computes the service time in processing a message and record this event"""
         # TODO Why do sinks don't have a service time?
-        #if module in self.deployments[application].application.sink_modules:  # module is a SINK
-        #    service_time = 0
-        #else:
-        att_node = self.topology.G.nodes[node]
-        service_time = message.instructions / float(att_node["IPT"])
+        if isinstance(module, Sink):
+            service_time = 0
+        else:
+            service_time = message.instructions / float(self.topology.G.nodes[node]["IPT"])
 
         self.event_log.append_event(type=type_,
                                     app=application.name,
@@ -284,14 +251,15 @@ class Simulation:
         """TODO"""
         process.interrupt()
         del self.process_to_node[process]
-        for app in self.app_to_module_to_processes:
-            for module_name in self.app_to_module_to_processes[app]:
-                if process in self.app_to_module_to_processes[app][module_name]:
-                    self.app_to_module_to_processes[app][module_name].remove(process)
+        for app in self.app_to_module_to_process:
+            for module_name in self.app_to_module_to_process[app]:
+                p = self.app_to_module_to_process[app][module_name]
+                if p == process:
+                    del self.app_to_module_to_process[app][module_name]
 
     def deploy_app(self, app: Application):
         """This process is responsible for linking the *application* to the different algorithms (placement, population, and service)"""
-        self.app_to_module_to_processes[app] = {}
+        self.app_to_module_to_process[app] = {}
         self._deploy_source(app)
         self._deploy_sink(app)
 
@@ -309,50 +277,17 @@ class Simulation:
         process = self.env.process(application.sink.run(self, application))
         self.process_to_node[process] = application.sink.node
         self._add_consumer_service_pipe(application, application.sink.name)
-
-        # Update the relathionships among module-entity
-        if application in self.app_to_module_to_processes:
-            if application.sink.name not in self.app_to_module_to_processes[application]:
-                self.app_to_module_to_processes[application][application.sink.name] = []
-        self.app_to_module_to_processes[application][application.sink.name].append(process)
-
-    def deploy_placement(self, placement: Placement) -> Process:
-        return self.env.process(placement.run(self))
+        self.app_to_module_to_process[application][application.sink.name] = process
 
     def deploy_operator(self, application: Application, operator: Operator, node: Any):
         """Add a DES process for deploy  modules. This function its used by (:mod:`Population`) algorithm."""
-        process = self.env.process(self._consumer_process(node, application, operator))
+        process = self.env.process(operator.run(self, application, node))
         self.process_to_node[process] = node
-
-        # To generate the QUEUE of a SERVICE module
         self._add_consumer_service_pipe(application, operator.name)
+        self.app_to_module_to_process[application][operator.name] = process
 
-        if operator.name not in self.app_to_module_to_processes[application]:  # TODO defaultdict
-            self.app_to_module_to_processes[application][operator.name] = []
-        self.app_to_module_to_processes[application][operator.name].append(process)
-
-    def _consumer_process(self, node: Any, application: Application, operator: Operator):
-        """Process associated to a compute module"""
-        logger.debug(f"Added_Process - Operator: {operator.name}")
-        while True:
-            pipe_id = f"{application.name}:{operator.name}"
-            message = yield self.consumer_pipes[pipe_id].get()
-
-            if message.name == operator.message_in.name:
-                logger.debug(f"{pipe_id}\tRecording message\t{message.name}")
-                service_time = self._compute_service_time(application, operator.name, message, node, "COMP")
-                yield self.env.timeout(service_time)
-
-                if not operator.message_out:
-                    logger.debug(f"{application.name}:{operator.name}\tSink message\t{message.name}")
-                    continue
-
-                if random.random() <= operator.probability:
-                    message_out = operator.message_out.evolve(timestamp=self.env.now)
-                    logger.debug(f"{application.name}:{operator.name}\tTransmit message\t{operator.message_out.name}")
-                    self._send_message(message_out, application, node)
-                else:
-                    logger.debug(f"{application.name}:{operator.name}\tDenied message\t{operator.message_out.name}")
+    def deploy_placement(self, placement: Placement) -> Process:
+        return self.env.process(placement.run(self))
 
     def remove_node(self, node):
         # TODO Remove
@@ -369,11 +304,10 @@ class Simulation:
         """Prints debug information about the assignment of DES process - Topology ID - Source Module or Modules"""
         fullAssignation = {}
 
-        for app in self.app_to_module_to_processes:
-            for module in self.app_to_module_to_processes[app]:
-                deployed = self.app_to_module_to_processes[app][module]
-                for des in deployed:
-                    fullAssignation[des] = {"ID": self.process_to_node[des], "Module": module}  # DES process are unique for each module/element
+        for app in self.app_to_module_to_process:
+            for module in self.app_to_module_to_process[app]:
+                des = self.app_to_module_to_process[app][module]
+                fullAssignation[des] = {"ID": self.process_to_node[des], "Module": module}  # DES process are unique for each module/element
 
         print("-" * 40)
         print("TOPO \t| Src.Mod \t| Modules")

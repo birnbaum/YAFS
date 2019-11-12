@@ -1,3 +1,4 @@
+import random
 from abc import ABC
 from copy import copy
 from typing import List, Optional, Dict, Any
@@ -22,13 +23,15 @@ class Source(Module):
         self.message_out = message_out
         self.distribution = distribution
 
-    def run(self, simulation: "Simulation", application: "Application"):
+    def run(self, simulation: "Simulation", app: "Application"):
         logger.debug("Added_Process - Module Pure Source")
         while True:
             yield simulation.env.timeout(next(self.distribution))
-            logger.debug(f"{application.name}:{self.name}\tGenerating Message: {self.message_out.name} \t(T:{simulation.env.now})")
+            logger.debug(f"{app.name}:{self.name}\tGenerating Message: {self.message_out.name} \t(T:{simulation.env.now})")
             new_message = self.message_out.evolve(timestamp=simulation.env.now)
-            simulation._send_message(new_message, application, self.node)
+            simulation._send_message(new_message, app, self.node)
+
+
 
 
 class Operator(Module):
@@ -46,6 +49,29 @@ class Operator(Module):
         self.probability = probability
         self.message_in = message_in
         self.message_out = message_out
+
+    def run(self, simulation: "Simulation", application: "Application", node: Any):
+        """Process associated to a compute module"""
+        logger.debug(f"Added_Process - Operator: {self.name}")
+        while True:
+            pipe_id = f"{application.name}:{self.name}"
+            message = yield simulation.consumer_pipes[pipe_id].get()
+
+            if message.name == self.message_in.name:
+                logger.debug(f"{pipe_id}\tRecording message\t{message.name}")
+                service_time = simulation._compute_service_time(application, self.name, message, node, "COMP")
+                yield simulation.env.timeout(service_time)
+
+                if not self.message_out:
+                    logger.debug(f"{application.name}:{self.name}\tSink message\t{message.name}")
+                    continue
+
+                if random.random() <= self.probability:
+                    message_out = self.message_out.evolve(timestamp=self.env.now)
+                    logger.debug(f"{application.name}:{self.name}\tTransmit message\t{self.message_out.name}")
+                    simulation._send_message(message_out, application, node)
+                else:
+                    logger.debug(f"{application.name}:{self.name}\tDenied message\t{self.message_out.name}")
 
 
 class Sink(Module):
