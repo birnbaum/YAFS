@@ -19,18 +19,6 @@ import numpy as np
 RANDOM_SEED = 1
 
 
-def create_application(name: str = "SimpleApp") -> Tuple[Application, List[Message]]:
-    sensor = Source("sensor")
-    service_a = Operator("service_a")
-    actuator = Sink("actuator")
-    message_a = Message("M.A", dst=service_a, instructions=20 * 10 ^ 6, size=1000)
-    message_b = Message("M.B", dst=actuator, instructions=30 * 10 ^ 6, size=500)
-    service_a.set_messages(message_a, message_b)  # TODO Weird back-referencing objects
-    application = Application(name=name, source=sensor, operators=[service_a], sink=actuator)
-
-    return application, [message_a]
-
-
 def main(simulated_time):
     random.seed(RANDOM_SEED)
     np.random.seed(RANDOM_SEED)
@@ -72,15 +60,18 @@ def main(simulated_time):
     t = Topology(G)
     utils.draw_topology(t)
 
-    app1, source_messages1 = create_application("App1")
-
-    simulation = Simulation(t)
-    simulation.deploy_app(app1, selection=ShortestPath())
-
     distribution = UniformDistribution(min=1, max=100)
 
-    simulation.deploy_source(app1, node="sensor1", message=source_messages1[0], distribution=distribution)
-    simulation.deploy_sink(app1, node="actuator1", module_name="actuator")
+    simulation = Simulation(t)
+
+    message_a = Message("M.A", instructions=20 * 10 ^ 6, size=1000)
+    message_b = Message("M.B", instructions=30 * 10 ^ 6, size=500)
+    sensor = Source("sensor", node="sensor1", message=message_a, distribution=distribution)
+    service_a = Operator("service_a", message_a, message_b)
+    actuator = Sink("actuator", node="actuator1")
+    app1 = Application(name="App1", source=sensor, operators=[service_a], sink=actuator)
+
+    simulation.deploy_app(app1, selection=ShortestPath())
 
     simulation.deploy_placement(CloudPlacement(apps=[app1]))
 

@@ -1,6 +1,8 @@
 from abc import ABC
 from copy import copy
-from typing import List, Optional, Dict
+from typing import List, Optional, Dict, Any
+
+from yafs.distribution import Distribution
 
 
 class Module(ABC):
@@ -10,7 +12,11 @@ class Module(ABC):
 
 
 class Source(Module):
-    pass
+    def __init__(self, name: str, node: Any, message: "Message", distribution: Distribution, data: Optional[Dict] = None):
+        super().__init__(name, data)
+        self.node = node
+        self.message = message
+        self.distribution = distribution
 
 
 class Operator(Module):
@@ -23,19 +29,17 @@ class Operator(Module):
         p: a list of probabilities to send this message. Broadcasting  # TODO Understand and refactor
     """
 
-    def __init__(self, name: str, data: Optional[Dict] = None, probability: float = 1.0):
+    def __init__(self, name: str, message_in: "Message", message_out: "Message", data: Optional[Dict] = None, probability: float = 1.0):
         super().__init__(name, data)
         self.probability = probability
-        self.message_in = None
-        self.message_out = None
-
-    def set_messages(self, message_in: "Message", message_out: "Message"):
         self.message_in = message_in
         self.message_out = message_out
 
 
 class Sink(Module):
-    pass
+    def __init__(self, name: str, node: Any, data: Optional[Dict] = None):
+        super().__init__(name, data)
+        self.node = node
 
 
 class Message:
@@ -55,9 +59,8 @@ class Message:
         app_name (str): the name of the application
     """
 
-    def __init__(self, name: str, dst: Module, instructions: int = 0, size: int = 0):
+    def __init__(self, name: str, instructions: int = 0, size: int = 0):
         self.name = name
-        self.dst = dst
         self.instructions = instructions
         self.size = size
 
@@ -68,7 +71,7 @@ class Message:
         self.timestamp_rec = 0  # TODO ??
 
     def __str__(self):
-        return f"Message<name=\"{self.name}\", dst=\"{self.dst.name}\">"
+        return f"Message<name=\"{self.name}\">"
 
     def evolve(self, **kwargs) -> "Message":
         message = copy(self)
