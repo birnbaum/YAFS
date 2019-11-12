@@ -27,25 +27,6 @@ class Topology:
         for key in self.G.nodes:
             self.G.nodes[key]["uptime"] = (0, None)
 
-    def find_IDs(self, value):
-        """Search for nodes with the same attributes that value
-
-        Args:
-             value (dict). example value = {"model": "m-"}. Only one key is admitted
-
-        Returns:
-            A list with the ID of each node that have the same attribute that the value.value
-        """
-        keyS = list(value.keys())[0]
-
-        result = []
-        for key in list(self.G.nodes.keys()):
-            val = self.G.nodes[key]
-            if keyS in val:
-                if value[keyS] == val[keyS]:
-                    result.append(key)
-        return result
-
     def add_node(self, nodes, edges=None):  # TODO edges unused
         """Add a list of nodes in the topology
 

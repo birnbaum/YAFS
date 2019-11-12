@@ -48,7 +48,7 @@ class Message:
     Internal args used in the **yafs.core** are:
         timestamp (float): simulation time. Instant of time that was created.
         path (list): a list of entities of the topology that has to travel to reach its target module from its source module.
-        dst_int (int): an identifier of the intermediate entity in which it is in the process of transmission.
+        next_dst (int): an identifier of the intermediate entity in which it is in the process of transmission.
         app_name (str): the name of the application
     """
 
@@ -62,7 +62,7 @@ class Message:
 
         self.timestamp = 0  # TODO Where is this used?
         self.path = []  # TODO Not sure this should be encoded in the message, only the routing can know this?
-        self.dst_int = -1  # TODO Understand this
+        self.next_dst = None  # TODO Understand this
         self.application = None  # TODO Remove this, Message should have no knowledge about application
         self.timestamp_rec = 0  # TODO ??
 

@@ -11,9 +11,9 @@ from yafs.placement import CloudPlacement
 from yafs.population import StaticPopulation
 
 from yafs.selection import ShortestPath
-from yafs.topology import Topology, load_yafs_json
+from yafs.topology import Topology
 
-from yafs.distribution import DeterministicDistribution, UniformDistribution
+from yafs.distribution import UniformDistribution
 import time
 import numpy as np
 
@@ -41,15 +41,37 @@ def main(simulated_time):
         "multigraph": False,
         "graph": {},
         "nodes": [
-            {"id": "cloud", "IPT": 50006, "RAM": 40000, "COST": 3, "WATT": 20.0},
-            {"id": "sensor-device", "IPT": 1006, "RAM": 4000, "COST": 3, "WATT": 40.0},
-            {"id": "actuator-device", "IPT": 1006, "RAM": 4000, "COST": 3, "WATT": 40.0}],
+            {"id": "cloud", "IPT": 10**6, "RAM": 10**6, "WATT": 20.0},
+            {"id": "sensor1", "IPT": 1000, "RAM": 4000, "WATT": 40.0},
+            {"id": "sensor2", "IPT": 1000, "RAM": 4000, "WATT": 40.0},
+            {"id": "sensor3", "IPT": 1000, "RAM": 4000, "WATT": 40.0},
+            {"id": "sensor4", "IPT": 1000, "RAM": 4000, "WATT": 40.0},
+            {"id": "fog1", "IPT": 5000, "RAM": 4000, "WATT": 40.0},
+            {"id": "fog2", "IPT": 5000, "RAM": 4000, "WATT": 40.0},
+            {"id": "actuator1", "IPT": 1000, "RAM": 4000, "WATT": 40.0},
+            {"id": "actuator2", "IPT": 1000, "RAM": 4000, "WATT": 40.0},
+        ],
         "links": [
-            {"BW": 1, "PR": 10, "source": "cloud", "target": "sensor-device"},
-            {"BW": 1, "PR": 1, "source": "cloud", "target": "actuator-device"}
+            {"source": "sensor1", "target": "fog1", "BW": 1, "PR": 10},
+            {"source": "sensor1", "target": "fog2", "BW": 1, "PR": 10},
+            {"source": "sensor2", "target": "fog1", "BW": 1, "PR": 10},
+            {"source": "sensor2", "target": "fog2", "BW": 1, "PR": 10},
+            {"source": "sensor3", "target": "fog1", "BW": 1, "PR": 10},
+            {"source": "sensor3", "target": "fog2", "BW": 1, "PR": 10},
+            {"source": "sensor4", "target": "fog1", "BW": 1, "PR": 10},
+            {"source": "sensor4", "target": "fog2", "BW": 1, "PR": 10},
+            {"source": "fog1", "target": "cloud", "BW": 5, "PR": 10},
+            {"source": "fog1", "target": "actuator1", "BW": 5, "PR": 10},
+            {"source": "fog1", "target": "actuator2", "BW": 5, "PR": 10},
+            {"source": "fog2", "target": "cloud", "BW": 5, "PR": 10},
+            {"source": "fog2", "target": "actuator1", "BW": 5, "PR": 10},
+            {"source": "fog2", "target": "actuator2", "BW": 5, "PR": 10},
+            {"source": "cloud", "target": "actuator1", "BW": 5, "PR": 10},
+            {"source": "cloud", "target": "actuator2", "BW": 5, "PR": 10},
         ]
     })
     t = Topology(G)
+    utils.draw_topology(t)
 
     app1, source_messages1 = create_application("App1")
     app2, source_messages2 = create_application("App2")
@@ -57,13 +79,13 @@ def main(simulated_time):
     distribution = UniformDistribution(min=1, max=100)
     # TODO Sink hardcoded
     population = StaticPopulation("Statical")
-    population.set_sink_control({"id": "actuator-device",  # identifies the device or devices where the sink is linked
+    population.set_sink_control({"id": "actuator1",  # identifies the device or devices where the sink is linked
                                  "number": 1,  # quantity of sinks linked in each device
                                  "module": "actuator"})  # identifies the module from the app who receives the messages
 
     # TODO It appears that the current implementation does not respect applications
     for source_message in source_messages1:
-        population.set_src_control({"id": "sensor-device",
+        population.set_src_control({"id": "sensor1",
                                     "number": 1,
                                     "message": source_message,
                                     "distribution": distribution})

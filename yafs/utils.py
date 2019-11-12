@@ -61,7 +61,7 @@ def get_shortest_random_path(G):
             counter += 1
 
 
-def draw_topology(topology, alloc_entity):
+def draw_topology(topology, alloc_entity=None):
     """
     Draw the modeled topology
 
@@ -70,10 +70,11 @@ def draw_topology(topology, alloc_entity):
     import matplotlib.pyplot as plt
 
     G = copy.copy(topology.G)
-    for node, modules in alloc_entity.items():
-        for module in modules:
-            G.add_node(module, module=True)
-            G.add_edge(node, module, module=True)
+    if alloc_entity is not None:
+        for node, modules in alloc_entity.items():
+            for module in modules:
+                G.add_node(module, module=True)
+                G.add_edge(node, module, module=True)
 
     pos = nx.spring_layout(G)
 

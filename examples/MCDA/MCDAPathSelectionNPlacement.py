@@ -462,7 +462,7 @@ class MCDARoutingAndDeploying(Selection):
     def get_path_from_failure(self, sim, message, link, alloc_DES, alloc_module, ctime):
         # print "Example of enrouting"
         # print message.path # [86, 242, 160, 164, 130, 301, 281, 216]
-        # print message.dst_int  # 301
+        # print message.next_dst  # 301
         # print link #(130, 301) link is broken! 301 is unreacheble
 
         idx = message.path.index(link[0])
@@ -476,7 +476,7 @@ class MCDARoutingAndDeploying(Selection):
 
             node_dst = message.path[len(message.path) - 1]
             # print "DST: ",node_dst #261
-            # print "INT: ",message.dst_int #301
+            # print "INT: ",message.next_dst #301
 
             path, des = self.get_paths(sim, message.app_name, message, node_src, alloc_DES, alloc_module)
             if len(path[0]) > 0:
@@ -488,7 +488,7 @@ class MCDARoutingAndDeploying(Selection):
                 newINT = node_src  # path[0][2]
                 # print newINT # 380
 
-                message.dst_int = newINT
+                message.next_dst = newINT
                 return [concPath], des
             else:
                 return [], []

@@ -150,21 +150,21 @@ class Simulation:
             message = yield self.network_ctrl_pipe.get()
 
             # If same SRC and PATH or the message has achieved the penultimate node to reach the dst
-            if not message.path or message.path[-1] == message.dst_int or len(message.path) == 1:
+            if not message.path or message.path[-1] == message.next_dst or len(message.path) == 1:
                 # Timestamp reception message in the module
                 message.timestamp_rec = self.env.now
                 # The message is sent to the module.pipe
                 self.consumer_pipes[f"{message.application.name}:{message.dst.name}"].put(message)
             else:
                 # The message is sent at first time or it sent more times.
-                if message.dst_int < 0:
+                if message.next_dst is None:
                     src_int = message.path[0]
-                    message.dst_int = message.path[1]
+                    message.next_dst = message.path[1]
                 else:
-                    src_int = message.dst_int
-                    message.dst_int = message.path[message.path.index(message.dst_int) + 1]
-                # arista set by (src_int,message.dst_int)
-                link = (src_int, message.dst_int)
+                    src_int = message.next_dst
+                    message.next_dst = message.path[message.path.index(message.next_dst) + 1]
+                # arista set by (src_int,message.next_dst)
+                link = (src_int, message.next_dst)
 
                 # Links in the topology are bidirectional: (a,b) == (b,a)
                 last_used = self.last_busy_time.get(link, 0)

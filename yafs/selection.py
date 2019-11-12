@@ -94,7 +94,7 @@ class DeviceSpeedAwareRouting(Selection):
             path, des = self.get_paths(sim, message.app_name, message, node_src, alloc_DES, alloc_module)
             if len(path[0]) > 0:
                 conc_path = message.path[0 : message.path.index(path[0][0])] + path[0]
-                message.dst_int = node_src  # TODO Not sure whether Selections should change messages...
+                message.next_dst = node_src  # TODO Not sure whether Selections should change messages...
                 return [conc_path], des
             else:
                 return [], []
