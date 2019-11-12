@@ -3,13 +3,14 @@
 import logging
 import random
 from collections import Callable
-from typing import Optional, List, Dict, Any
+from typing import Optional, List, Dict, Any, Union
 
 import simpy
+from networkx.utils import pairwise
 from simpy import Process
 from tqdm import tqdm
 
-from yafs.application import Application, Message, Operator, Sink
+from yafs.application import Application, Message, Operator, Sink, Module
 from yafs.distribution import Distribution
 from yafs.placement import Placement
 from yafs.selection import Selection
@@ -40,24 +41,19 @@ class Simulation:
         topology: Associated topology of the environment.
     """
 
-    def __init__(self, topology: Topology):
+    def __init__(self, topology: Topology, selection: Selection):
         # TODO Refactor this class. Way too many fields, no clear separation of concerns.
 
         self.topology = topology
+        self.selection = selection
 
         self.env = simpy.Environment()  # discrete-event simulator (aka DES)
         logger.addFilter(SimulationTimeFilter(self.env))
         logger.addHandler(ch)
 
-        self.env.process(self._network_process())
-
         self.event_log = EventLog()
 
-        self.network_ctrl_pipe = simpy.Store(self.env)
-        self.consumer_pipes = {}  # Queues for each message <application>:<module_name> -> pipe
         self.network_pump = 0  # Shared resource that controls the exchange of messages in the topology
-
-        # self.message_transmissions = []
 
         """Relationship of pure source with topology entity
 
@@ -92,6 +88,23 @@ class Simulation:
         # edge -> last_use_channel (float) = Simulation time
         self.last_busy_time = {}  # must be updated with up/down node
 
+    def transmission_process(self, message: Message, src_node):
+        paths = self.selection.get_paths(self.topology.G, message, src_node, [message.dst.node])
+        for path in paths:
+            latencies = [self.topology.G.edges[x, y]["PR"] for x, y in pairwise(path)]
+            total_latency = sum(latencies)
+            logger.debug(f"Sending {message} via path {path}. Latency: {total_latency}({latencies})")
+            yield self.env.timeout(total_latency)
+            self.event_log.append_transmission(src=path[0],
+                                               dst=path[-1],
+                                               app=message.application.name,
+                                               latency=total_latency,
+                                               message=message.name,
+                                               ctime=self.env.now,
+                                               size=message.size,
+                                               buffer=self.network_pump)
+            self.env.process(message.dst.enter(message, self))
+
     @property
     def stats(self):
         return Stats(self.event_log)
@@ -107,17 +120,6 @@ class Simulation:
                 process = self.app_to_module_to_process[app][module_name]
                 result[self.process_to_node[process]].append(app.name + "#" + module_name)
         return result
-
-    def _send_message(self, message: Message, app: Application, src_node: int):
-        """Sends a message between modules and updates the metrics once the message reaches the destination module"""
-        dst_process = self.app_to_module_to_process[app][app.sink.name]
-        dst_node = self.process_to_node[dst_process]
-
-        paths = app.selection.get_paths(self.topology.G, message, src_node, [dst_node])
-        for path in paths:
-            logger.debug(f"Application {app.name} sending {message} via path {path}")
-            new_message = message.evolve(path=path, application=app)
-            self.network_ctrl_pipe.put(new_message)
 
     def _network_process(self):
         """Internal DES-process who manages the latency of messages sent in the network.
@@ -181,29 +183,6 @@ class Simulation:
         self.network_pump -= 1
         self.network_ctrl_pipe.put(message)
 
-    def _compute_service_time(self, application: Application, module, message, node: Any, type_):
-        """Computes the service time in processing a message and record this event"""
-        # TODO Why do sinks don't have a service time?
-        if isinstance(module, Sink):
-            service_time = 0
-        else:
-            service_time = message.instructions / float(self.topology.G.nodes[node]["IPT"])
-
-        self.event_log.append_event(type=type_,
-                                    app=application.name,
-                                    module=module,
-                                    message=message.name,
-                                    module_src=application.source,
-                                    TOPO_src=message.path[0],
-                                    TOPO_dst=node,
-                                    service=service_time,
-                                    time_in=self.env.now,
-                                    time_out=service_time + self.env.now,
-                                    time_emit=float(message.timestamp),
-                                    time_reception=float(message.timestamp_rec))
-
-        return service_time
-
     def deploy_node_failure_generator(self, nodes: List[int], distribution: Distribution, logfile: Optional[str] = None) -> None:
         self.env.process(self._node_failure_generator(nodes, distribution, logfile))
 
@@ -220,11 +199,6 @@ class Simulation:
             self.remove_node(node)
             for process in processes:
                 self.stop_process(process)
-
-    def _add_consumer_service_pipe(self, application: Application, module_name):
-        pipe_key = f"{application.name}:{module_name}"
-        logger.debug("Creating PIPE: " + pipe_key)
-        self.consumer_pipes[pipe_key] = simpy.Store(self.env)
 
     # TODO What is this used for?
     def deploy_monitor(self, name: str, function: Callable, distribution: Callable, **param):
@@ -274,17 +248,17 @@ class Simulation:
 
         This function its used by the placement algorithm internally, there is no DES PROCESS for this type of behaviour
         """
-        process = self.env.process(application.sink.run(self, application))
-        self.process_to_node[process] = application.sink.node
-        self._add_consumer_service_pipe(application, application.sink.name)
-        self.app_to_module_to_process[application][application.sink.name] = process
+        # process = self.env.process(application.sink.run(self, application))
+        # self.process_to_node[process] = application.sink.node
+        # self._add_consumer_service_pipe(application, application.sink.name)
+        # self.app_to_module_to_process[application][application.sink.name] = process
 
     def deploy_operator(self, application: Application, operator: Operator, node: Any):
         """Add a DES process for deploy  modules. This function its used by (:mod:`Population`) algorithm."""
-        process = self.env.process(operator.run(self, application, node))
-        self.process_to_node[process] = node
-        self._add_consumer_service_pipe(application, operator.name)
-        self.app_to_module_to_process[application][operator.name] = process
+        # process = self.env.process(operator.run(self, application, node))
+        # self.process_to_node[process] = node
+        # self._add_consumer_service_pipe(application, operator.name)
+        # self.app_to_module_to_process[application][operator.name] = process
 
     def deploy_placement(self, placement: Placement) -> Process:
         return self.env.process(placement.run(self))

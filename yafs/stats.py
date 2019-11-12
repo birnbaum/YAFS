@@ -38,7 +38,7 @@ class EventLog:
     def append_event(self, **kwargs) -> None:
         columns = set(kwargs.keys())
         expected_columns = {"type", "app", "module", "message", "TOPO_src", "TOPO_dst", "module_src", "service",
-                            "time_in", "time_out", "time_emit", "time_reception"}
+                            "time_in", "time_out", "time_emit"}
         if columns != expected_columns:
             raise ValueError(f"Cannot append metrics event:\nExpected columns: {expected_columns}\nGot: {columns}")
         self.message_log.append(kwargs)
@@ -58,12 +58,11 @@ class Stats:
         self.messages = pd.DataFrame(event_log.message_log)
         self.transmission = pd.DataFrame(event_log.transmission_log)
 
-        self.messages["time_latency"] = self.messages["time_reception"] - self.messages["time_emit"]
-        self.messages["time_wait"] = self.messages["time_in"] - self.messages["time_reception"]  #
+        self.messages["time_latency"] = self.messages["time_in"] - self.messages["time_emit"]
+        self.messages["time_wait"] = self.messages["time_in"] - self.messages["time_in"]  # ???
         self.messages["time_service"] = self.messages["time_out"] - self.messages["time_in"]
-        self.messages["time_response"] = self.messages["time_out"] - self.messages["time_reception"]
+        self.messages["time_response"] = self.messages["time_out"] - self.messages["time_in"]
         self.messages["time_total_response"] = self.messages["time_response"] + self.messages["time_latency"]
-
 
     def count_messages(self):
         return len(self.messages)

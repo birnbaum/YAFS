@@ -62,14 +62,16 @@ def main(simulated_time):
 
     distribution = UniformDistribution(min=1, max=100)
 
-    simulation = Simulation(t)
-
-    message_a = Message("M.A", instructions=20 * 10 ^ 6, size=1000)
-    message_b = Message("M.B", instructions=30 * 10 ^ 6, size=500)
-    sensor = Source("sensor", node="sensor1", message_out=message_a, distribution=distribution)
-    service_a = Operator("service_a", message_in=message_a, message_out=message_b)
+    # Application Graph
     actuator = Sink("actuator", node="actuator1")
-    app1 = Application(name="App1", source=sensor, operators=[service_a], sink=actuator, selection=ShortestPath())
+    message_b = Message("M.B", dst=actuator, instructions=30 * 10 ^ 6, size=500)
+    service_a = Operator("service_a", message_out=message_b)
+    message_a = Message("M.A", dst=service_a, instructions=20 * 10 ^ 6, size=1000)
+    sensor = Source("sensor", node="sensor1", message_out=message_a, distribution=distribution)
+
+    simulation = Simulation(t, selection=ShortestPath())
+
+    app1 = Application(name="App1", source=sensor, operators=[service_a], sink=actuator)
 
     simulation.deploy_app(app1)
 
