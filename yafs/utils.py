@@ -73,8 +73,8 @@ def draw_topology(G, alloc_entity=None):
     if alloc_entity is not None:
         for node, modules in alloc_entity.items():
             for module in modules:
-                G.add_node(module, module=True)
-                G.add_edge(node, module, module=True)
+                G.add_node(module.name, module=True)
+                G.add_edge(node, module.name, module=True)
 
     pos = nx.spring_layout(G)
 

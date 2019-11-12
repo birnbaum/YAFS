@@ -108,8 +108,9 @@ class Operator(Module):
                                           time_start=time_process_start,
                                           time_out=simulation.env.now)
 
+
 class Sink(Module):
-    # TODO Missing message in??
+
     def __init__(self, name: str, node: Any, data: Optional[Dict] = None):
         super().__init__(name, data)
         self.node = node

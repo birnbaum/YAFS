@@ -9,7 +9,7 @@ from networkx.utils import pairwise, nx
 from simpy import Process, Resource
 from tqdm import tqdm
 
-from yafs.application import Application, Message, Operator
+from yafs.application import Application, Message, Operator, Module
 from yafs.distribution import Distribution
 from yafs.placement import Placement
 from yafs.selection import Selection
@@ -48,6 +48,8 @@ class Simulation:
         self.G = G
         self.selection = selection
         self.event_log = EventLog()
+
+        self.apps = []
 
         self.network_pump = 0  # Shared resource that controls the exchange of messages in the topology
 
@@ -106,15 +108,14 @@ class Simulation:
         return Stats(self.event_log)
 
     @property
-    def node_to_modules(self) -> Dict[int, List]:  # Only used in drawing
+    def node_to_modules(self) -> Dict[Any, List[Module]]:  # Only used in drawing
         """Returns a dictionary mapping from node ids to their deployed services"""
-        result = {key: [] for key in self.G.nodes}
-        for src_deployed in self.alloc_source.values():
-            result[src_deployed["id"]].append(src_deployed["app"].name + "#" + src_deployed["module"].name)
-        for app in self.app_to_module_to_process:
-            for module_name in self.app_to_module_to_process[app]:
-                process = self.app_to_module_to_process[app][module_name]
-                result[self.process_to_node[process]].append(app.name + "#" + module_name)
+        result = {node: [] for node in self.G}
+        for app in self.apps:
+            result[app.source.node].append(app.source)
+            result[app.sink.node].append(app.sink)
+            for operator in app.operators:
+                result[operator.node].append(operator)
         return result
 
     def _network_process(self):
@@ -229,6 +230,7 @@ class Simulation:
 
     def deploy_app(self, app: Application):
         """This process is responsible for linking the *application* to the different algorithms (placement, population, and service)"""
+        self.apps.append(app)
         self.app_to_module_to_process[app] = {}
         self._deploy_source(app)
         self._deploy_sink(app)
