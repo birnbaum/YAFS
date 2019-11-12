@@ -23,8 +23,8 @@ def create_application(name: str = "SimpleApp") -> Tuple[Application, List[Messa
     sensor = Source("sensor")
     service_a = Operator("service_a")
     actuator = Sink("actuator")
-    message_a = Message("M.A", src=sensor, dst=service_a, instructions=20 * 10 ^ 6, size=1000)
-    message_b = Message("M.B", src=service_a, dst=actuator, instructions=30 * 10 ^ 6, size=500)
+    message_a = Message("M.A", dst=service_a, instructions=20 * 10 ^ 6, size=1000)
+    message_b = Message("M.B", dst=actuator, instructions=30 * 10 ^ 6, size=500)
     service_a.set_messages(message_a, message_b)  # TODO Weird back-referencing objects
     application = Application(name=name, source=sensor, operators=[service_a], sink=actuator)
 
@@ -73,17 +73,14 @@ def main(simulated_time):
     utils.draw_topology(t)
 
     app1, source_messages1 = create_application("App1")
-    # app2, source_messages2 = create_application("App2")
 
     simulation = Simulation(t)
-
-    selection = ShortestPath()
-    simulation.deploy_app(app1, selection=selection)
+    simulation.deploy_app(app1, selection=ShortestPath())
 
     distribution = UniformDistribution(min=1, max=100)
 
-    simulation.deploy_source(app1, node_id="sensor1", message=source_messages1[0], distribution=distribution)
-    simulation.deploy_sink(app1, node_id="actuator1", module_name="actuator")
+    simulation.deploy_source(app1, node="sensor1", message=source_messages1[0], distribution=distribution)
+    simulation.deploy_sink(app1, node="actuator1", module_name="actuator")
 
     simulation.deploy_placement(CloudPlacement(apps=[app1]))
 

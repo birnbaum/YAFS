@@ -57,7 +57,7 @@ class DynamicPopulation(Population):
             seed = item["id_resource"] * 1000 + item["lambda"] + self.it
 
             dDistribution = ExponentialDistribution(name="Exp", lambd=lambd, seed=seed)
-            sim.deploy_source(app_name, node_id=idtopo, message=msg, distribution=dDistribution)
+            sim.deploy_source(app_name, node=idtopo, message=msg, distribution=dDistribution)
 
 
 def create_applications_from_json(data):

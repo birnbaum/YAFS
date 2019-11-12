@@ -55,11 +55,10 @@ class Message:
         app_name (str): the name of the application
     """
 
-    def __init__(self, name: str, src: Module, dst: Module, instructions: int = 0, size: int = 0):
+    def __init__(self, name: str, dst: Module, instructions: int = 0, size: int = 0):
         self.name = name
-        self.src = src
         self.dst = dst
-        self.instructions = instructions  # TODO ??
+        self.instructions = instructions
         self.size = size
 
         self.timestamp = 0  # TODO Where is this used?
@@ -69,7 +68,7 @@ class Message:
         self.timestamp_rec = 0  # TODO ??
 
     def __str__(self):
-        return f"Message<name=\"{self.name}\", src=\"{self.src.name}\", dst=\"{self.dst.name}\">"
+        return f"Message<name=\"{self.name}\", dst=\"{self.dst.name}\">"
 
     def evolve(self, **kwargs) -> "Message":
         message = copy(self)

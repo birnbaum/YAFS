@@ -216,22 +216,22 @@ class Simulation:
         self.network_pump -= 1
         self.network_ctrl_pipe.put(message)
 
-    def _compute_service_time(self, application: Application, module, message, node_id, type_):
+    def _compute_service_time(self, application: Application, module, message, node: Any, type_):
         """Computes the service time in processing a message and record this event"""
         # TODO Why do sinks don't have a service time?
         #if module in self.deployments[application].application.sink_modules:  # module is a SINK
         #    service_time = 0
         #else:
-        att_node = self.topology.G.nodes[node_id]
+        att_node = self.topology.G.nodes[node]
         service_time = message.instructions / float(att_node["IPT"])
 
         self.event_log.append_event(type=type_,
                                     app=application.name,
                                     module=module,
                                     message=message.name,
-                                    module_src=message.src,
+                                    module_src=application.source,
                                     TOPO_src=message.path[0],
-                                    TOPO_dst=node_id,
+                                    TOPO_dst=node,
                                     service=service_time,
                                     time_in=self.env.now,
                                     time_out=service_time + self.env.now,
@@ -283,28 +283,28 @@ class Simulation:
             yield self.env.timeout(next(distribution))
             function(**param)
 
-    def deploy_source(self, application: Application, node_id: int, message: Message, distribution: Distribution):
+    def deploy_source(self, application: Application, node: Any, message: Message, distribution: Distribution):
         """Add a DES process for deploy pure source modules (sensors). This function its used by (:mod:`Population`) algorithm"""
-        process = self.env.process(self._source_process(node_id, application, message, distribution))
-        self.process_to_node[process] = node_id
-        self.alloc_source[process] = {"id": node_id, "app": application, "module": message.src, "name": message.name}
+        process = self.env.process(self._source_process(node, application, message, distribution))
+        self.process_to_node[process] = node
+        self.alloc_source[process] = {"id": node, "app": application, "module": application.source, "name": message.name}
 
-    def _source_process(self, node_id: int, application: Application, message: Message, distribution: Distribution):
+    def _source_process(self, node: Any, application: Application, message: Message, distribution: Distribution):
         """Process who controls the invocation of several Pure Source Modules"""
         logger.debug("Added_Process - Module Pure Source")
         while True:
             yield self.env.timeout(next(distribution))
             logger.debug(f"App '{application.name}'\tGenerating Message: {message.name} \t(T:{self.env.now})")
             new_message = message.evolve(timestamp=self.env.now)
-            self._send_message(new_message, application, node_id)
+            self._send_message(new_message, application, node)
 
-    def deploy_sink(self, application: Application, node_id: int, module_name: str):
+    def deploy_sink(self, application: Application, node: Any, module_name: str):
         """Add a DES process to deploy pure SINK modules (actuators).
 
         This function its used by the placement algorithm internally, there is no DES PROCESS for this type of behaviour
         """
-        process = self.env.process(self._sink_module_process(node_id, application, module_name))
-        self.process_to_node[process] = node_id
+        process = self.env.process(self._sink_module_process(node, application, module_name))
+        self.process_to_node[process] = node
 
         self._add_consumer_service_pipe(application, module_name)
 
@@ -314,13 +314,13 @@ class Simulation:
                 self.app_to_module_to_processes[application][module_name] = []
         self.app_to_module_to_processes[application][module_name].append(process)
 
-    def _sink_module_process(self, node_id, application: Application, module_name):
+    def _sink_module_process(self, node: Any, application: Application, module_name: str):
         """Process associated to a SINK module"""
         logger.debug(f"Added_Process - Module Pure Sink: {module_name}")
         while True:
             message = yield self.consumer_pipes[f"{application.name}:{module_name}"].get()
             logger.debug("(App:%s#%s)\tModule Pure - Sink Message:\t%s" % (application.name, module_name, message.name))
-            service_time = self._compute_service_time(application, module_name, message, node_id, "SINK")
+            service_time = self._compute_service_time(application, module_name, message, node, "SINK")
             yield self.env.timeout(service_time)  # service time is 0
 
     def stop_process(self, process: Process):
@@ -353,7 +353,7 @@ class Simulation:
             self.app_to_module_to_processes[application][operator.name] = []
         self.app_to_module_to_processes[application][operator.name].append(process)
 
-    def _consumer_process(self, node_id: int, application: Application, operator: Operator):
+    def _consumer_process(self, node: Any, application: Application, operator: Operator):
         """Process associated to a compute module"""
         logger.debug(f"Added_Process - Operator: {operator.name}")
         while True:
@@ -362,7 +362,7 @@ class Simulation:
 
             if message.name == operator.message_in.name:
                 logger.debug(f"{pipe_id}\tRecording message\t{message.name}")
-                service_time = self._compute_service_time(application, operator.name, message, node_id, "COMP")
+                service_time = self._compute_service_time(application, operator.name, message, node, "COMP")
                 yield self.env.timeout(service_time)
 
                 if not operator.message_out:
@@ -372,7 +372,7 @@ class Simulation:
                 if random.random() <= operator.probability:
                     message_out = operator.message_out.evolve(timestamp=self.env.now)
                     logger.debug(f"{application.name}:{operator.name}\tTransmit message\t{operator.message_out.name}")
-                    self._send_message(message_out, application, node_id)
+                    self._send_message(message_out, application, node)
                 else:
                     logger.debug(f"{application.name}:{operator.name}\tDenied message\t{operator.message_out.name}")
 
