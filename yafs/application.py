@@ -32,7 +32,7 @@ class Message:
         self.instructions = instructions
         self.size = size
 
-        self.timestamp = 0  # TODO Where is this used?
+        self.created = 0
         self.application = None  # TODO Remove this, Message should have no knowledge about application
 
     def __str__(self):
@@ -78,15 +78,23 @@ class Operator(Module):
         p: a list of probabilities to send this message. Broadcasting  # TODO Understand and refactor
     """
 
-    def __init__(self, name: str, message_out: "Message", data: Optional[Dict] = None, probability: float = 1.0):
+    def __init__(self, name: str, message_out: "Message", data: Optional[Dict] = None):
         super().__init__(name, data)
-        self.probability = probability
         self.message_out = message_out
         self.node = None  # Not yet deployed
 
     def enter(self, message: "Message", simulation):
         logger.debug(f"{message} arrived in operator {self.name}.")
         service_time = message.instructions / float(simulation.G.nodes[self.node]["IPT"])
+
+        time_in = simulation.env.now
+        with simulation.G.nodes[self.node]["resource"].request() as req:
+            yield req
+            time_process_start = simulation.env.now
+            yield simulation.env.timeout(service_time)
+            message_out = self.message_out.evolve(timestamp=simulation.env.now, application=message.application)
+            logger.debug(f"{self.name}\tTransmit\t{self.message_out.name}")
+            simulation.env.process(simulation.transmission_process(message_out, self.node))
 
         simulation.event_log.append_event(type="COMP",
                                           app=message.application.name,
@@ -95,19 +103,10 @@ class Operator(Module):
                                           module_src=message.application.source,
                                           TOPO_src=message.application.source.node,
                                           TOPO_dst=self.message_out.dst.node,
-                                          service=service_time,
-                                          time_in=simulation.env.now,
-                                          time_out=service_time + simulation.env.now,
-                                          time_emit=float(message.timestamp))
-
-        yield simulation.env.timeout(service_time)
-        if random.random() <= self.probability:
-            message_out = self.message_out.evolve(timestamp=simulation.env.now, application=message.application)
-            logger.debug(f"{self.name}\tTransmit\t{self.message_out.name}")
-            simulation.env.process(simulation.transmission_process(message_out, self.node))
-        else:
-            logger.debug(f"{self.name}\tDenied\t{self.message_out.name}")
-
+                                          time_created=message.created,
+                                          time_in=time_in,
+                                          time_start=time_process_start,
+                                          time_out=simulation.env.now)
 
 class Sink(Module):
     # TODO Missing message in??
@@ -117,7 +116,6 @@ class Sink(Module):
 
     def enter(self, message: "Message", simulation):
         logger.debug(f"{message} arrived in sink {self.name}")
-
         simulation.event_log.append_event(type="SINK",
                                           app=message.application.name,
                                           module=self,
@@ -125,10 +123,10 @@ class Sink(Module):
                                           module_src=message.application.source,
                                           TOPO_src=message.application.source.node,
                                           TOPO_dst=None,
-                                          service=0,
+                                          time_created=message.created,
                                           time_in=simulation.env.now,
-                                          time_out=0 + simulation.env.now,
-                                          time_emit=float(message.timestamp))
+                                          time_start=None,
+                                          time_out=None)
         return
         yield
 

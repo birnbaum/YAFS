@@ -12,12 +12,6 @@ class EventLog:
     MESSAGE_LOG_FILE = "message_log.csv"
     TRANSMISSION_LOG_FILE = "transmission_log.csv"
 
-    TIME_LATENCY = "time_latency"
-    TIME_WAIT = "time_wait"
-    TIME_RESPONSE = "time_response"
-    TIME_SERVICE = "time_service"
-    TIME_TOTAL_RESPONSE = "time_total_response"
-
     WATT_SERVICE = "byService"
     WATT_UPTIME = "byUptime"
 
@@ -37,8 +31,8 @@ class EventLog:
 
     def append_event(self, **kwargs) -> None:
         columns = set(kwargs.keys())
-        expected_columns = {"type", "app", "module", "message", "TOPO_src", "TOPO_dst", "module_src", "service",
-                            "time_in", "time_out", "time_emit"}
+        expected_columns = {"type", "app", "module", "message", "TOPO_src", "TOPO_dst", "module_src", "time_created", "time_in",
+                            "time_start", "time_out"}
         if columns != expected_columns:
             raise ValueError(f"Cannot append metrics event:\nExpected columns: {expected_columns}\nGot: {columns}")
         self.message_log.append(kwargs)
@@ -59,11 +53,10 @@ class Stats:
         self.messages = pd.DataFrame(event_log.message_log)
         self.transmission = pd.DataFrame(event_log.transmission_log)
 
-        self.messages["time_latency"] = self.messages["time_in"] - self.messages["time_emit"]
-        self.messages["time_wait"] = self.messages["time_in"] - self.messages["time_in"]  # ???
-        self.messages["time_service"] = self.messages["time_out"] - self.messages["time_in"]
-        self.messages["time_response"] = self.messages["time_out"] - self.messages["time_in"]
-        self.messages["time_total_response"] = self.messages["time_response"] + self.messages["time_latency"]
+        self.messages["time_transport"] = self.messages["time_in"] - self.messages["time_created"]
+        self.messages["time_queue"] = self.messages["time_start"] - self.messages["time_in"]
+        self.messages["time_process"] = self.messages["time_out"] - self.messages["time_start"]
+        self.messages["time_total"] = self.messages["time_out"] + self.messages["time_created"]
 
     def count_messages(self):
         return len(self.messages)

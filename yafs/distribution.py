@@ -34,7 +34,7 @@ class UniformDistribution(Distribution):
         self.max = max
 
     def __next__(self):
-        return random.randint(self.min, self.max)
+        return random.uniform(self.min, self.max)
 
 
 class DeterministicDistributionStartPoint(Distribution):

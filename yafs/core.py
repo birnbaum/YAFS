@@ -6,7 +6,7 @@ from typing import Optional, List, Dict, Any
 
 import simpy
 from networkx.utils import pairwise, nx
-from simpy import Process
+from simpy import Process, Resource
 from tqdm import tqdm
 
 from yafs.application import Application, Message, Operator
@@ -40,15 +40,13 @@ class Simulation:
     """
 
     def __init__(self, G: nx.Graph, selection: Selection):
-        # TODO Refactor this class. Way too many fields, no clear separation of concerns.
-
-        self.G = G
-        self.selection = selection
         self.env = simpy.Environment()
-
         logger.addFilter(SimulationTimeFilter(self.env))
         logger.addHandler(ch)
-
+        resources = {node: Resource(self.env) for node in G}
+        nx.set_node_attributes(G, resources, "resource")
+        self.G = G
+        self.selection = selection
         self.event_log = EventLog()
 
         self.network_pump = 0  # Shared resource that controls the exchange of messages in the topology
