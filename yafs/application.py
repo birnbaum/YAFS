@@ -17,7 +17,6 @@ class Service:
         self.message_in = message_in
         self.message_out = message_out
         self.probability = probability
-        self.p = p if p else []
         self.module_dst = module_dst if module_dst else []
 
 
@@ -52,13 +51,12 @@ class Message:
         app_name (str): the name of the application
     """
 
-    def __init__(self, name: str, src: Module, dst: Module, instructions: int = 0, size: int = 0, broadcasting: bool = False):
+    def __init__(self, name: str, src: Module, dst: Module, instructions: int = 0, size: int = 0):
         self.name = name
         self.src = src
         self.dst = dst
         self.instructions = instructions  # TODO ??
         self.size = size
-        self.broadcasting = broadcasting  # TODO document
 
         self.timestamp = 0  # TODO Where is this used?
         self.path = []  # TODO Not sure this should be encoded in the message, only the routing can know this?

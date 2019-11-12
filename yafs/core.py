@@ -375,16 +375,8 @@ class Simulation:
 
                 if random.random() <= service.probability:
                     message_out = service.message_out.evolve(timestamp=self.env.now)
-                    if not service.module_dst:
-                        # it is not a broadcasting message
-                        logger.debug(f"{application.name}:{module_name}\tTransmit message\t{service.message_out.name}")
-                        self._send_message(message_out, application, node_id)
-                    else:
-                        # it is a broadcasting message
-                        logger.debug(f"{application.name}:{module_name}\tBroadcasting message\t{service.message_out.name}")
-                        for idx, module_dst in enumerate(service.module_dst):
-                            if random.random() <= service.p[idx]:
-                                self._send_message(message_out, application, node_id)
+                    logger.debug(f"{application.name}:{module_name}\tTransmit message\t{service.message_out.name}")
+                    self._send_message(message_out, application, node_id)
                 else:
                     logger.debug(f"{application.name}:{module_name}\tDenied message\t{service.message_out.name}")
 
