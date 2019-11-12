@@ -12,7 +12,6 @@ from tqdm import tqdm
 from yafs.application import Application, Message, Service
 from yafs.distribution import Distribution
 from yafs.placement import Placement
-from yafs.population import Population
 from yafs.selection import Selection
 from yafs.stats import Stats, EventLog
 from yafs.topology import Topology
@@ -55,8 +54,6 @@ class Simulation:
         self.event_log = EventLog()
 
         self.deployments = {}  # TODO Should become a list?
-
-        self.populations = {}
 
         self.network_ctrl_pipe = simpy.Store(self.env)
         self.consumer_pipes = {}  # Queues for each message <application>:<module_name> -> pipe
@@ -344,19 +341,6 @@ class Simulation:
     def deploy_placement(self, placement: Placement) -> Process:
         return self.env.process(placement.run(self))
 
-    def deploy_population(self, population, applications: List[Application]):
-        self.populations[population] = applications
-        if population.activation_dist is not None:
-            self.env.process(self._population_process(population))
-
-    def _population_process(self, population):
-        """Controls the invocation of Population.run"""
-        logger.debug("Added_Process - Population Algorithm")
-        while True:
-            yield self.env.timeout(population.get_next_activation())
-            logger.debug("Run - Population Policy")
-            population.run(self)
-
     def deploy_module(self, application: Application, module_name: str, services: List[Service], node_ids: List[int]):
         """Add a DES process for deploy  modules. This function its used by (:mod:`Population`) algorithm."""
         assert len(services) == len(node_ids)  # TODO Does this hold?
@@ -446,13 +430,6 @@ class Simulation:
             results_path: TODO
             progress_bar: TODO
         """
-        # Creating app.sources and deploy the sources in the topology
-        for population, apps in self.populations.items():
-            for app in apps:
-                population.initial_allocation(self, app)
-
-        # self.print_debug_assignaments()
-
         for i in tqdm(range(1, until), total=until, disable=(not progress_bar)):
             self.env.run(until=i)
 

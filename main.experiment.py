@@ -8,7 +8,6 @@ from yafs import utils
 from yafs.core import Simulation
 from yafs.application import Application, Message, Module
 from yafs.placement import CloudPlacement
-from yafs.population import StaticPopulation
 
 from yafs.selection import ShortestPath
 from yafs.topology import Topology
@@ -74,30 +73,19 @@ def main(simulated_time):
     utils.draw_topology(t)
 
     app1, source_messages1 = create_application("App1")
-    app2, source_messages2 = create_application("App2")
-
-    distribution = UniformDistribution(min=1, max=100)
-    # TODO Sink hardcoded
-    population = StaticPopulation("Statical")
-    population.set_sink_control({"id": "actuator1",  # identifies the device or devices where the sink is linked
-                                 "number": 1,  # quantity of sinks linked in each device
-                                 "module": "actuator"})  # identifies the module from the app who receives the messages
-
-    # TODO It appears that the current implementation does not respect applications
-    for source_message in source_messages1:
-        population.set_src_control({"id": "sensor1",
-                                    "number": 1,
-                                    "message": source_message,
-                                    "distribution": distribution})
-
-    selection = ShortestPath()
+    # app2, source_messages2 = create_application("App2")
 
     simulation = Simulation(t)
+
+    selection = ShortestPath()
     simulation.deploy_app(app1, selection=selection)
-    # simulation.deploy_app(app2, selection=selection)
+
+    distribution = UniformDistribution(min=1, max=100)
+
+    simulation.deploy_source(app1, node_id="sensor1", message=source_messages1[0], distribution=distribution)
+    simulation.deploy_sink(app1, node_id="actuator1", module_name="actuator")
 
     simulation.deploy_placement(CloudPlacement(apps=[app1]))
-    simulation.deploy_population(population, applications=[app1])
 
     simulation.run(until=simulated_time, results_path="results", progress_bar=False)
     simulation.stats.print_report(simulated_time)
