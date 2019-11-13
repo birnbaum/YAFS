@@ -3,12 +3,11 @@
 First dirty experiment
 
 ## CloudPlacement
-![CloudPlacement](CloudPlacement.png)
+<img src="CloudPlacement.png" width="600">
 
-Simulated 10000 time units in 0.8584060668945312 seconds.
-
------------- RESULTS ------------
+```
 Simulation Time:      10000
+Real Time:            0.858 seconds
 Messages transmitted: 2854
 Bytes transmitted:    1499300
 
@@ -17,15 +16,15 @@ Average message time:  20.361
 - network latency:     13.219
 - operator queue:      0.007
 - operator processing: 0.500
+```
 
 
 ## EdgePlacement
-![EdgePlacement](EdgePlacement.png)
+<img src="EdgePlacement.png" width="600">
 
-Simulated 10000 time units in 0.7624161243438721 seconds.
-
------------- RESULTS ------------
+```
 Simulation Time:      10000
+Real Time:            0.762 seconds
 Messages transmitted: 2858
 Bytes transmitted:    1501400
 
@@ -34,3 +33,4 @@ Average message time:  10.565
 - network latency:     7.215
 - operator queue:      0.172
 - operator processing: 3.000
+```
