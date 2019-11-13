@@ -35,7 +35,7 @@ from matplotlib.offsetbox import OffsetImage, AnnotationBbox
 from tqdm import tqdm
 
 from trackanimation.tracking import DFTrack
-from yafs.core import Simulation
+from pyfogsim.core import Simulation
 
 
 class AnimationTrack:

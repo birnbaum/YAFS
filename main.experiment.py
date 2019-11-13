@@ -3,15 +3,14 @@ import random
 
 import networkx as nx
 
-from yafs import utils
-from yafs.core import Simulation
-from yafs.application import Application, Message, Sink, Source, Operator
-from yafs.placement import CloudPlacement
+from pyfogsim import utils
+from pyfogsim.core import Simulation
+from pyfogsim.application import Application, Message, Sink, Source, Operator
+from pyfogsim.placement import CloudPlacement, EdgePlacement
 
-from yafs.selection import ShortestPath
+from pyfogsim.selection import ShortestPath
 
-from yafs.distribution import UniformDistribution, Distribution
-import time
+from pyfogsim.distribution import UniformDistribution, Distribution
 import numpy as np
 
 RANDOM_SEED = 1
@@ -46,22 +45,18 @@ def main(simulated_time):
             {"id": "actuator2", "IPT": 10, "RAM": 4000, "WATT": 40.0},
         ],
         "links": [
-            {"source": "sensor1", "target": "fog1", "BW": 1, "PR": 10},
-            {"source": "sensor1", "target": "fog2", "BW": 1, "PR": 10},
-            {"source": "sensor2", "target": "fog1", "BW": 1, "PR": 10},
-            {"source": "sensor2", "target": "fog2", "BW": 1, "PR": 10},
-            {"source": "sensor3", "target": "fog1", "BW": 1, "PR": 10},
-            {"source": "sensor3", "target": "fog2", "BW": 1, "PR": 10},
-            {"source": "sensor4", "target": "fog1", "BW": 1, "PR": 10},
-            {"source": "sensor4", "target": "fog2", "BW": 1, "PR": 10},
-            {"source": "fog1", "target": "cloud", "BW": 5, "PR": 10},
-            {"source": "fog1", "target": "actuator1", "BW": 5, "PR": 10},
-            {"source": "fog1", "target": "actuator2", "BW": 5, "PR": 10},
-            {"source": "fog2", "target": "cloud", "BW": 5, "PR": 10},
-            {"source": "fog2", "target": "actuator1", "BW": 5, "PR": 10},
-            {"source": "fog2", "target": "actuator2", "BW": 5, "PR": 10},
-            {"source": "cloud", "target": "actuator1", "BW": 5, "PR": 10},
-            {"source": "cloud", "target": "actuator2", "BW": 5, "PR": 10},
+            {"source": "sensor1", "target": "fog1", "BW": 100, "PR": 10},
+            {"source": "sensor2", "target": "fog1", "BW": 100, "PR": 10},
+            {"source": "sensor3", "target": "fog2", "BW": 100, "PR": 10},
+            {"source": "sensor4", "target": "fog2", "BW": 100, "PR": 10},
+            {"source": "fog1", "target": "cloud", "BW": 500, "PR": 10},
+            {"source": "fog1", "target": "actuator1", "BW": 500, "PR": 10},
+            {"source": "fog1", "target": "actuator2", "BW": 500, "PR": 10},
+            {"source": "fog2", "target": "cloud", "BW": 500, "PR": 10},
+            {"source": "fog2", "target": "actuator1", "BW": 500, "PR": 10},
+            {"source": "fog2", "target": "actuator2", "BW": 500, "PR": 10},
+            {"source": "cloud", "target": "actuator1", "BW": 500, "PR": 10},
+            {"source": "cloud", "target": "actuator2", "BW": 500, "PR": 10},
         ]
     })
 
@@ -76,6 +71,7 @@ def main(simulated_time):
         apps.append(app)
 
     simulation.deploy_placement(CloudPlacement(apps=apps))
+    # simulation.deploy_placement(EdgePlacement(apps=apps))
 
     simulation.run(until=simulated_time, results_path="results", progress_bar=False)
     simulation.stats.print_report(simulated_time)
