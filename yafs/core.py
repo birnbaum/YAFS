@@ -1,6 +1,7 @@
 """This module unifies the event-discrete simulation environment with the rest of modules: placement, topology, selection, population, utils and metrics."""
 
 import logging
+import time
 from collections import Callable
 from typing import Optional, List, Dict, Any
 
@@ -18,6 +19,7 @@ from yafs.stats import Stats, EventLog
 class SimulationTimeFilter(logging.Filter):
 
     def __init__(self, env):
+        super().__init__()
         self.env = env
 
     def filter(self, record):
@@ -60,10 +62,12 @@ class Simulation:
 
     def run(self, until: int, results_path: Optional[str] = None, progress_bar: bool = True):
         """Runs the simulation"""
+        start_time = time.time()
         for i in tqdm(range(1, until), total=until, disable=(not progress_bar)):
             self.env.run(until=i)
         if results_path:
             self.event_log.write(results_path)
+        logger.info(f"Simulated {until} time units in {time.time() - start_time} seconds.")
 
     def deploy_app(self, app: Application):
         """This process is responsible for linking the *application* to the different algorithms (placement, population, and service)"""
@@ -89,29 +93,8 @@ class Simulation:
                 latencies.append(latency)
         message.network_queue = sum(queue_times)
         message.network_latency = sum(latencies)
-        logger.debug(f"Sent {message} via path {path}. Queued: {message.network_queue}. Latency: {message.network_queue}.")
+        logger.debug(f"Sent    {message}. Total Latency: {message.network_latency + message.network_queue} ({message.network_queue} due to congestion).")
         self.env.process(message.dst.enter(message, self))
-
-    # TODO What is this used for?
-    def deploy_monitor(self, name: str, function: Callable, distribution: Callable, **param):
-        """Add a DES process for user purpose
-
-        Args:
-            name: name of monitor
-            function: function that will be invoked within the simulator with the user's code
-            distribution: a temporary distribution function
-
-        Kwargs:
-            param (dict): the parameters of the *distribution* function
-        """
-        self.env.process(self._monitor_process(name, function, distribution, **param))
-
-    def _monitor_process(self, name, function, distribution, **param):
-        """Process for user purpose"""
-        logger.debug(f"Added_Process - Internal Monitor: {name}")
-        while True:
-            yield self.env.timeout(next(distribution))
-            function(**param)
 
     def _prepare_network(self, network: nx.Graph) -> nx.Graph:
         nx.set_node_attributes(network, {node: Resource(self.env) for node in network}, "resource")

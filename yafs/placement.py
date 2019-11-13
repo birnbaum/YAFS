@@ -54,6 +54,6 @@ class CloudPlacement(Placement):
 
     def _run(self, simulation: "Simulation"):
         for app in self.apps:
-            cloud_node_id, _ = max(simulation.G.nodes(data=True), key=lambda node: node[1]["IPT"])
+            cloud_node_id, _ = max(simulation.network.nodes(data=True), key=lambda node: node[1]["IPT"])
             for operator in app.operators:
                 operator.node = cloud_node_id

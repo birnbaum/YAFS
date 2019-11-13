@@ -85,6 +85,4 @@ def main(simulated_time):
 if __name__ == "__main__":
     logging.basicConfig(format="%(name)s - %(levelname)s - %(message)s", level=logging.DEBUG)
     logging.getLogger("matplotlib").setLevel(logging.WARNING)
-    start_time = time.time()
     main(simulated_time=1000)
-    print(("\n--- %s seconds ---" % (time.time() - start_time)))

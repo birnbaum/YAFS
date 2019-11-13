@@ -1,49 +1,44 @@
 import csv
+import logging
 import os
 from typing import List, Dict
 
 import numpy as np
 import pandas as pd
 
+from yafs.application import Application, Module, Message
 
-# TODO Missing documentation
+logger = logging.getLogger(__name__)
+
+
 class EventLog:
 
     MESSAGE_LOG_FILE = "message_log.csv"
-    TRANSMISSION_LOG_FILE = "transmission_log.csv"
-
-    WATT_SERVICE = "byService"
-    WATT_UPTIME = "byUptime"
 
     def __init__(self):
-        # TODO The two log files seem to always contain the same number of elements with the same ids. If this is True, merge them into one list
-        # TODO Events should be dataclasses?
         self.message_log = []
-        self.transmission_log = []
 
     def load(self, path: str = "results") -> None:
         self.message_log = _load_csv(path, self.MESSAGE_LOG_FILE)
-        self.transmission_log = _load_csv(path, self.TRANSMISSION_LOG_FILE)
 
     def write(self, path: str = "results") -> None:
         _write_csv(path, self.MESSAGE_LOG_FILE, self.message_log)
-        _write_csv(path, self.TRANSMISSION_LOG_FILE, self.transmission_log)
 
-    def append_event(self, **kwargs) -> None:
-        columns = set(kwargs.keys())
-        expected_columns = {"type", "app", "module", "message", "TOPO_src", "TOPO_dst", "module_src", "time_created", "time_in",
-                            "time_start", "time_out"}
-        if columns != expected_columns:
-            raise ValueError(f"Cannot append metrics event:\nExpected columns: {expected_columns}\nGot: {columns}")
-        self.message_log.append(kwargs)
-
-    def append_transmission(self, **kwargs) -> None:
-        columns = set(kwargs.keys())
-
-        expected_columns = {"src", "dst", "app", "latency", "message", "ctime", "size", "buffer"}
-        if columns != expected_columns:
-            raise ValueError(f"Cannot append metrics transmission:\nExpected columns: {expected_columns}\nGot: {columns}")
-        self.transmission_log.append(kwargs)
+    def append(self, app: Application, module: Module, message: Message) -> None:
+        self.message_log.append({
+            "app_name": app.name,
+            "module_type": module.__class__.__name__,
+            "module_name": module.name,
+            "node": module.node,
+            "message": message.name,
+            "instructions": message.instructions,
+            "size": message.size,
+            "created": message.created,
+            "network_queue": message.network_queue,
+            "network_latency": message.network_latency,
+            "operator_queue": message.operator_queue,
+            "operator_processing": message.operator_processing,
+        })
 
 
 # TODO Missing documentation
@@ -51,20 +46,14 @@ class Stats:
 
     def __init__(self, event_log: EventLog):
         self.messages = pd.DataFrame(event_log.message_log)
-        self.transmission = pd.DataFrame(event_log.transmission_log)
-
-        self.messages["time_transport"] = self.messages["time_in"] - self.messages["time_created"]
-        self.messages["time_queue"] = self.messages["time_start"] - self.messages["time_in"]
-        self.messages["time_process"] = self.messages["time_out"] - self.messages["time_start"]
-        self.messages["time_total"] = self.messages["time_out"] + self.messages["time_created"]
 
     def count_messages(self):
         return len(self.messages)
 
     def bytes_transmitted(self):
-        return self.transmission["size"].sum()
+        return self.messages["size"].sum()
 
-    def utilization(self, id_entity, total_time, from_time=0.0):
+    def utilization(self, id_entity, total_time, from_time=0.0):  # TODO
         if "time_service" not in self.messages.columns:  # cached
             self.messages["time_service"] = self.messages.time_out - self.messages.time_in
         values = self.messages.groupby("DES.dst").time_service.agg("sum")
@@ -78,80 +67,16 @@ class Stats:
         resp_msg.columns = resp_msg.columns.droplevel(0)
         return resp_msg
 
-    def get_watt(self, totaltime, topology, by=EventLog.WATT_SERVICE):
-        results = {}
-        if by == EventLog.WATT_SERVICE:
-            nodes = self.messages.groupby("TOPO.dst").agg({"time_service": "sum"})
-            for id_node in nodes.index:
-                results[id_node] = {
-                    "id": G.nodes[id_node]["id"],
-                    "type": G.nodes[id_node]["type"],
-                    "watt": nodes.loc[id_node].time_service * G.nodes[id_node]["WATT"],
-                }
-        else:
-            for node_key in G.nodes:
-                if not G.nodes[node_key]["uptime"][1]:
-                    end = totaltime
-                start = G.nodes[node_key]["uptime"][0]
-                uptime = end - start  # TODO end may be undefined
-                results[node_key] = {
-                    "id": G.nodes[node_key]["id"],
-                    "type": G.nodes[node_key]["type"],
-                    "watt": uptime * G.nodes[node_key]["WATT"],
-                    "uptime": uptime,
-                }
-
-        return results
-
-    def get_cost_cloud(self, topology):
-        cost = 0.0
-        nodeInfo = G.nodes
-        results = {}
-        nodes = self.messages.groupby("TOPO.dst").agg({"time_service": "sum"})
-
-        for id_node in nodes.index:
-            if nodeInfo[id_node]["type"] == Entity.ENTITY_CLOUD:  # TODO Entity does not exist
-                results[id_node] = {
-                    "id": nodeInfo[id_node]["id"],
-                    "type": nodeInfo[id_node]["type"],
-                    "watt": nodes.loc[id_node].time_service * nodeInfo[id_node]["WATT"],
-                }
-                cost += nodes.loc[id_node].time_service * nodeInfo[id_node]["COST"]
-        return cost, results
-
     def print_report(self, total_time):
         print("\n------------ RESULTS ------------")
         print(f"Simulation Time:      {total_time}")
         print(f"Messages transmitted: {self.count_messages()}")
         print(f"Bytes transmitted:    {self.bytes_transmitted()}")
 
-        print("Network saturation:")
-        print("\tAverage waiting messages: %i" % self.average_messages_not_transmitted())
-        print("\tPeak of waiting messages: %i" % self.peak_messages_not_transmitted())
-        print("\tMessages not transmitted: %i" % self.messages_not_transmitted())
-
-        # print()
-        # print(self.message_stats())
-
-        # print("\tEnergy Consumed (WATTS by UpTime):")
-        # values = self.get_watt(total_time, topology, Metrics.WATT_UPTIME)
-        # for node in values:
-        #    print(("\t\t%i - %s :\t %.2f" % (node, values[node]["model"], values[node]["watt"])))
-
-        # print("\tEnergy Consumed by Service (WATTS by Service Time):")
-        # values = self.get_watt(total_time, topology, Metrics.WATT_SERVICE)
-        # for node in values:
-        #    print(("\t\t%i - %s :\t %.2f" % (node, values[node]["model"], values[node]["watt"])))
-
-        # print("\tCost of execution in cloud:")
-        # total, values = self.get_cost_cloud(topology)
-        # print(("\t\t%.8f" % total))
-
-    def valueLoop(self, total_time, time_loops=None):  # TODO Improve this interface
-        if time_loops is not None:
-            results = self.message_stats(time_loops)
-            for i, loop in enumerate(time_loops):
-                return results[i]
+        #print("Network saturation:")
+        #print("\tAverage waiting messages: %i" % self.average_messages_not_transmitted())
+        #print("\tPeak of waiting messages: %i" % self.peak_messages_not_transmitted())
+        #print("\tMessages not transmitted: %i" % self.messages_not_transmitted())
 
     def average_messages_not_transmitted(self):
         return np.mean(self.transmission.buffer)
@@ -182,6 +107,9 @@ def _load_csv(directory: str, filename: str) -> List[Dict]:
 
 
 def _write_csv(directory: str, filename: str, content: List[Dict]) -> None:
+    if len(content) == 0:
+        logger.warning("No stats to write: Empty content.")
+        return
     os.makedirs(directory, exist_ok=True)
     with open(os.path.join(directory, filename), "w") as f:
         writer = csv.DictWriter(f, fieldnames=content[0].keys())
