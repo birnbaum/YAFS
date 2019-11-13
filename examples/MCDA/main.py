@@ -182,8 +182,8 @@ def main(simulated_time, path, pathResults, case, failuresON, it, idcloud):
         deploymentservices[k] = cd
         userposition[k] = cu
 
-    nx.set_node_attributes(s.G, values=deploymentservices, name="services")
-    nx.set_node_attributes(s.G, values=userposition, name="userposition")
+    nx.set_node_attributes(s.network, values=deploymentservices, name="services")
+    nx.set_node_attributes(s.network, values=userposition, name="userposition")
     # nx.write_gexf(s.G, "network_assignments.gexf")
 
     print(selectorPath.dname)
@@ -204,9 +204,9 @@ def main(simulated_time, path, pathResults, case, failuresON, it, idcloud):
     dl = {}
     for item in attEdges:
         dl[item] = {"W": attEdges[item]}
-    nx.set_edge_attributes(s.G, values=dl)
+    nx.set_edge_attributes(s.network, values=dl)
 
-    nx.write_gexf(s.G, selectorPath.dname + "/network_assignments_%s_%i_%i.gexf" % (case, stop_time, it))
+    nx.write_gexf(s.network, selectorPath.dname + "/network_assignments_%s_%i_%i.gexf" % (case, stop_time, it))
 
     f = open(selectorPath.dname + "/file_assignments_%s_%i_%i.pkl" % (case, stop_time, it), "wb")
     pickle.dump(controlServices, f)

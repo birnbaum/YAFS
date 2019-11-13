@@ -227,7 +227,7 @@ class MovementUpdate:
         # This is an expensive task (optional)
         if self.doExecutionVideo:
             # sim.topology.draw_png(self.path_results + "network_%i" % self.current_step)
-            self.animation.make_snap(self.current_step, self.path_results + "snap_%05d" % self.current_step, G=sim.G, draw_connection_line=False)
+            self.animation.make_snap(self.current_step, self.path_results + "snap_%05d" % self.current_step, G=sim.network, draw_connection_line=False)
 
         logger.info("\texecution time of movement (#%i): %s" % (self.current_step, (time.time() - start_time)))
         # we prepare the next execution of this function

@@ -9,8 +9,7 @@ from networkx.utils import pairwise, nx
 from simpy import Process, Resource
 from tqdm import tqdm
 
-from yafs.application import Application, Message, Operator, Module
-from yafs.distribution import Distribution
+from yafs.application import Application, Message, Module
 from yafs.placement import Placement
 from yafs.selection import Selection
 from yafs.stats import Stats, EventLog
@@ -33,52 +32,54 @@ ch.setFormatter(logging.Formatter('%(simulation_time).4f - %(name)s - %(levelnam
 
 
 class Simulation:
-    """Contains the cloud event-discrete simulation environment and controls the structure variables.
+    """Contains the cloud event-discrete simulation environment and controls the structure variables."""
 
-    Args:
-        topology: Associated topology of the environment.
-    """
-
-    def __init__(self, G: nx.Graph, selection: Selection):
+    def __init__(self, network: nx.Graph, selection: Selection):
         self.env = simpy.Environment()
         logger.addFilter(SimulationTimeFilter(self.env))
         logger.addHandler(ch)
-        nx.set_node_attributes(G, {node: Resource(self.env) for node in G}, "resource")
-        nx.set_node_attributes(G, {node: 0 for node in G}, "usage")
-        nx.set_edge_attributes(G, {edge: Resource(self.env) for edge in G.edges}, "resource")
-        nx.set_node_attributes(G, {edge: 0 for edge in G.edges}, "usage")
-        self.G = G
+        self.network = self._prepare_network(network)
         self.selection = selection
         self.event_log = EventLog()
-
         self.apps = []
 
-        """Represents the deployment of a module in a DES PROCESS each DES has a one topology.node.id (see alloc_des var.)
+    @property
+    def stats(self):
+        return Stats(self.event_log)
 
-        It used for (:mod:`Placement`) class interaction.
+    @property
+    def node_to_modules(self) -> Dict[Any, List[Module]]:  # Only used in drawing
+        """Returns a dictionary mapping from node ids to their deployed services"""
+        result = {node: [] for node in self.network}
+        for app in self.apps:
+            result[app.source.node].append(app.source)
+            result[app.sink.node].append(app.sink)
+            for operator in app.operators:
+                result[operator.node].append(operator)
+        return result
 
-        A dictionary where the key is an app.name and value is a dictionary with key is a module and value an array of id DES process
+    def run(self, until: int, results_path: Optional[str] = None, progress_bar: bool = True):
+        """Runs the simulation"""
+        for i in tqdm(range(1, until), total=until, disable=(not progress_bar)):
+            self.env.run(until=i)
+        if results_path:
+            self.event_log.write(results_path)
 
-        .. code-block:: python
+    def deploy_app(self, app: Application):
+        """This process is responsible for linking the *application* to the different algorithms (placement, population, and service)"""
+        self.apps.append(app)
+        self.env.process(app.source.run(self, app))
 
-            {Application(...):{"Controller": 1, "Client": 4}}
-        """
-        self.app_to_module_to_process = {}
-
-        """Relationship between DES process and topology.node.id
-
-        It is necessary to identify the message.source (topology.node)
-        1.N. DES process -> 1. topology.node
-        """
-        self.process_to_node = {}
+    def deploy_placement(self, placement: Placement) -> Process:
+        return self.env.process(placement.run(self))
 
     def transmission_process(self, message: Message, src_node):
         queue_times = []
         latencies = []
-        path = self.selection.get_path(self.G, message, src_node, message.dst.node)
+        path = self.selection.get_path(self.network, message, src_node, message.dst.node)
         logger.debug(f"Sending {message} via path {path}.")
         for x, y in pairwise(path):
-            edge_data = self.G.edges[x, y]
+            edge_data = self.network.edges[x, y]
             latency = edge_data["PR"] + message.size / edge_data["BW"]
             with edge_data["resource"].request() as req:
                 queue_start = self.env.now
@@ -90,38 +91,6 @@ class Simulation:
         message.network_latency = sum(latencies)
         logger.debug(f"Sent {message} via path {path}. Queued: {message.network_queue}. Latency: {message.network_queue}.")
         self.env.process(message.dst.enter(message, self))
-
-    @property
-    def stats(self):
-        return Stats(self.event_log)
-
-    @property
-    def node_to_modules(self) -> Dict[Any, List[Module]]:  # Only used in drawing
-        """Returns a dictionary mapping from node ids to their deployed services"""
-        result = {node: [] for node in self.G}
-        for app in self.apps:
-            result[app.source.node].append(app.source)
-            result[app.sink.node].append(app.sink)
-            for operator in app.operators:
-                result[operator.node].append(operator)
-        return result
-
-    def deploy_node_failure_generator(self, nodes: List[int], distribution: Distribution, logfile: Optional[str] = None) -> None:
-        self.env.process(self._node_failure_generator(nodes, distribution, logfile))
-
-    def _node_failure_generator(self, nodes: List[int], distribution: Distribution, logfile: Optional[str] = None):
-        """Controls the elimination of nodes"""
-        logger.debug(f"Adding Process: Node Failure Generator<nodes={nodes}, distribution={distribution}>")
-        for node in nodes:
-            yield self.env.timeout(next(distribution))
-            processes = [k for k, v in self.process_to_node.items() if v == node]  # A node can host multiples DES processes
-            if logfile:
-                with open(logfile, "a") as stream:
-                    stream.write("%i,%s,%d\n" % (node, len(processes), self.env.now))
-            logger.debug("\n\nRemoving node: %i, Total nodes: %i" % (node, len(self.G)))
-            self.remove_node(node)
-            for process in processes:
-                self.stop_process(process)
 
     # TODO What is this used for?
     def deploy_monitor(self, name: str, function: Callable, distribution: Callable, **param):
@@ -144,51 +113,9 @@ class Simulation:
             yield self.env.timeout(next(distribution))
             function(**param)
 
-    def stop_process(self, process: Process):
-        """TODO"""
-        process.interrupt()
-        del self.process_to_node[process]
-        for app in self.app_to_module_to_process:
-            for module_name in self.app_to_module_to_process[app]:
-                p = self.app_to_module_to_process[app][module_name]
-                if p == process:
-                    del self.app_to_module_to_process[app][module_name]
-
-    def deploy_app(self, app: Application):
-        """This process is responsible for linking the *application* to the different algorithms (placement, population, and service)"""
-        self.apps.append(app)
-        self.app_to_module_to_process[app] = {}
-        self._deploy_source(app)
-
-    def _deploy_source(self, application: Application):
-        """Add a DES process for deploy pure source modules (sensors). This function its used by (:mod:`Population`) algorithm"""
-        process = self.env.process(application.source.run(self, application))
-        self.process_to_node[process] = application.source.node
-
-    def deploy_placement(self, placement: Placement) -> Process:
-        return self.env.process(placement.run(self))
-
-    def remove_node(self, node):
-        # TODO Remove
-        # Stopping related processes deployed in the module and clearing main structure: alloc_DES
-        if node in list(self.process_to_node.values()):
-            for process, p_node in list(self.process_to_node.items()):
-                if p_node == node:
-                    self.stop_process(process)
-
-        # Finally removing node from topology
-        self.G.remove_node(node)
-
-    def run(self, until: int, results_path: Optional[str] = None, progress_bar: bool = True):
-        """Runs the simulation
-
-        Args:
-            until: Defines a stop time
-            results_path: TODO
-            progress_bar: TODO
-        """
-        for i in tqdm(range(1, until), total=until, disable=(not progress_bar)):
-            self.env.run(until=i)
-
-        if results_path:
-            self.event_log.write(results_path)
+    def _prepare_network(self, network: nx.Graph) -> nx.Graph:
+        nx.set_node_attributes(network, {node: Resource(self.env) for node in network}, "resource")
+        nx.set_node_attributes(network, {node: 0 for node in network}, "usage")
+        nx.set_edge_attributes(network, {edge: Resource(self.env) for edge in network.edges}, "resource")
+        nx.set_node_attributes(network, {edge: 0 for edge in network.edges}, "usage")
+        return network

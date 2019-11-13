@@ -354,10 +354,10 @@ def main(simulated_time, path, results_path, case, run_id):
             elif "_" in service:
                 modules_entities[k] += 1  # [u'3#3_22', u'2#2_19']
 
-    nx.set_node_attributes(s.G, values=src_entities, name="SRC")
-    nx.set_node_attributes(s.G, values=modules_entities, name="MOD")
+    nx.set_node_attributes(s.network, values=src_entities, name="SRC")
+    nx.set_node_attributes(s.network, values=modules_entities, name="MOD")
 
-    nx.write_gexf(s.G, os.path.join(results_path, "network.gexf"))
+    nx.write_gexf(s.network, os.path.join(results_path, "network.gexf"))
 
     # controlServices = selectorPath.controlServices
     # f = open(pathResults + "/file_assignments_%s_%i_%i.pkl" % (case, simulated_time, it), "wb")
