@@ -84,14 +84,16 @@ class Operator(Module):
         self.node = None  # Not yet deployed
 
     def enter(self, message: "Message", simulation):
+        node_data = simulation.G.nodes[self.node]
         logger.debug(f"{message} arrived in operator {self.name}.")
-        service_time = message.instructions / float(simulation.G.nodes[self.node]["IPT"])
+        service_time = message.instructions / node_data["IPT"]
 
         time_in = simulation.env.now
-        with simulation.G.nodes[self.node]["resource"].request() as req:
+        with node_data["resource"].request() as req:
             yield req
             time_process_start = simulation.env.now
             yield simulation.env.timeout(service_time)
+            node_data["usage"] += simulation.env.now - time_process_start
             message_out = self.message_out.evolve(timestamp=simulation.env.now, application=message.application)
             logger.debug(f"{self.name}\tTransmit\t{self.message_out.name}")
             simulation.env.process(simulation.transmission_process(message_out, self.node))

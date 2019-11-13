@@ -43,8 +43,10 @@ class Simulation:
         self.env = simpy.Environment()
         logger.addFilter(SimulationTimeFilter(self.env))
         logger.addHandler(ch)
-        resources = {node: Resource(self.env) for node in G}
-        nx.set_node_attributes(G, resources, "resource")
+        nx.set_node_attributes(G, {node: Resource(self.env) for node in G}, "resource")
+        nx.set_node_attributes(G, {node: 0 for node in G}, "usage")
+        nx.set_edge_attributes(G, {edge: Resource(self.env) for edge in G.edges}, "resource")
+        nx.set_node_attributes(G, {edge: 0 for edge in G.edges}, "usage")
         self.G = G
         self.selection = selection
         self.event_log = EventLog()
@@ -71,21 +73,23 @@ class Simulation:
         self.process_to_node = {}
 
     def transmission_process(self, message: Message, src_node):
-        paths = self.selection.get_paths(self.G, message, src_node, [message.dst.node])
-        for path in paths:
-            latencies = [self.G.edges[x, y]["PR"] for x, y in pairwise(path)]
-            total_latency = sum(latencies)
-            logger.debug(f"Sending {message} via path {path}. Latency: {total_latency}({latencies})")
-            yield self.env.timeout(total_latency)
-            self.event_log.append_transmission(src=path[0],
-                                               dst=path[-1],
-                                               app=message.application.name,
-                                               latency=total_latency,
-                                               message=message.name,
-                                               ctime=self.env.now,
-                                               size=message.size,
-                                               buffer=self.network_pump)
-            self.env.process(message.dst.enter(message, self))
+        queue_times = []
+        latencies = []
+        path = self.selection.get_path(self.G, message, src_node, message.dst.node)
+        logger.debug(f"Sending {message} via path {path}.")
+        for x, y in pairwise(path):
+            edge_data = self.G.edges[x, y]
+            latency = edge_data["PR"] + message.size / edge_data["BW"]
+            with edge_data["resource"].request() as req:
+                queue_start = self.env.now
+                yield req
+                queue_times.append(self.env.now - queue_start)
+                yield self.env.timeout(latency)
+                latencies.append(latency)
+        message.network_queue = sum(queue_times)
+        message.network_latency = sum(latencies)
+        logger.debug(f"Sent {message} via path {path}. Queued: {message.network_queue}. Latency: {message.network_queue}.")
+        self.env.process(message.dst.enter(message, self))
 
     @property
     def stats(self):
