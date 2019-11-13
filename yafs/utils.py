@@ -61,7 +61,7 @@ def get_shortest_random_path(G):
             counter += 1
 
 
-def draw_topology(G, alloc_entity=None):
+def draw_topology(G, alloc_entity=None, filename: str = "app.png"):
     """
     Draw the modeled topology
 
@@ -92,7 +92,7 @@ def draw_topology(G, alloc_entity=None):
     plt.ion()
     plt.show()
 
-    fig.savefig("app_deployed.png", format="png")
+    fig.savefig(filename, format="png")
     plt.close(fig)
 
 

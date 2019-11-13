@@ -209,7 +209,7 @@ class DeviceSpeedAwareRouting(Selection):
                 best_des = dev
         return min_path, best_des
 
-    def get_paths(self, sim, app_name, message, topology_src, alloc_DES, alloc_module):
+    def get_path(self, sim, app_name, message, topology_src, alloc_DES, alloc_module):
         node_src = topology_src  # entity that sends the message
 
         # Name of the service
@@ -251,7 +251,7 @@ class DeviceSpeedAwareRouting(Selection):
             # print "DST: ",node_dst #261
             # print "INT: ",message.next_dst #301
 
-            path, des = self.get_paths(sim, message.app_name, message, node_src, alloc_DES, alloc_module)
+            path, des = self.get_path(sim, message.app_name, message, node_src, alloc_DES, alloc_module)
             if len(path[0]) > 0:
                 # print path # [[164, 130, 380, 110, 216]]
                 # print des # [40]

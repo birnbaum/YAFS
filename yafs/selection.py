@@ -1,7 +1,7 @@
 import logging
 import random
 from abc import ABC, abstractmethod
-from typing import Tuple, List, Optional
+from typing import Tuple, List, Optional, Any
 
 import networkx as nx
 
@@ -14,37 +14,26 @@ class Selection(ABC):
     """Provides the route among topology entities for that a message reach the destiny module, it can also be seen as an orchestration algorithm."""
 
     @abstractmethod
-    def get_paths(self, G: nx.Graph, message: Message, src_node: int, dst_nodes: List[int]) -> List[List[int]]:
+    def get_path(self, G: nx.Graph, message: Message, src_node: Any, dst_node: Any) -> List[Any]:
         """Computes the message paths from the source node to each destination node.
 
         Returns:
             List of paths for each provided destination node
         """
 
-    # TODO Find a generic way on how to make this work
-    def get_path_from_failure(self, sim, message, link, alloc_DES, alloc_module, ctime) -> Tuple[List[int], Optional[int]]:
-        """Called when some link of a message path is broken or unavailable. A new one from that point should be calculated."""
-        raise NotImplementedError("This selection algorithm does not support `get_path_from_failure()`")
-
 
 class RandomPath(Selection):
     """Among all the possible options, it returns a random path."""
 
-    def get_paths(self, G: nx.Graph, message: Message, src_node: int, dst_nodes: List[int]) -> List[List[int]]:
-        paths = []
-        for dst_node in dst_nodes:
-            paths.append([random.choice(list(nx.all_simple_paths(G, source=src_node, target=dst_node)))])
-        return paths
+    def get_path(self, G: nx.Graph, message: Message, src_node: Any, dst_node: Any) -> List[Any]:
+        return random.choice(list(nx.all_simple_paths(G, source=src_node, target=dst_node)))
 
 
 class ShortestPath(Selection):
     """Returns the shortest path from node `src_node` to `dst_node` in the network `G`"""
 
-    def get_paths(self, G: nx.Graph, message: Message, src_node: int, dst_nodes: List[int]) -> List[List[int]]:
-        paths = []
-        for dst_node in dst_nodes:
-            return [nx.shortest_path(G, source=src_node, target=dst_node)]
-        return paths
+    def get_path(self, G: nx.Graph, message: Message, src_node: Any, dst_node: Any) -> List[Any]:
+        return nx.shortest_path(G, source=src_node, target=dst_node)
 
 
 class DeviceSpeedAwareRouting(Selection):
@@ -70,7 +59,7 @@ class DeviceSpeedAwareRouting(Selection):
         tuples = [(nx.shortest_path(G, src_node, n), n) for n in dst_nodes]
         return min(tuples, key=_speed)
 
-    def get_paths(self, G, message, src_node, dst_nodes):
+    def get_path(self, G, message, src_node, dst_nodes):
         if self.cache_size != len(G):
             self.cache_size = len(G)
             self.cache = {}
@@ -89,7 +78,7 @@ class DeviceSpeedAwareRouting(Selection):
             return [], []
         else:
             node_src = message.path[index]  # In this point to the other entity the system fail
-            path, des = self.get_paths(sim, message.app_name, message, node_src, alloc_DES, alloc_module)
+            path, des = self.get_path(sim, message.app_name, message, node_src, alloc_DES, alloc_module)
             if len(path[0]) > 0:
                 conc_path = message.path[0 : message.path.index(path[0][0])] + path[0]
                 message.next_dst = node_src  # TODO Not sure whether Selections should change messages...
