@@ -3,7 +3,7 @@ import networkx as nx
 import math
 
 
-def draw_topology(G, alloc_entity=None, filename: str = "app.png"):
+def draw_topology(G, alloc_entity=None, name: str = "app.png"):
     """
     Draw the modeled topology
 
@@ -34,7 +34,7 @@ def draw_topology(G, alloc_entity=None, filename: str = "app.png"):
     plt.ion()
     plt.show()
 
-    fig.savefig(filename, format="png")
+    fig.savefig(name + ".png", format="png")
     plt.close(fig)
 
 

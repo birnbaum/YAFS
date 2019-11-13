@@ -72,11 +72,14 @@ class Stats:
         print(f"Simulation Time:      {total_time}")
         print(f"Messages transmitted: {self.count_messages()}")
         print(f"Bytes transmitted:    {self.bytes_transmitted()}")
+        print()
 
-        #print("Network saturation:")
-        #print("\tAverage waiting messages: %i" % self.average_messages_not_transmitted())
-        #print("\tPeak of waiting messages: %i" % self.peak_messages_not_transmitted())
-        #print("\tMessages not transmitted: %i" % self.messages_not_transmitted())
+        means = self.messages[["network_queue", "network_latency", "operator_queue", "operator_processing"]].mean()
+        print(f"Average message time:  {sum(means):.3f}")
+        print(f"- network queue:       {means['network_queue']:.3f}")
+        print(f"- network latency:     {means['network_latency']:.3f}")
+        print(f"- operator queue:      {means['operator_queue']:.3f}")
+        print(f"- operator processing: {means['operator_processing']:.3f}")
 
     def average_messages_not_transmitted(self):
         return np.mean(self.transmission.buffer)

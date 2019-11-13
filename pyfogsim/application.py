@@ -61,7 +61,7 @@ class Source(Module):
         logger.debug("Added_Process - Source")
         while True:
             yield simulation.env.timeout(next(self.distribution))
-            message = self.message_out.evolve(timestamp=simulation.env.now, application=app)
+            message = self.message_out.evolve(created=simulation.env.now, application=app)
             simulation.env.process(simulation.transmission_process(message, self.node))
 
 
