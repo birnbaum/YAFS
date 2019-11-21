@@ -46,7 +46,7 @@ class DeviceSpeedAwareRouting(Selection):  # TODO from YAFS, partially adapted
                 edge = G.edges[(path[node], path[node + 1])]
                 network_time += edge[Topology.LINK_PR] + (message.bytes / edge[Topology.LINK_BW])
             dst_node = G.nodes[path[-1]]
-            processing_time = message.instructions / float(dst_node["IPT"])
+            processing_time = message.instructions / float(dst_node["ipt"])
             return network_time + processing_time
         tuples = [(nx.shortest_path(G, src_node, n), n) for n in dst_nodes]
         return min(tuples, key=_speed)

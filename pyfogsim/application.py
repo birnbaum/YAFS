@@ -14,7 +14,7 @@ class Message:
     Args:
         name: Message name
         dst: Name of the module who receives this message
-        instructions: Number of instructions to be executed (Instead of MIPS, we use IPT since the time is relative to the simulation units.)
+        instructions: Number of instructions to be executed
         size: Size in bytes
     """
 
@@ -49,6 +49,9 @@ class Module(ABC):
         self.data = data if data else {}  # TODO find better name
         self.node = None
 
+    def __str__(self):
+        return self.name
+
 
 class Source(Module):
     def __init__(self, name: str, node: Any, message_out: "Message", distribution: Distribution, data: Optional[Dict] = None):
@@ -77,16 +80,14 @@ class Operator(Module):
         self.message_out = message_out
 
     def enter(self, message: "Message", simulation: "Simulation"):
-        node_data = simulation.network.nodes[self.node]
         logger.debug(f"{message} arrived in operator {self.name}.")
-        service_time = message.instructions / node_data["IPT"]
+        service_time = message.instructions / self.node.ipt
 
-        with node_data["resource"].request() as req:
+        with self.node.request() as req:
             queue_start = simulation.env.now
             yield req
             process_start = simulation.env.now
             yield simulation.env.timeout(service_time)
-            # node_data["usage"] += simulation.env.now - process_start
         message.operator_queue = process_start - queue_start
         message.operator_processing = simulation.env.now - process_start
 

@@ -82,9 +82,9 @@ class Simulation:
         path = self.selection.get_path(self.network, message, src_node, message.dst.node)
         logger.debug(f"Sending {message} via path {path}.")
         for x, y in pairwise(path):
-            edge_data = self.network.edges[x, y]
-            latency = edge_data["PR"] + message.size / edge_data["BW"]
-            with edge_data["resource"].request() as req:
+            link = self.network.edges[x, y]["link"]
+            latency = link.latency + message.size / link.bandwidth
+            with link.request() as req:
                 queue_start = self.env.now
                 yield req
                 queue_times.append(self.env.now - queue_start)
@@ -96,8 +96,8 @@ class Simulation:
         self.env.process(message.dst.enter(message, self))
 
     def _prepare_network(self, network: nx.Graph) -> nx.Graph:
-        nx.set_node_attributes(network, {node: Resource(self.env) for node in network}, "resource")
-        nx.set_node_attributes(network, {node: 0 for node in network}, "usage")
-        nx.set_edge_attributes(network, {edge: Resource(self.env) for edge in network.edges}, "resource")
-        nx.set_node_attributes(network, {edge: 0 for edge in network.edges}, "usage")
+        for node in network:
+            node.set_env(self.env)
+        for _, _, data in network.edges(data=True):
+            data["link"].set_env(self.env)
         return network
