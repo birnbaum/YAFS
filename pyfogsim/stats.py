@@ -48,9 +48,13 @@ class Stats:
         self.messages = pd.DataFrame(event_log.message_log)
 
     def count_messages(self):
+        if self.messages.empty:
+            return 0
         return len(self.messages)
 
     def bytes_transmitted(self):
+        if self.messages.empty:
+            return 0
         return self.messages["size"].sum()
 
     def utilization(self, id_entity, total_time, from_time=0.0):  # TODO
@@ -74,6 +78,8 @@ class Stats:
         print(f"Bytes transmitted:    {self.bytes_transmitted()}")
         print()
 
+        if self.messages.empty:
+            return
         means = self.messages[["network_queue", "network_latency", "operator_queue", "operator_processing"]].mean()
         print(f"Average message time:  {sum(means):.3f}")
         print(f"- network queue:       {means['network_queue']:.3f}")

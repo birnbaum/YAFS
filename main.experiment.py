@@ -1,12 +1,14 @@
 import logging
 import random
+from typing import Any
 
 import networkx as nx
 
 from pyfogsim import utils
 from pyfogsim.core import Simulation
 from pyfogsim.application import Application, Message, Sink, Source, Operator
-from pyfogsim.placement import CloudPlacement, EdgePlacement
+from pyfogsim.placementalgorithm import CloudPlacement, EdgePlacement, GeneticPlacement
+from pyfogsim.resource import Cloud, Fog, Sensor, Link4G, LinkCable
 
 from pyfogsim.selection import ShortestPath
 
@@ -16,7 +18,7 @@ import numpy as np
 RANDOM_SEED = 1
 
 
-def _app(name: str, source_node: str, sink_node: str, distribution: Distribution):
+def _app(name: str, source_node: Any, sink_node: Any, distribution: Distribution):
     actuator = Sink(f"{name}:sink", node=sink_node)
     message_b = Message(f"{name}:operator->sink", dst=actuator, instructions=50, size=50)
     service_a = Operator(f"{name}:operator", message_out=message_b)
@@ -29,34 +31,34 @@ def main(simulated_time, placement):
     random.seed(RANDOM_SEED)
     np.random.seed(RANDOM_SEED)
 
+    cloud = Cloud("")
+    fog_a = Fog("A")
+    fog_b = Fog("B")
+    sensor_a = Sensor("A")
+    sensor_b = Sensor("B")
+    sensor_c = Sensor("C")
+    sensor_d = Sensor("D")
+
     G = nx.node_link_graph({
         "directed": False,
         "multigraph": False,
         "graph": {},
         "nodes": [
-            {"id": "cloud", "IPT": 60, "RAM": 10**6, "WATT": 20.0},
-            {"id": "sensor1", "IPT": 10, "RAM": 4000, "WATT": 40.0},
-            {"id": "sensor2", "IPT": 10, "RAM": 4000, "WATT": 40.0},
-            {"id": "sensor3", "IPT": 10, "RAM": 4000, "WATT": 40.0},
-            {"id": "sensor4", "IPT": 10, "RAM": 4000, "WATT": 40.0},
-            {"id": "fog1", "IPT": 10, "RAM": 4000, "WATT": 40.0},
-            {"id": "fog2", "IPT": 10, "RAM": 4000, "WATT": 40.0},
-            {"id": "actuator1", "IPT": 10, "RAM": 4000, "WATT": 40.0},
-            {"id": "actuator2", "IPT": 10, "RAM": 4000, "WATT": 40.0},
+            {"id": cloud},
+            {"id": sensor_a},
+            {"id": sensor_b},
+            {"id": sensor_c},
+            {"id": sensor_d},
+            {"id": fog_a},
+            {"id": fog_b},
         ],
         "links": [
-            {"source": "sensor1", "target": "fog1", "BW": 300, "PR": 1},
-            {"source": "sensor2", "target": "fog1", "BW": 300, "PR": 1},
-            {"source": "sensor3", "target": "fog2", "BW": 300, "PR": 1},
-            {"source": "sensor4", "target": "fog2", "BW": 300, "PR": 1},
-            {"source": "fog1", "target": "cloud", "BW": 500, "PR": 10},
-            {"source": "fog1", "target": "actuator1", "BW": 500, "PR": 10},
-            {"source": "fog1", "target": "actuator2", "BW": 500, "PR": 10},
-            {"source": "fog2", "target": "cloud", "BW": 500, "PR": 10},
-            {"source": "fog2", "target": "actuator1", "BW": 500, "PR": 10},
-            {"source": "fog2", "target": "actuator2", "BW": 500, "PR": 10},
-            {"source": "cloud", "target": "actuator1", "BW": 500, "PR": 10},
-            {"source": "cloud", "target": "actuator2", "BW": 500, "PR": 10},
+            {"source": sensor_a, "target": fog_a, "link": Link4G()},
+            {"source": sensor_b, "target": fog_a, "link": Link4G()},
+            {"source": sensor_c, "target": fog_b, "link": Link4G()},
+            {"source": sensor_d, "target": fog_b, "link": Link4G()},
+            {"source": fog_a, "target": cloud, "link": LinkCable()},
+            {"source": fog_b, "target": cloud, "link": LinkCable()},
         ]
     })
 
@@ -64,9 +66,9 @@ def main(simulated_time, placement):
 
     # Application Graph
     apps = []
-    distribution = UniformDistribution(min=5, max=50)
-    for i in range(1, 5):
-        app = _app(f"App{i}", source_node=f"sensor{i}", sink_node=f"actuator{(i-1)%2+1}", distribution=distribution)
+    distribution = UniformDistribution(min=1, max=40)
+    for sensor in [sensor_a, sensor_b, sensor_c, sensor_d]:
+        app = _app(f"App{sensor.name}", source_node=sensor, sink_node=cloud, distribution=distribution)
         simulation.deploy_app(app)
         apps.append(app)
 
@@ -74,11 +76,23 @@ def main(simulated_time, placement):
 
     simulation.run(until=simulated_time, progress_bar=False)
     simulation.stats.print_report(simulated_time)
-    utils.draw_topology(G, simulation.node_to_modules, name=placement.__name__)
+
+    print("\nNode Usage:")
+    for node in G:
+        if node.usage > 0:
+            print(f"{node} usage: {node.usage * 100:.1f}%\tconsumption: {node.energy_consumption:.2f} Watt")
+
+    print("\nLink Usage:")
+    for source, target, data in G.edges(data=True):
+        if data["link"].usage > 0:
+            print(f"{source}->{target} usage: {data['link'].usage * 100:.1f}%\tconsumption: {data['link'].energy_consumption:.2f} Watt")
+
+    utils.draw_topology1(G, simulation.node_to_modules, name=placement.__name__)
 
 
 if __name__ == "__main__":
     logging.basicConfig(format="%(name)s - %(levelname)s - %(message)s", level=logging.INFO)
     logging.getLogger("matplotlib").setLevel(logging.WARNING)
-    main(simulated_time=10000, placement=CloudPlacement)
-    main(simulated_time=10000, placement=EdgePlacement)
+    main(simulated_time=1000, placement=GeneticPlacement)
+    # main(simulated_time=1000, placement=CloudPlacement)
+    # main(simulated_time=1000, placement=EdgePlacement)
