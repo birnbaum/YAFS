@@ -4,18 +4,16 @@ import random
 from typing import Any
 
 import networkx as nx
-
-from geo.geo import generate_network
-from pyfogsim.core import Simulation
-from pyfogsim.application import Application, Message, Sink, Source, Operator
-from pyfogsim.placement import CloudPlacement, EdgePlacement
-from berlin_mitte.plot import plot
-from pyfogsim.resource import Cloud, Fog, Sensor, Link4G, LinkCable
-
-from pyfogsim.selection import ShortestPath
-
-from pyfogsim.distribution import UniformDistribution, Distribution
 import numpy as np
+
+from berlin_mitte.generate_network import generate_network
+from berlin_mitte.plot import plot
+from pyfogsim.application import Application, Message, Sink, Source, Operator
+from pyfogsim.core import Simulation
+from pyfogsim.distribution import UniformDistribution, Distribution
+from pyfogsim.placement import CloudPlacement, EdgePlacement
+from pyfogsim.resource import Cloud, Fog, Sensor, Link4G, LinkCable
+from pyfogsim.selection import ShortestPath
 
 logging.basicConfig(format="%(name)s - %(levelname)s - %(message)s", level=logging.INFO)
 logging.getLogger("matplotlib").setLevel(logging.WARNING)

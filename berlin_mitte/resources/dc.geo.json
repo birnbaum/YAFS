@@ -1,0 +1,47 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          13.422018,
+          52.520459
+        ]
+      },
+      "properties": {
+        "address": "Karl-Marx-Allee 31, 10178 Berlin",
+        "name": "Rathaus Mitte"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          13.338541,
+          52.527057
+        ]
+      },
+      "properties": {
+        "address": "Mathilde-Jacob-Platz 1, 10551 Berlin",
+        "name": "Rathaus Tiergarten"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          13.374348,
+          52.557083
+        ]
+      },
+      "properties": {
+        "address": "Osloer Str. 36, 13359 Berlin",
+        "name": "Bürgeramt Wedding"
+      }
+    }
+  ]
+}
