@@ -10,9 +10,8 @@ from pygments.styles.paraiso_dark import BLUE
 
 from pyfogsim.resource import Cloud, Sensor, Fog, LinkCable, Link4G
 
-resources = os.path.join(os.path.dirname(__file__), "..", "resources")
-MITTE_PNG = os.path.join(resources, "mitte.png")
-MITTE_GEOJSON = os.path.join(resources, "mitte.geo.json")
+MITTE_PNG = "resources/mitte.png"
+MITTE_GEOJSON = "resources/mitte.geo.json"
 
 
 def plot(
@@ -155,8 +154,6 @@ def plot(
 
     ax.axis('off')
     plt.show()
-    # plt.axis((13.2951364, 13.435795599999999, 52.492117585781244, 52.57176741421875))
-
 
     if out_path is not None:
         assert os.path.splitext(out_path)[1] == ".png"

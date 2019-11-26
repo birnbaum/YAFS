@@ -8,8 +8,8 @@ import networkx as nx
 from geo.geo import generate_network
 from pyfogsim.core import Simulation
 from pyfogsim.application import Application, Message, Sink, Source, Operator
-from pyfogsim.placement import CloudPlacement, EdgePlacement, GeneticPlacement
-from pyfogsim.plot import plot
+from pyfogsim.placement import CloudPlacement, EdgePlacement
+from berlin_mitte.plot import plot
 from pyfogsim.resource import Cloud, Fog, Sensor, Link4G, LinkCable
 
 from pyfogsim.selection import ShortestPath
