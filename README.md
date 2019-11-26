@@ -1,36 +1,19 @@
 # pyFogSim
 
-First dirty experiment
+## 10 Sensors
+<img src="experiment_10_sensors/city.png" width="600">
+<img src="experiment_10_sensors/topology.png" width="600">
+<img src="experiment_10_sensors/CloudPlacement_1000/load.png" width="600">
+<img src="experiment_10_sensors/EdgePlacement_1000/load.png" width="600">
 
-## CloudPlacement
-<img src="CloudPlacement.png" width="600">
+## 100 Sensors
+<img src="experiment_100_sensors/city.png" width="600">
+<img src="experiment_100_sensors/topology.png" width="600">
+<img src="experiment_100_sensors/CloudPlacement_1000/load.png" width="600">
+<img src="experiment_100_sensors/EdgePlacement_1000/load.png" width="600">
 
-```
-Simulation Time:      10000
-Real Time:            0.858 seconds
-Messages transmitted: 2854
-Bytes transmitted:    1499300
-
-Average message time:  20.361
-- network queue:       6.635
-- network latency:     13.219
-- operator queue:      0.007
-- operator processing: 0.500
-```
-
-
-## EdgePlacement
-<img src="EdgePlacement.png" width="600">
-
-```
-Simulation Time:      10000
-Real Time:            0.762 seconds
-Messages transmitted: 2858
-Bytes transmitted:    1501400
-
-Average message time:  10.565
-- network queue:       0.178
-- network latency:     7.215
-- operator queue:      0.172
-- operator processing: 3.000
-```
+## 300 Sensors
+<img src="experiment_300_sensors/city.png" width="600">
+<img src="experiment_300_sensors/topology.png" width="600">
+<img src="experiment_300_sensors/CloudPlacement_1000/load.png" width="600">
+<img src="experiment_300_sensors/EdgePlacement_1000/load.png" width="600">

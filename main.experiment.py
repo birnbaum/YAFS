@@ -17,8 +17,6 @@ from pyfogsim.selection import ShortestPath
 
 logging.basicConfig(format="%(name)s - %(levelname)s - %(message)s", level=logging.INFO)
 logging.getLogger("matplotlib").setLevel(logging.WARNING)
-random.seed(0)
-np.random.seed(0)
 
 
 def _app(name: str, source_node: Any, sink_node: Any, distribution: Distribution):
@@ -76,6 +74,7 @@ def setup_simulation(G):
 
 
 def main(network, simulated_time, placement, out_dir):
+    random.seed(0)
     simulation = setup_simulation(network)
     simulation.deploy_placement(placement(apps=simulation.apps))
     simulation.run(until=simulated_time, progress_bar=False)
@@ -97,8 +96,10 @@ def main(network, simulated_time, placement, out_dir):
 
 
 if __name__ == "__main__":
+    random.seed(0)
+
     SIMULATED_TIME = 1000
-    N_SENSORS = 300
+    N_SENSORS = 10
     PLACEMENTS = [
         CloudPlacement,
         EdgePlacement,
