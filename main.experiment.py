@@ -1,10 +1,12 @@
 import logging
+import os
 import random
 from typing import Any
 
 import networkx as nx
 
-from pyfogsim import utils
+from geo.geo import generate_network
+from geo.plot import plot
 from pyfogsim.core import Simulation
 from pyfogsim.application import Application, Message, Sink, Source, Operator
 from pyfogsim.placementalgorithm import CloudPlacement, EdgePlacement, GeneticPlacement
@@ -15,7 +17,10 @@ from pyfogsim.selection import ShortestPath
 from pyfogsim.distribution import UniformDistribution, Distribution
 import numpy as np
 
-RANDOM_SEED = 1
+logging.basicConfig(format="%(name)s - %(levelname)s - %(message)s", level=logging.INFO)
+logging.getLogger("matplotlib").setLevel(logging.WARNING)
+random.seed(0)
+np.random.seed(0)
 
 
 def _app(name: str, source_node: Any, sink_node: Any, distribution: Distribution):
@@ -27,10 +32,7 @@ def _app(name: str, source_node: Any, sink_node: Any, distribution: Distribution
     return Application(name=name, source=sensor, operators=[service_a], sink=actuator)
 
 
-def main(simulated_time, placement):
-    random.seed(RANDOM_SEED)
-    np.random.seed(RANDOM_SEED)
-
+def generate_simple_network() -> nx.Graph:
     cloud = Cloud("")
     fog_a = Fog("A")
     fog_b = Fog("B")
@@ -46,53 +48,72 @@ def main(simulated_time, placement):
         "nodes": [
             {"id": cloud},
             {"id": sensor_a},
-            {"id": sensor_b},
-            {"id": sensor_c},
-            {"id": sensor_d},
+            #            {"id": sensor_b},
+            #            {"id": sensor_c},
+            #            {"id": sensor_d},
             {"id": fog_a},
-            {"id": fog_b},
+            #            {"id": fog_b},
         ],
         "links": [
             {"source": sensor_a, "target": fog_a, "link": Link4G()},
-            {"source": sensor_b, "target": fog_a, "link": Link4G()},
-            {"source": sensor_c, "target": fog_b, "link": Link4G()},
-            {"source": sensor_d, "target": fog_b, "link": Link4G()},
+            #            {"source": sensor_b, "target": fog_a, "link": Link4G()},
+            #            {"source": sensor_c, "target": fog_b, "link": Link4G()},
+            #            {"source": sensor_d, "target": fog_b, "link": Link4G()},
             {"source": fog_a, "target": cloud, "link": LinkCable()},
-            {"source": fog_b, "target": cloud, "link": LinkCable()},
+            #            {"source": fog_b, "target": cloud, "link": LinkCable()},
         ]
     })
+    return G
 
+
+def setup_simulation(G):
     simulation = Simulation(G, selection=ShortestPath())
-
     # Application Graph
-    apps = []
     distribution = UniformDistribution(min=1, max=40)
-    for sensor in [sensor_a, sensor_b, sensor_c, sensor_d]:
+    cloud = next(n for n in G.nodes() if isinstance(n, Cloud))
+    for sensor in [n for n in G.nodes() if isinstance(n, Sensor)]:
         app = _app(f"App{sensor.name}", source_node=sensor, sink_node=cloud, distribution=distribution)
         simulation.deploy_app(app)
-        apps.append(app)
+    return simulation
 
-    simulation.deploy_placement(placement(apps=apps))
 
+def main(network, simulated_time, placement, out_dir):
+    simulation = setup_simulation(network)
+    simulation.deploy_placement(placement(apps=simulation.apps))
     simulation.run(until=simulated_time, progress_bar=False)
     simulation.stats.print_report(simulated_time)
 
     print("\nNode Usage:")
-    for node in G:
+    for node in simulation.network:
         if node.usage > 0:
-            print(f"{node} usage: {node.usage * 100:.1f}%\tconsumption: {node.energy_consumption:.2f} Watt")
+            print(f"usage: {node.usage * 100:.1f}%\tconsumption: {node.energy_consumption:.2f} Watt")
 
-    print("\nLink Usage:")
-    for source, target, data in G.edges(data=True):
-        if data["link"].usage > 0:
-            print(f"{source}->{target} usage: {data['link'].usage * 100:.1f}%\tconsumption: {data['link'].energy_consumption:.2f} Watt")
+    plot(simulation.network, out_path=f"{out_dir}/load.png", node_load=True, edge_load=True)
 
-    utils.draw_topology1(G, simulation.node_to_modules, name=placement.__name__)
+    # print("\nLink Usage:")
+    # for source, target, data in simulation.network.edges(data=True):
+    #     if data["link"].usage > 0:
+    #         print(f"{source}->{target} usage: {data['link'].usage * 100:.1f}%\tconsumption: {data['link'].energy_consumption:.2f} Watt")
+
+    # utils.draw_topology1(simulation.network, simulation.node_to_modules, name=placement.__name__)
 
 
 if __name__ == "__main__":
-    logging.basicConfig(format="%(name)s - %(levelname)s - %(message)s", level=logging.INFO)
-    logging.getLogger("matplotlib").setLevel(logging.WARNING)
-    main(simulated_time=1000, placement=GeneticPlacement)
-    # main(simulated_time=1000, placement=CloudPlacement)
-    # main(simulated_time=1000, placement=EdgePlacement)
+    SIMULATED_TIME = 1000
+    N_SENSORS = 300
+    PLACEMENTS = [
+        CloudPlacement,
+        EdgePlacement,
+    #    GeneticPlacement,
+    ]
+    experiment_name = f"experiment_{N_SENSORS}_sensors"
+    os.makedirs(experiment_name, exist_ok=True)
+
+    network = generate_network(N_SENSORS)
+    plot(network, out_path=f"{experiment_name}/city.png", plot_map=True, plot_labels=True)
+    plot(network, out_path=f"{experiment_name}/topology.png", plot_cloud_fog_edges=False)
+
+    for placement in PLACEMENTS:
+        out_dir = f"{experiment_name}/{placement.__name__}_{SIMULATED_TIME}"
+        os.makedirs(out_dir, exist_ok=True)
+        main(network=generate_network(N_SENSORS), simulated_time=SIMULATED_TIME, placement=placement, out_dir=out_dir)
