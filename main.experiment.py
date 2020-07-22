@@ -12,7 +12,7 @@ from pyfogsim.application import Application, Message, Sink, Source, Operator
 from pyfogsim.core import Simulation
 from pyfogsim.distribution import UniformDistribution, Distribution
 from pyfogsim.placement import CloudPlacement, EdgePlacement
-from pyfogsim.resource import Cloud, Fog, Sensor, Link4G, LinkCable
+from pyfogsim.resource import Cloud, Fog, Sensor, WirelessLink, LinkCable
 from pyfogsim.selection import ShortestPath
 
 logging.basicConfig(format="%(name)s - %(levelname)s - %(message)s", level=logging.INFO)
@@ -51,7 +51,7 @@ def generate_simple_network() -> nx.Graph:
             #            {"id": fog_b},
         ],
         "links": [
-            {"source": sensor_a, "target": fog_a, "link": Link4G()},
+            {"source": sensor_a, "target": fog_a, "link": WirelessLink()},
             #            {"source": sensor_b, "target": fog_a, "link": Link4G()},
             #            {"source": sensor_c, "target": fog_b, "link": Link4G()},
             #            {"source": sensor_d, "target": fog_b, "link": Link4G()},
@@ -66,15 +66,14 @@ def setup_simulation(G):
     simulation = Simulation(G, selection=ShortestPath())
     # Application Graph
     distribution = UniformDistribution(min=1, max=40)
-    cloud = next(n for n in G.nodes() if isinstance(n, Cloud))
+    clouds = [n for n in G.nodes() if isinstance(n, Cloud)]
     for sensor in [n for n in G.nodes() if isinstance(n, Sensor)]:
-        app = _app(f"App{sensor.name}", source_node=sensor, sink_node=cloud, distribution=distribution)
+        app = _app(f"App{sensor.name}", source_node=sensor, sink_node=random.choice(clouds), distribution=distribution)
         simulation.deploy_app(app)
     return simulation
 
 
 def main(network, simulated_time, placement, out_dir):
-    random.seed(0)
     simulation = setup_simulation(network)
     simulation.deploy_placement(placement(apps=simulation.apps))
     simulation.run(until=simulated_time, progress_bar=False)
@@ -97,9 +96,10 @@ def main(network, simulated_time, placement, out_dir):
 
 if __name__ == "__main__":
     random.seed(0)
+    np.random.seed(0)
 
     SIMULATED_TIME = 1000
-    N_SENSORS = 10
+    N_SENSORS = 5
     PLACEMENTS = [
         CloudPlacement,
         EdgePlacement,
@@ -108,11 +108,11 @@ if __name__ == "__main__":
     experiment_name = f"experiment_{N_SENSORS}_sensors"
     os.makedirs(experiment_name, exist_ok=True)
 
-    network = generate_network(N_SENSORS)
+    network = generate_network(N_SENSORS, 2)
     plot(network, out_path=f"{experiment_name}/city.png", plot_map=True, plot_labels=True)
     plot(network, out_path=f"{experiment_name}/topology.png", plot_cloud_fog_edges=False)
 
     for placement in PLACEMENTS:
         out_dir = f"{experiment_name}/{placement.__name__}_{SIMULATED_TIME}"
         os.makedirs(out_dir, exist_ok=True)
-        main(network=generate_network(N_SENSORS), simulated_time=SIMULATED_TIME, placement=placement, out_dir=out_dir)
+        main(network=generate_network(N_SENSORS, 2), simulated_time=SIMULATED_TIME, placement=placement, out_dir=out_dir)

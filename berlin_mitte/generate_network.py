@@ -7,8 +7,7 @@ import geojson
 import networkx as nx
 from shapely.geometry import shape, Point
 
-from pyfogsim.resource import Fog, Sensor, Link4G, LinkCable, Cloud
-
+from pyfogsim.resource import Fog, Sensor, WirelessLink, LinkCable, Cloud, DataCenter
 
 result_dir = os.path.join(os.path.dirname(__file__), "resources")
 DC_GEOJSON = os.path.join(result_dir, "dc.geo.json")
@@ -17,19 +16,23 @@ MITTE_GEOJSON = os.path.join(result_dir, "mitte.geo.json")
 
 
 def generate_network(n_sensors: int, n_fog: Optional[int] = None) -> nx.Graph:
+    random.seed(0)
     with open(MITTE_GEOJSON) as stream:
         mitte = shape(geojson.load(stream)["geometry"])
 
+    cloud_node = {"id": Cloud("Cloud"), "pos": (50.119807, 8.6214506)}
     dc_nodes = _dc_nodes()
     nodes_fog = _fog_nodes(n_fog)
 
     sensor_nodes, sensor_edge_lists = zip(*islice(_sensor_nodes(mitte, nodes_fog), n_sensors))
-    nodes = dc_nodes + nodes_fog + list(sensor_nodes)
+    nodes = [cloud_node] + dc_nodes + nodes_fog + list(sensor_nodes)
 
     edges = [edge for edge_list in sensor_edge_lists for edge in edge_list]  # flatten
     for fog in nodes_fog:
-        for cloud in dc_nodes:
-            edges.append({"source": fog["id"], "target": cloud["id"], "link": LinkCable()})
+        for dc in dc_nodes:
+            edges.append({"source": fog["id"], "target": dc["id"], "link": LinkCable()})
+    for dc in dc_nodes:
+        edges.append({"source": cloud_node["id"], "target": dc["id"], "link": LinkCable()})
 
     return nx.node_link_graph({
         "directed": False,
@@ -46,7 +49,7 @@ def _dc_nodes() -> List[Dict]:
         offices = geojson.load(stream)
     for feature in offices["features"]:
         point = shape(feature['geometry'])
-        node = Cloud(name=feature["properties"]["name"])
+        node = DataCenter(name=feature["properties"]["name"])
         nodes.append({"id": node, "pos": (point.x, point.y)})
     return nodes
 
@@ -75,6 +78,6 @@ def _sensor_nodes(mitte, fog_nodes, sigma=0.03) -> List[Dict]:
         for fog in fog_nodes:
             point = Point(*fog["pos"])
             if radius.contains(point):
-                edges.append({"source": node, "target": fog["id"], "link": Link4G()})
+                edges.append({"source": node, "target": fog["id"], "link": WirelessLink()})
         if len(edges) > 0:
             yield {"id": node, "pos": position}, edges

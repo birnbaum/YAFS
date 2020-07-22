@@ -8,7 +8,7 @@ from descartes import PolygonPatch
 from matplotlib.colors import ListedColormap
 from pygments.styles.paraiso_dark import BLUE
 
-from pyfogsim.resource import Cloud, Sensor, Fog, LinkCable, Link4G
+from pyfogsim.resource import Sensor, Fog, LinkCable, WirelessLink, DataCenter
 
 result_dir = os.path.join(os.path.dirname(__file__), "resources")
 MITTE_PNG = os.path.join(result_dir, "mitte.png")
@@ -53,7 +53,7 @@ def plot(
     base_props = dict(G=G, pos=pos, ax=ax)
 
     fog_nodes = _filter_nodes(G, Fog)
-    cloud_nodes = _filter_nodes(G, Cloud)
+    dc_nodes = _filter_nodes(G, DataCenter)
     if node_load:
         nx.draw_networkx_nodes(
             **base_props,
@@ -69,9 +69,9 @@ def plot(
         )
         nx.draw_networkx_nodes(
             **base_props,
-            nodelist=cloud_nodes,
+            nodelist=dc_nodes,
             node_shape="s",
-            node_color=[node.usage for node in cloud_nodes],
+            node_color=[node.usage for node in dc_nodes],
             node_size=100,
             edgecolors="black",
             linewidths=1,
@@ -91,7 +91,7 @@ def plot(
         )
         nx.draw_networkx_nodes(
             **base_props,
-            nodelist=cloud_nodes,
+            nodelist=dc_nodes,
             node_shape="s",
             node_color="white",
             node_size=30,
@@ -108,7 +108,7 @@ def plot(
     )
 
     if plot_cloud_fog_edges:
-        edgelist = _filter_edges(G, Link4G)
+        edgelist = _filter_edges(G, WirelessLink)
         if edge_load:
             nx.draw_networkx_edges(
                 **base_props,
@@ -126,7 +126,7 @@ def plot(
                 width=0.1,
             )
 
-    edgelist = _filter_edges(G, Link4G)
+    edgelist = _filter_edges(G, WirelessLink)
     if edge_load:
         nx.draw_networkx_edges(
             **base_props,
@@ -148,7 +148,7 @@ def plot(
         nx.draw_networkx_labels(
             G=G,
             pos={k: (x, y+0.0025) for k, (x, y) in pos.items()},
-            labels={n: n.name for n in G.nodes() if isinstance(n, Cloud)},
+            labels={n: n.name for n in G.nodes() if isinstance(n, DataCenter)},
             font_weight="light",
             font_size=10,
         )

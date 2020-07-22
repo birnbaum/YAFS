@@ -1,4 +1,5 @@
 import logging
+import random
 from abc import abstractmethod, ABC
 from typing import Iterator, List
 
@@ -28,7 +29,7 @@ class Placement(ABC):
 
     def run(self, simulation: "Simulation"):
         """This method will be invoked during the simulation to change the assignment of the modules to the topology."""
-        self._initial_allocation(simulation)
+        self._run(simulation)
         if self.activation_dist:
             while True:
                 try:
@@ -38,10 +39,6 @@ class Placement(ABC):
                 else:
                     yield simulation.env.timeout(next_activation)
                     self._run(simulation)
-
-    def _initial_allocation(self, simulation: "Simulation"):  # TODO Why does this know about the simulation?
-        """Given an ecosystem, it starts the allocation of modules in the topology."""
-        self._run(simulation)
 
     @abstractmethod
     def _run(self, simulation: "Simulation"):  # TODO Why does this know about the simulation?
@@ -54,10 +51,10 @@ class CloudPlacement(Placement):
     def _run(self, simulation: "Simulation"):
         logger.debug(f"CloudPlacement placing {len(self.apps)} applications.")
         for app in self.apps:
-            cloud_node_id, _ = max(simulation.network.nodes(data=True), key=lambda node: node[1]["IPT"])
+            cloud_node = max(simulation.network, key=lambda node: node.ipt)
             for operator in app.operators:
-                logger.debug(f"CloudPlacement placing operator '{operator.name}' at node '{cloud_node_id}'.")
-                operator.node = cloud_node_id
+                logger.debug(f"CloudPlacement placing operator '{operator.name}' at node '{cloud_node}'.")
+                operator.node = cloud_node
 
 
 class EdgePlacement(Placement):  # TODO First implementation, now very sophisticated
@@ -70,3 +67,37 @@ class EdgePlacement(Placement):  # TODO First implementation, now very sophistic
             for operator in app.operators:
                 logger.debug(f"EdgePlacement placing operator '{operator.name}' at node '{path[1]}'.")
                 operator.node = path[1]
+
+
+class GeneticPlacement(Placement):  # TODO First implementation, now very sophisticated
+
+    def _run(self, simulation: "Simulation"):
+        G = simulation.network.copy()
+
+        for app in self.apps:
+            for operator in app.operators:
+                node = random.choice(list(G))
+                if hasattr(node, "operators"):
+                    node.operators.append(operator)
+                else:
+                    node.operators = [operator]
+
+        evaluate(G)
+
+        # app  dps-inc/dps-out/RAM/ops
+        # node RAM/ops
+        node_consumptions = [node.consumption for node in nodes]
+        link_consumptions = [node.consumption for node in nodes]
+        consumtion = sum(node_consumptions) + sum(link_consumptions)
+
+    # def run(self, simulation: "Simulation"):
+    #     """This method will be invoked during the simulation to change the assignment of the modules to the topology."""
+    #     while True:
+    #         yield simulation.env.timeout(1000)
+    #         for node in simulation.network:
+    #             node.energy_consumption
+
+
+#class Mapping:
+
+

@@ -69,7 +69,7 @@ class Link:
             # self.x.append((start, self.env.now))
 
 
-class Link4G(Link):
+class WirelessLink(Link):
     def __init__(self):
         super().__init__(bandwidth=300, latency=20, watt_idle=3, watt_load=12)
 
@@ -117,14 +117,19 @@ class Node:
 
 class Sensor(Node):
     def __init__(self, name: str):
-        super().__init__(name, ipt=10, ram=2000, watt_idle=3, watt_load=12)
+        super().__init__(name, ipt=1, ram=1, watt_idle=0, watt_load=0)
 
 
 class Fog(Node):
     def __init__(self, name: str):
-        super().__init__(name, ipt=20, ram=4000, watt_idle=5, watt_load=20)
+        super().__init__(name, ipt=10, ram=2000, watt_idle=5, watt_load=20)
+
+
+class DataCenter(Node):
+    def __init__(self, name: str):
+        super().__init__(name, ipt=100, ram=10000, watt_idle=10, watt_load=150)
 
 
 class Cloud(Node):
     def __init__(self, name: str):
-        super().__init__(name, ipt=200, ram=20000, watt_idle=10, watt_load=150)
+        super().__init__(name, ipt=400, ram=20000, watt_idle=10, watt_load=150)

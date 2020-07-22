@@ -62,8 +62,9 @@ class Simulation:
     def run(self, until: int, results_path: Optional[str] = None, progress_bar: bool = True):
         """Runs the simulation"""
         start_time = time.time()
-        for i in tqdm(range(1, until), total=until, disable=(not progress_bar)):
-            self.env.run(until=i)
+        # for i in tqdm(range(1, until), total=until, disable=(not progress_bar)):
+        #     self.env.run(until=i)
+        self.env.run(until=until)
         if results_path:
             self.event_log.write(results_path)
         logger.info(f"Simulated {until} time units in {time.time() - start_time} seconds.")
